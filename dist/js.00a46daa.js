@@ -1603,7 +1603,8 @@ var _Global = _interopRequireDefault(require("./theme/Global"));
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // For global CSS reset + a few styles for html and body
-console.log('whee');
+(function ($global) {//something here
+})(window);
 },{"./theme/Global":"js/theme/Global.js"}],"../node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
 var global = arguments[3];
 var OVERLAY_ID = '__parcel__error__overlay__';
