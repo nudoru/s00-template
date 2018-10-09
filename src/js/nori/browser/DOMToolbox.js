@@ -79,79 +79,37 @@ export const removeElement = el => {
   el.parentNode.removeChild(el);
 };
 
-export const append = (el, selector) => {
-  let parent = document.querySelector(selector);
+export const appendElement = (root, el) => {
+  let parent = isDomObj(root) ? root : document.querySelector(root);
   if (parent) {
     parent.appendChild(el);
   } else {
-    console.warn('Can\'t append element, selector not found: ', selector);
+    console.warn('Can\'t append element, selector not found: ', root);
   }
 };
 
-export const replace = (el, selector) => {
+export const replaceElement = (root, el) => {
   if (el.parent) {
-    let parent      = document.querySelector(selector),
+    let parent      = isDomObj(root) ? root : document.querySelector(root),
         nextSibling = el.nextSibling;
     if (parent) {
       parent.removeChild(el);
       parent.insertBefore(el, nextSibling);
     } else {
-      console.warn('Can\'t append element, selector not found: ', selector);
+      console.warn('Can\'t append element, selector not found: ', root);
     }
   } else {
-    append(el, selector);
+    append(el, root);
   }
 };
 
-//http://stackoverflow.com/questions/494143/creating-a-new-dom-element-from-an-html-string-using-built-in-dom-methods-or-pro
-export const HTMLStrToNode2 = str => {
-  let temp       = document.createElement('div');
-  temp.innerHTML = str;
-  return temp.firstChild;
-};
-
-//http://krasimirtsonev.com/blog/article/Revealing-the-magic-how-to-properly-convert-HTML-string-to-a-DOM-element
-export const HTMLStrToNode = (html) => {
-  /* code taken from jQuery */
-  var wrapMap      = {
-    option: [1, "<select multiple='multiple'>", "</select>"],
-    legend: [1, "<fieldset>", "</fieldset>"],
-    area  : [1, "<map>", "</map>"],
-    param : [1, "<object>", "</object>"],
-    thead : [1, "<table>", "</table>"],
-    tr    : [2, "<table><tbody>", "</tbody></table>"],
-    col   : [2, "<table><tbody></tbody><colgroup>", "</colgroup></table>"],
-    td    : [3, "<table><tbody><tr>", "</tr></tbody></table>"],
-
-    // IE6-8 can't serialize link, script, style, or any html5 (NoScope) tags,
-    // unless wrapped in a div with non-breaking characters in front of it.
-    _default: [1, "<div>", "</div>"]
-  };
-  wrapMap.optgroup = wrapMap.option;
-  wrapMap.tbody    = wrapMap.tfoot = wrapMap.colgroup = wrapMap.caption = wrapMap.thead;
-  wrapMap.th  = wrapMap.td;
-  var element = document.createElement('div');
-  var match   = /<\s*\w.*?>/g.exec(html);
-  if (match !== null) {
-    var tag           = match[0].replace(/</g, '').replace(/>/g, '');
-    var map           = wrapMap[tag] || wrapMap._default;
-    html              = map[1] + html + map[2];
-    element.innerHTML = html;
-    // Descend through wrappers to the right content
-    var j = map[0] + 1;
-    while (j--) {
-      element = element.lastChild;
-    }
-  } else {
-    // if only text is passed
-    element.innerHTML = html;
-    element           = element.lastChild;
-  }
-  return element;
+//https://davidwalsh.name/convert-html-stings-dom-nodes
+export const HTMLStrToNode = str => {
+  return document.createRange().createContextualFragment(str);
 };
 
 export const wrapElement = (wrapperStr, el) => {
-  let wrapperEl = this.HTMLStrToNode(wrapperStr),
+  let wrapperEl = HTMLStrToNode(wrapperStr),
       elParent  = el.parentNode;
 
   wrapperEl.appendChild(el);
@@ -160,10 +118,10 @@ export const wrapElement = (wrapperStr, el) => {
 };
 
 // http://stackoverflow.com/questions/15329167/closest-ancestor-matching-selector-using-native-dom
-export const closest = (el, selector) => {
+export const closest = (root, el) => {
   let matchesSelector = el.matches || el.webkitMatchesSelector || el.mozMatchesSelector || el.msMatchesSelector;
   while (el) {
-    if (matchesSelector.bind(el)(selector)) {
+    if (matchesSelector.bind(el)(root)) {
       return el;
     } else {
       el = el.parentElement;
@@ -173,7 +131,7 @@ export const closest = (el, selector) => {
 };
 
 // from youmightnotneedjquery.com
-export const hasClass = (el, className) => {
+export const hasClass = (className, el) => {
   if (el.classList) {
     el.classList.contains(className);
   } else {
@@ -238,7 +196,7 @@ export const computeWindowScale = config => {
 /**
  * Get an array of elements in the container returned as Array instead of a Node list
  */
-export const getQSElementsAsArray = (el, cls) => {
+export const querySelectorAllAsArray = (el, cls) => {
   return Array.prototype.slice.call(el.querySelectorAll(cls), 0);
 };
 
