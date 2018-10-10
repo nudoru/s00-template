@@ -1,6 +1,5 @@
 import * as GlobalCSS from './theme/Global'; // For global CSS reset + a few styles for html and body
 import {css} from 'emotion';
-import {appendElement, HTMLStrToNode} from "./nori/browser/DOMToolbox";
 import Component from './nori/Component';
 
 (($global)=> {
@@ -10,7 +9,7 @@ import Component from './nori/Component';
   const red = css`color: red`;
   const blue = css`color: blue`;
 
-  let text = new Component(`span`, {}, 'Hi ');
+  let text = new Component(`span`, {mouseover: (e) => {console.log(e)}}, 'Hi ');
   let text2 = new Component(`span`, {class: blue}, [text, 'there ']);
   let text3 = new Component(`span`, {}, [text, text2, 'Matt']);
 

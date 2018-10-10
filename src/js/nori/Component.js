@@ -43,9 +43,10 @@ export default class Component {
     return Object.assign({}, this.internalState);
   }
 
-  get props() {
-    return Object.assign({}, this.internalProps);
-  }
+  // YAGNI
+  // get props() {
+  //   return Object.assign({}, this.internalProps);
+  // }
 
   get current() {
     if (!this.renderedElement) {
@@ -70,34 +71,15 @@ export default class Component {
     return acc;
   }, []);
 
-  $getChildren = (children) => children.map(child => this.$getChildValue(child)).join('');
-
-  $getChildValue(child) {
-    let innerValue;
-    if (Is.string(child)) {
-      innerValue = Mustache.render(child, this.internalState);
-    } else if (Is.func(child)) {
-      innerValue = child();
-    } else if (Is.object(child) && typeof child.$getTag === 'function') {
-      innerValue = child.$getTag();
-    } else {
-      console.warn(`Component ${this.internalProps.id} can't do anything with child of type ${typeof child}`);
-      innerValue = 'ERR';
-    }
-    return innerValue;
-  }
-
-  // TODO don't render children as strings here
-  $getTag = () => `<${this.tag} ${this.$getTagAttrsFromProps(this.internalProps)}>${this.$getChildren(this.children)}</${this.tag}>`;
-
   renderTo(root, onRenderFn) {
-    const element = HTMLStrToNode(this.$getTag());
+    // TODO give each a unique data-id here
+    const element = HTMLStrToNode(`<${this.tag} ${this.$getTagAttrsFromProps(this.internalProps)}/>`);
     appendElement(root, element);
-
-    //TODO render children here and attach to this element
 
     this.renderedElementParent = root;
     this.renderedElement       = root.lastChild;
+
+    this.$renderChildren(this.renderedElement);
 
     this.$getEventsFromProps(this.internalProps).forEach(evt => {
       this.renderedElement.addEventListener(evt.event, evt.handler);
@@ -108,20 +90,34 @@ export default class Component {
     }
   }
 
+  $renderChildren(root) {
+    this.children.forEach(child => {
+      if (Is.string(child)) {
+        let text = document.createTextNode(Mustache.render(child, this.internalState));
+        appendElement(root, text);
+      } else if (Is.object(child) && typeof child.renderTo === 'function') {
+        return child.renderTo(root);
+      }
+    });
+  }
+
   remove() {
     this.$getEventsFromProps(this.internalProps).forEach(evt => {
-      this.renderedElement.removeEventListener(evt.event, evt.handler);
+      try {
+        this.renderedElement.removeEventListener(evt.event, evt.handler);
+      } catch (e) {
+      }
     });
 
     this.children.forEach(child => {
-      if(Is.object(child) && typeof child.remove === 'function') {
+      if (Is.object(child) && typeof child.remove === 'function') {
         child.remove();
       }
     });
 
     removeElement(this.renderedElement);
-    this.renderedElementParent = null;
     this.renderedElement       = null;
+    this.renderedElementParent = null;
   }
 
 }

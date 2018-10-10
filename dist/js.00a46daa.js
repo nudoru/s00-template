@@ -1595,7 +1595,693 @@ function _taggedTemplateLiteral(strings, raw) { if (!raw) { raw = strings.slice(
 // normalize.css v8.0.0 | MIT License | github.com/necolas/normalize.css
 // + Customs
 (0, _emotion.injectGlobal)(_templateObject(), _Theme.modularScale.ms2, _Theme.theme.fontSizes[2], _Theme.theme.gradients['premium-white']);
-},{"emotion":"../node_modules/emotion/dist/index.esm.js","./Theme":"js/theme/Theme.js"}],"../node_modules/ramda/es/internal/_isPlaceholder.js":[function(require,module,exports) {
+},{"emotion":"../node_modules/emotion/dist/index.esm.js","./Theme":"js/theme/Theme.js"}],"../node_modules/mustache/mustache.js":[function(require,module,exports) {
+var define;
+var global = arguments[3];
+/*!
+ * mustache.js - Logic-less {{mustache}} templates with JavaScript
+ * http://github.com/janl/mustache.js
+ */
+
+/*global define: false Mustache: true*/
+
+(function defineMustache (global, factory) {
+  if (typeof exports === 'object' && exports && typeof exports.nodeName !== 'string') {
+    factory(exports); // CommonJS
+  } else if (typeof define === 'function' && define.amd) {
+    define(['exports'], factory); // AMD
+  } else {
+    global.Mustache = {};
+    factory(global.Mustache); // script, wsh, asp
+  }
+}(this, function mustacheFactory (mustache) {
+
+  var objectToString = Object.prototype.toString;
+  var isArray = Array.isArray || function isArrayPolyfill (object) {
+    return objectToString.call(object) === '[object Array]';
+  };
+
+  function isFunction (object) {
+    return typeof object === 'function';
+  }
+
+  /**
+   * More correct typeof string handling array
+   * which normally returns typeof 'object'
+   */
+  function typeStr (obj) {
+    return isArray(obj) ? 'array' : typeof obj;
+  }
+
+  function escapeRegExp (string) {
+    return string.replace(/[\-\[\]{}()*+?.,\\\^$|#\s]/g, '\\$&');
+  }
+
+  /**
+   * Null safe way of checking whether or not an object,
+   * including its prototype, has a given property
+   */
+  function hasProperty (obj, propName) {
+    return obj != null && typeof obj === 'object' && (propName in obj);
+  }
+
+  /**
+   * Safe way of detecting whether or not the given thing is a primitive and
+   * whether it has the given property
+   */
+  function primitiveHasOwnProperty (primitive, propName) {  
+    return (
+      primitive != null
+      && typeof primitive !== 'object'
+      && primitive.hasOwnProperty
+      && primitive.hasOwnProperty(propName)
+    );
+  }
+
+  // Workaround for https://issues.apache.org/jira/browse/COUCHDB-577
+  // See https://github.com/janl/mustache.js/issues/189
+  var regExpTest = RegExp.prototype.test;
+  function testRegExp (re, string) {
+    return regExpTest.call(re, string);
+  }
+
+  var nonSpaceRe = /\S/;
+  function isWhitespace (string) {
+    return !testRegExp(nonSpaceRe, string);
+  }
+
+  var entityMap = {
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#39;',
+    '/': '&#x2F;',
+    '`': '&#x60;',
+    '=': '&#x3D;'
+  };
+
+  function escapeHtml (string) {
+    return String(string).replace(/[&<>"'`=\/]/g, function fromEntityMap (s) {
+      return entityMap[s];
+    });
+  }
+
+  var whiteRe = /\s*/;
+  var spaceRe = /\s+/;
+  var equalsRe = /\s*=/;
+  var curlyRe = /\s*\}/;
+  var tagRe = /#|\^|\/|>|\{|&|=|!/;
+
+  /**
+   * Breaks up the given `template` string into a tree of tokens. If the `tags`
+   * argument is given here it must be an array with two string values: the
+   * opening and closing tags used in the template (e.g. [ "<%", "%>" ]). Of
+   * course, the default is to use mustaches (i.e. mustache.tags).
+   *
+   * A token is an array with at least 4 elements. The first element is the
+   * mustache symbol that was used inside the tag, e.g. "#" or "&". If the tag
+   * did not contain a symbol (i.e. {{myValue}}) this element is "name". For
+   * all text that appears outside a symbol this element is "text".
+   *
+   * The second element of a token is its "value". For mustache tags this is
+   * whatever else was inside the tag besides the opening symbol. For text tokens
+   * this is the text itself.
+   *
+   * The third and fourth elements of the token are the start and end indices,
+   * respectively, of the token in the original template.
+   *
+   * Tokens that are the root node of a subtree contain two more elements: 1) an
+   * array of tokens in the subtree and 2) the index in the original template at
+   * which the closing tag for that section begins.
+   */
+  function parseTemplate (template, tags) {
+    if (!template)
+      return [];
+
+    var sections = [];     // Stack to hold section tokens
+    var tokens = [];       // Buffer to hold the tokens
+    var spaces = [];       // Indices of whitespace tokens on the current line
+    var hasTag = false;    // Is there a {{tag}} on the current line?
+    var nonSpace = false;  // Is there a non-space char on the current line?
+
+    // Strips all whitespace tokens array for the current line
+    // if there was a {{#tag}} on it and otherwise only space.
+    function stripSpace () {
+      if (hasTag && !nonSpace) {
+        while (spaces.length)
+          delete tokens[spaces.pop()];
+      } else {
+        spaces = [];
+      }
+
+      hasTag = false;
+      nonSpace = false;
+    }
+
+    var openingTagRe, closingTagRe, closingCurlyRe;
+    function compileTags (tagsToCompile) {
+      if (typeof tagsToCompile === 'string')
+        tagsToCompile = tagsToCompile.split(spaceRe, 2);
+
+      if (!isArray(tagsToCompile) || tagsToCompile.length !== 2)
+        throw new Error('Invalid tags: ' + tagsToCompile);
+
+      openingTagRe = new RegExp(escapeRegExp(tagsToCompile[0]) + '\\s*');
+      closingTagRe = new RegExp('\\s*' + escapeRegExp(tagsToCompile[1]));
+      closingCurlyRe = new RegExp('\\s*' + escapeRegExp('}' + tagsToCompile[1]));
+    }
+
+    compileTags(tags || mustache.tags);
+
+    var scanner = new Scanner(template);
+
+    var start, type, value, chr, token, openSection;
+    while (!scanner.eos()) {
+      start = scanner.pos;
+
+      // Match any text between tags.
+      value = scanner.scanUntil(openingTagRe);
+
+      if (value) {
+        for (var i = 0, valueLength = value.length; i < valueLength; ++i) {
+          chr = value.charAt(i);
+
+          if (isWhitespace(chr)) {
+            spaces.push(tokens.length);
+          } else {
+            nonSpace = true;
+          }
+
+          tokens.push([ 'text', chr, start, start + 1 ]);
+          start += 1;
+
+          // Check for whitespace on the current line.
+          if (chr === '\n')
+            stripSpace();
+        }
+      }
+
+      // Match the opening tag.
+      if (!scanner.scan(openingTagRe))
+        break;
+
+      hasTag = true;
+
+      // Get the tag type.
+      type = scanner.scan(tagRe) || 'name';
+      scanner.scan(whiteRe);
+
+      // Get the tag value.
+      if (type === '=') {
+        value = scanner.scanUntil(equalsRe);
+        scanner.scan(equalsRe);
+        scanner.scanUntil(closingTagRe);
+      } else if (type === '{') {
+        value = scanner.scanUntil(closingCurlyRe);
+        scanner.scan(curlyRe);
+        scanner.scanUntil(closingTagRe);
+        type = '&';
+      } else {
+        value = scanner.scanUntil(closingTagRe);
+      }
+
+      // Match the closing tag.
+      if (!scanner.scan(closingTagRe))
+        throw new Error('Unclosed tag at ' + scanner.pos);
+
+      token = [ type, value, start, scanner.pos ];
+      tokens.push(token);
+
+      if (type === '#' || type === '^') {
+        sections.push(token);
+      } else if (type === '/') {
+        // Check section nesting.
+        openSection = sections.pop();
+
+        if (!openSection)
+          throw new Error('Unopened section "' + value + '" at ' + start);
+
+        if (openSection[1] !== value)
+          throw new Error('Unclosed section "' + openSection[1] + '" at ' + start);
+      } else if (type === 'name' || type === '{' || type === '&') {
+        nonSpace = true;
+      } else if (type === '=') {
+        // Set the tags for the next time around.
+        compileTags(value);
+      }
+    }
+
+    // Make sure there are no open sections when we're done.
+    openSection = sections.pop();
+
+    if (openSection)
+      throw new Error('Unclosed section "' + openSection[1] + '" at ' + scanner.pos);
+
+    return nestTokens(squashTokens(tokens));
+  }
+
+  /**
+   * Combines the values of consecutive text tokens in the given `tokens` array
+   * to a single token.
+   */
+  function squashTokens (tokens) {
+    var squashedTokens = [];
+
+    var token, lastToken;
+    for (var i = 0, numTokens = tokens.length; i < numTokens; ++i) {
+      token = tokens[i];
+
+      if (token) {
+        if (token[0] === 'text' && lastToken && lastToken[0] === 'text') {
+          lastToken[1] += token[1];
+          lastToken[3] = token[3];
+        } else {
+          squashedTokens.push(token);
+          lastToken = token;
+        }
+      }
+    }
+
+    return squashedTokens;
+  }
+
+  /**
+   * Forms the given array of `tokens` into a nested tree structure where
+   * tokens that represent a section have two additional items: 1) an array of
+   * all tokens that appear in that section and 2) the index in the original
+   * template that represents the end of that section.
+   */
+  function nestTokens (tokens) {
+    var nestedTokens = [];
+    var collector = nestedTokens;
+    var sections = [];
+
+    var token, section;
+    for (var i = 0, numTokens = tokens.length; i < numTokens; ++i) {
+      token = tokens[i];
+
+      switch (token[0]) {
+        case '#':
+        case '^':
+          collector.push(token);
+          sections.push(token);
+          collector = token[4] = [];
+          break;
+        case '/':
+          section = sections.pop();
+          section[5] = token[2];
+          collector = sections.length > 0 ? sections[sections.length - 1][4] : nestedTokens;
+          break;
+        default:
+          collector.push(token);
+      }
+    }
+
+    return nestedTokens;
+  }
+
+  /**
+   * A simple string scanner that is used by the template parser to find
+   * tokens in template strings.
+   */
+  function Scanner (string) {
+    this.string = string;
+    this.tail = string;
+    this.pos = 0;
+  }
+
+  /**
+   * Returns `true` if the tail is empty (end of string).
+   */
+  Scanner.prototype.eos = function eos () {
+    return this.tail === '';
+  };
+
+  /**
+   * Tries to match the given regular expression at the current position.
+   * Returns the matched text if it can match, the empty string otherwise.
+   */
+  Scanner.prototype.scan = function scan (re) {
+    var match = this.tail.match(re);
+
+    if (!match || match.index !== 0)
+      return '';
+
+    var string = match[0];
+
+    this.tail = this.tail.substring(string.length);
+    this.pos += string.length;
+
+    return string;
+  };
+
+  /**
+   * Skips all text until the given regular expression can be matched. Returns
+   * the skipped string, which is the entire tail if no match can be made.
+   */
+  Scanner.prototype.scanUntil = function scanUntil (re) {
+    var index = this.tail.search(re), match;
+
+    switch (index) {
+      case -1:
+        match = this.tail;
+        this.tail = '';
+        break;
+      case 0:
+        match = '';
+        break;
+      default:
+        match = this.tail.substring(0, index);
+        this.tail = this.tail.substring(index);
+    }
+
+    this.pos += match.length;
+
+    return match;
+  };
+
+  /**
+   * Represents a rendering context by wrapping a view object and
+   * maintaining a reference to the parent context.
+   */
+  function Context (view, parentContext) {
+    this.view = view;
+    this.cache = { '.': this.view };
+    this.parent = parentContext;
+  }
+
+  /**
+   * Creates a new context using the given view with this context
+   * as the parent.
+   */
+  Context.prototype.push = function push (view) {
+    return new Context(view, this);
+  };
+
+  /**
+   * Returns the value of the given name in this context, traversing
+   * up the context hierarchy if the value is absent in this context's view.
+   */
+  Context.prototype.lookup = function lookup (name) {
+    var cache = this.cache;
+
+    var value;
+    if (cache.hasOwnProperty(name)) {
+      value = cache[name];
+    } else {
+      var context = this, intermediateValue, names, index, lookupHit = false;
+
+      while (context) {
+        if (name.indexOf('.') > 0) {
+          intermediateValue = context.view;
+          names = name.split('.');
+          index = 0;
+
+          /**
+           * Using the dot notion path in `name`, we descend through the
+           * nested objects.
+           *
+           * To be certain that the lookup has been successful, we have to
+           * check if the last object in the path actually has the property
+           * we are looking for. We store the result in `lookupHit`.
+           *
+           * This is specially necessary for when the value has been set to
+           * `undefined` and we want to avoid looking up parent contexts.
+           *
+           * In the case where dot notation is used, we consider the lookup
+           * to be successful even if the last "object" in the path is
+           * not actually an object but a primitive (e.g., a string, or an
+           * integer), because it is sometimes useful to access a property
+           * of an autoboxed primitive, such as the length of a string.
+           **/
+          while (intermediateValue != null && index < names.length) {
+            if (index === names.length - 1)
+              lookupHit = (
+                hasProperty(intermediateValue, names[index]) 
+                || primitiveHasOwnProperty(intermediateValue, names[index])
+              );
+
+            intermediateValue = intermediateValue[names[index++]];
+          }
+        } else {
+          intermediateValue = context.view[name];
+
+          /**
+           * Only checking against `hasProperty`, which always returns `false` if
+           * `context.view` is not an object. Deliberately omitting the check
+           * against `primitiveHasOwnProperty` if dot notation is not used.
+           *
+           * Consider this example:
+           * ```
+           * Mustache.render("The length of a football field is {{#length}}{{length}}{{/length}}.", {length: "100 yards"})
+           * ```
+           *
+           * If we were to check also against `primitiveHasOwnProperty`, as we do
+           * in the dot notation case, then render call would return:
+           *
+           * "The length of a football field is 9."
+           *
+           * rather than the expected:
+           *
+           * "The length of a football field is 100 yards."
+           **/
+          lookupHit = hasProperty(context.view, name);
+        }
+
+        if (lookupHit) {
+          value = intermediateValue;
+          break;
+        }
+
+        context = context.parent;
+      }
+
+      cache[name] = value;
+    }
+
+    if (isFunction(value))
+      value = value.call(this.view);
+
+    return value;
+  };
+
+  /**
+   * A Writer knows how to take a stream of tokens and render them to a
+   * string, given a context. It also maintains a cache of templates to
+   * avoid the need to parse the same template twice.
+   */
+  function Writer () {
+    this.cache = {};
+  }
+
+  /**
+   * Clears all cached templates in this writer.
+   */
+  Writer.prototype.clearCache = function clearCache () {
+    this.cache = {};
+  };
+
+  /**
+   * Parses and caches the given `template` according to the given `tags` or
+   * `mustache.tags` if `tags` is omitted,  and returns the array of tokens
+   * that is generated from the parse.
+   */
+  Writer.prototype.parse = function parse (template, tags) {
+    var cache = this.cache;
+    var cacheKey = template + ':' + (tags || mustache.tags).join(':');
+    var tokens = cache[cacheKey];
+
+    if (tokens == null)
+      tokens = cache[cacheKey] = parseTemplate(template, tags);
+
+    return tokens;
+  };
+
+  /**
+   * High-level method that is used to render the given `template` with
+   * the given `view`.
+   *
+   * The optional `partials` argument may be an object that contains the
+   * names and templates of partials that are used in the template. It may
+   * also be a function that is used to load partial templates on the fly
+   * that takes a single argument: the name of the partial.
+   *
+   * If the optional `tags` argument is given here it must be an array with two
+   * string values: the opening and closing tags used in the template (e.g.
+   * [ "<%", "%>" ]). The default is to mustache.tags.
+   */
+  Writer.prototype.render = function render (template, view, partials, tags) {
+    var tokens = this.parse(template, tags);
+    var context = (view instanceof Context) ? view : new Context(view);
+    return this.renderTokens(tokens, context, partials, template);
+  };
+
+  /**
+   * Low-level method that renders the given array of `tokens` using
+   * the given `context` and `partials`.
+   *
+   * Note: The `originalTemplate` is only ever used to extract the portion
+   * of the original template that was contained in a higher-order section.
+   * If the template doesn't use higher-order sections, this argument may
+   * be omitted.
+   */
+  Writer.prototype.renderTokens = function renderTokens (tokens, context, partials, originalTemplate) {
+    var buffer = '';
+
+    var token, symbol, value;
+    for (var i = 0, numTokens = tokens.length; i < numTokens; ++i) {
+      value = undefined;
+      token = tokens[i];
+      symbol = token[0];
+
+      if (symbol === '#') value = this.renderSection(token, context, partials, originalTemplate);
+      else if (symbol === '^') value = this.renderInverted(token, context, partials, originalTemplate);
+      else if (symbol === '>') value = this.renderPartial(token, context, partials, originalTemplate);
+      else if (symbol === '&') value = this.unescapedValue(token, context);
+      else if (symbol === 'name') value = this.escapedValue(token, context);
+      else if (symbol === 'text') value = this.rawValue(token);
+
+      if (value !== undefined)
+        buffer += value;
+    }
+
+    return buffer;
+  };
+
+  Writer.prototype.renderSection = function renderSection (token, context, partials, originalTemplate) {
+    var self = this;
+    var buffer = '';
+    var value = context.lookup(token[1]);
+
+    // This function is used to render an arbitrary template
+    // in the current context by higher-order sections.
+    function subRender (template) {
+      return self.render(template, context, partials);
+    }
+
+    if (!value) return;
+
+    if (isArray(value)) {
+      for (var j = 0, valueLength = value.length; j < valueLength; ++j) {
+        buffer += this.renderTokens(token[4], context.push(value[j]), partials, originalTemplate);
+      }
+    } else if (typeof value === 'object' || typeof value === 'string' || typeof value === 'number') {
+      buffer += this.renderTokens(token[4], context.push(value), partials, originalTemplate);
+    } else if (isFunction(value)) {
+      if (typeof originalTemplate !== 'string')
+        throw new Error('Cannot use higher-order sections without the original template');
+
+      // Extract the portion of the original template that the section contains.
+      value = value.call(context.view, originalTemplate.slice(token[3], token[5]), subRender);
+
+      if (value != null)
+        buffer += value;
+    } else {
+      buffer += this.renderTokens(token[4], context, partials, originalTemplate);
+    }
+    return buffer;
+  };
+
+  Writer.prototype.renderInverted = function renderInverted (token, context, partials, originalTemplate) {
+    var value = context.lookup(token[1]);
+
+    // Use JavaScript's definition of falsy. Include empty arrays.
+    // See https://github.com/janl/mustache.js/issues/186
+    if (!value || (isArray(value) && value.length === 0))
+      return this.renderTokens(token[4], context, partials, originalTemplate);
+  };
+
+  Writer.prototype.renderPartial = function renderPartial (token, context, partials) {
+    if (!partials) return;
+
+    var value = isFunction(partials) ? partials(token[1]) : partials[token[1]];
+    if (value != null)
+      return this.renderTokens(this.parse(value), context, partials, value);
+  };
+
+  Writer.prototype.unescapedValue = function unescapedValue (token, context) {
+    var value = context.lookup(token[1]);
+    if (value != null)
+      return value;
+  };
+
+  Writer.prototype.escapedValue = function escapedValue (token, context) {
+    var value = context.lookup(token[1]);
+    if (value != null)
+      return mustache.escape(value);
+  };
+
+  Writer.prototype.rawValue = function rawValue (token) {
+    return token[1];
+  };
+
+  mustache.name = 'mustache.js';
+  mustache.version = '3.0.0';
+  mustache.tags = [ '{{', '}}' ];
+
+  // All high-level mustache.* functions use this writer.
+  var defaultWriter = new Writer();
+
+  /**
+   * Clears all cached templates in the default writer.
+   */
+  mustache.clearCache = function clearCache () {
+    return defaultWriter.clearCache();
+  };
+
+  /**
+   * Parses and caches the given template in the default writer and returns the
+   * array of tokens it contains. Doing this ahead of time avoids the need to
+   * parse templates on the fly as they are rendered.
+   */
+  mustache.parse = function parse (template, tags) {
+    return defaultWriter.parse(template, tags);
+  };
+
+  /**
+   * Renders the `template` with the given `view` and `partials` using the
+   * default writer. If the optional `tags` argument is given here it must be an
+   * array with two string values: the opening and closing tags used in the
+   * template (e.g. [ "<%", "%>" ]). The default is to mustache.tags.
+   */
+  mustache.render = function render (template, view, partials, tags) {
+    if (typeof template !== 'string') {
+      throw new TypeError('Invalid template! Template should be a "string" ' +
+                          'but "' + typeStr(template) + '" was given as the first ' +
+                          'argument for mustache#render(template, view, partials)');
+    }
+
+    return defaultWriter.render(template, view, partials, tags);
+  };
+
+  // This is here for backwards compatibility with 0.4.x.,
+  /*eslint-disable */ // eslint wants camel cased function name
+  mustache.to_html = function to_html (template, view, partials, send) {
+    /*eslint-enable*/
+
+    var result = mustache.render(template, view, partials);
+
+    if (isFunction(send)) {
+      send(result);
+    } else {
+      return result;
+    }
+  };
+
+  // Export the escaping function so that the user may override it.
+  // See https://github.com/janl/mustache.js/issues/244
+  mustache.escape = escapeHtml;
+
+  // Export these mainly for testing, but also for advanced usage.
+  mustache.Scanner = Scanner;
+  mustache.Context = Context;
+  mustache.Writer = Writer;
+
+  return mustache;
+}));
+
+},{}],"../node_modules/ramda/es/internal/_isPlaceholder.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -18481,7 +19167,63 @@ var _zipObj = _interopRequireDefault(require("./zipObj"));
 var _zipWith = _interopRequireDefault(require("./zipWith"));
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-},{"./F":"../node_modules/ramda/es/F.js","./T":"../node_modules/ramda/es/T.js","./__":"../node_modules/ramda/es/__.js","./add":"../node_modules/ramda/es/add.js","./addIndex":"../node_modules/ramda/es/addIndex.js","./adjust":"../node_modules/ramda/es/adjust.js","./all":"../node_modules/ramda/es/all.js","./allPass":"../node_modules/ramda/es/allPass.js","./always":"../node_modules/ramda/es/always.js","./and":"../node_modules/ramda/es/and.js","./any":"../node_modules/ramda/es/any.js","./anyPass":"../node_modules/ramda/es/anyPass.js","./ap":"../node_modules/ramda/es/ap.js","./aperture":"../node_modules/ramda/es/aperture.js","./append":"../node_modules/ramda/es/append.js","./apply":"../node_modules/ramda/es/apply.js","./applySpec":"../node_modules/ramda/es/applySpec.js","./applyTo":"../node_modules/ramda/es/applyTo.js","./ascend":"../node_modules/ramda/es/ascend.js","./assoc":"../node_modules/ramda/es/assoc.js","./assocPath":"../node_modules/ramda/es/assocPath.js","./binary":"../node_modules/ramda/es/binary.js","./bind":"../node_modules/ramda/es/bind.js","./both":"../node_modules/ramda/es/both.js","./call":"../node_modules/ramda/es/call.js","./chain":"../node_modules/ramda/es/chain.js","./clamp":"../node_modules/ramda/es/clamp.js","./clone":"../node_modules/ramda/es/clone.js","./comparator":"../node_modules/ramda/es/comparator.js","./complement":"../node_modules/ramda/es/complement.js","./compose":"../node_modules/ramda/es/compose.js","./composeK":"../node_modules/ramda/es/composeK.js","./composeP":"../node_modules/ramda/es/composeP.js","./concat":"../node_modules/ramda/es/concat.js","./cond":"../node_modules/ramda/es/cond.js","./construct":"../node_modules/ramda/es/construct.js","./constructN":"../node_modules/ramda/es/constructN.js","./contains":"../node_modules/ramda/es/contains.js","./converge":"../node_modules/ramda/es/converge.js","./countBy":"../node_modules/ramda/es/countBy.js","./curry":"../node_modules/ramda/es/curry.js","./curryN":"../node_modules/ramda/es/curryN.js","./dec":"../node_modules/ramda/es/dec.js","./defaultTo":"../node_modules/ramda/es/defaultTo.js","./descend":"../node_modules/ramda/es/descend.js","./difference":"../node_modules/ramda/es/difference.js","./differenceWith":"../node_modules/ramda/es/differenceWith.js","./dissoc":"../node_modules/ramda/es/dissoc.js","./dissocPath":"../node_modules/ramda/es/dissocPath.js","./divide":"../node_modules/ramda/es/divide.js","./drop":"../node_modules/ramda/es/drop.js","./dropLast":"../node_modules/ramda/es/dropLast.js","./dropLastWhile":"../node_modules/ramda/es/dropLastWhile.js","./dropRepeats":"../node_modules/ramda/es/dropRepeats.js","./dropRepeatsWith":"../node_modules/ramda/es/dropRepeatsWith.js","./dropWhile":"../node_modules/ramda/es/dropWhile.js","./either":"../node_modules/ramda/es/either.js","./empty":"../node_modules/ramda/es/empty.js","./endsWith":"../node_modules/ramda/es/endsWith.js","./eqBy":"../node_modules/ramda/es/eqBy.js","./eqProps":"../node_modules/ramda/es/eqProps.js","./equals":"../node_modules/ramda/es/equals.js","./evolve":"../node_modules/ramda/es/evolve.js","./filter":"../node_modules/ramda/es/filter.js","./find":"../node_modules/ramda/es/find.js","./findIndex":"../node_modules/ramda/es/findIndex.js","./findLast":"../node_modules/ramda/es/findLast.js","./findLastIndex":"../node_modules/ramda/es/findLastIndex.js","./flatten":"../node_modules/ramda/es/flatten.js","./flip":"../node_modules/ramda/es/flip.js","./forEach":"../node_modules/ramda/es/forEach.js","./forEachObjIndexed":"../node_modules/ramda/es/forEachObjIndexed.js","./fromPairs":"../node_modules/ramda/es/fromPairs.js","./groupBy":"../node_modules/ramda/es/groupBy.js","./groupWith":"../node_modules/ramda/es/groupWith.js","./gt":"../node_modules/ramda/es/gt.js","./gte":"../node_modules/ramda/es/gte.js","./has":"../node_modules/ramda/es/has.js","./hasIn":"../node_modules/ramda/es/hasIn.js","./head":"../node_modules/ramda/es/head.js","./identical":"../node_modules/ramda/es/identical.js","./identity":"../node_modules/ramda/es/identity.js","./ifElse":"../node_modules/ramda/es/ifElse.js","./inc":"../node_modules/ramda/es/inc.js","./indexBy":"../node_modules/ramda/es/indexBy.js","./indexOf":"../node_modules/ramda/es/indexOf.js","./init":"../node_modules/ramda/es/init.js","./innerJoin":"../node_modules/ramda/es/innerJoin.js","./insert":"../node_modules/ramda/es/insert.js","./insertAll":"../node_modules/ramda/es/insertAll.js","./intersection":"../node_modules/ramda/es/intersection.js","./intersperse":"../node_modules/ramda/es/intersperse.js","./into":"../node_modules/ramda/es/into.js","./invert":"../node_modules/ramda/es/invert.js","./invertObj":"../node_modules/ramda/es/invertObj.js","./invoker":"../node_modules/ramda/es/invoker.js","./is":"../node_modules/ramda/es/is.js","./isEmpty":"../node_modules/ramda/es/isEmpty.js","./isNil":"../node_modules/ramda/es/isNil.js","./join":"../node_modules/ramda/es/join.js","./juxt":"../node_modules/ramda/es/juxt.js","./keys":"../node_modules/ramda/es/keys.js","./keysIn":"../node_modules/ramda/es/keysIn.js","./last":"../node_modules/ramda/es/last.js","./lastIndexOf":"../node_modules/ramda/es/lastIndexOf.js","./length":"../node_modules/ramda/es/length.js","./lens":"../node_modules/ramda/es/lens.js","./lensIndex":"../node_modules/ramda/es/lensIndex.js","./lensPath":"../node_modules/ramda/es/lensPath.js","./lensProp":"../node_modules/ramda/es/lensProp.js","./lift":"../node_modules/ramda/es/lift.js","./liftN":"../node_modules/ramda/es/liftN.js","./lt":"../node_modules/ramda/es/lt.js","./lte":"../node_modules/ramda/es/lte.js","./map":"../node_modules/ramda/es/map.js","./mapAccum":"../node_modules/ramda/es/mapAccum.js","./mapAccumRight":"../node_modules/ramda/es/mapAccumRight.js","./mapObjIndexed":"../node_modules/ramda/es/mapObjIndexed.js","./match":"../node_modules/ramda/es/match.js","./mathMod":"../node_modules/ramda/es/mathMod.js","./max":"../node_modules/ramda/es/max.js","./maxBy":"../node_modules/ramda/es/maxBy.js","./mean":"../node_modules/ramda/es/mean.js","./median":"../node_modules/ramda/es/median.js","./memoize":"../node_modules/ramda/es/memoize.js","./memoizeWith":"../node_modules/ramda/es/memoizeWith.js","./merge":"../node_modules/ramda/es/merge.js","./mergeAll":"../node_modules/ramda/es/mergeAll.js","./mergeDeepLeft":"../node_modules/ramda/es/mergeDeepLeft.js","./mergeDeepRight":"../node_modules/ramda/es/mergeDeepRight.js","./mergeDeepWith":"../node_modules/ramda/es/mergeDeepWith.js","./mergeDeepWithKey":"../node_modules/ramda/es/mergeDeepWithKey.js","./mergeWith":"../node_modules/ramda/es/mergeWith.js","./mergeWithKey":"../node_modules/ramda/es/mergeWithKey.js","./min":"../node_modules/ramda/es/min.js","./minBy":"../node_modules/ramda/es/minBy.js","./modulo":"../node_modules/ramda/es/modulo.js","./multiply":"../node_modules/ramda/es/multiply.js","./nAry":"../node_modules/ramda/es/nAry.js","./negate":"../node_modules/ramda/es/negate.js","./none":"../node_modules/ramda/es/none.js","./not":"../node_modules/ramda/es/not.js","./nth":"../node_modules/ramda/es/nth.js","./nthArg":"../node_modules/ramda/es/nthArg.js","./o":"../node_modules/ramda/es/o.js","./objOf":"../node_modules/ramda/es/objOf.js","./of":"../node_modules/ramda/es/of.js","./omit":"../node_modules/ramda/es/omit.js","./once":"../node_modules/ramda/es/once.js","./or":"../node_modules/ramda/es/or.js","./over":"../node_modules/ramda/es/over.js","./pair":"../node_modules/ramda/es/pair.js","./partial":"../node_modules/ramda/es/partial.js","./partialRight":"../node_modules/ramda/es/partialRight.js","./partition":"../node_modules/ramda/es/partition.js","./path":"../node_modules/ramda/es/path.js","./pathEq":"../node_modules/ramda/es/pathEq.js","./pathOr":"../node_modules/ramda/es/pathOr.js","./pathSatisfies":"../node_modules/ramda/es/pathSatisfies.js","./pick":"../node_modules/ramda/es/pick.js","./pickAll":"../node_modules/ramda/es/pickAll.js","./pickBy":"../node_modules/ramda/es/pickBy.js","./pipe":"../node_modules/ramda/es/pipe.js","./pipeK":"../node_modules/ramda/es/pipeK.js","./pipeP":"../node_modules/ramda/es/pipeP.js","./pluck":"../node_modules/ramda/es/pluck.js","./prepend":"../node_modules/ramda/es/prepend.js","./product":"../node_modules/ramda/es/product.js","./project":"../node_modules/ramda/es/project.js","./prop":"../node_modules/ramda/es/prop.js","./propEq":"../node_modules/ramda/es/propEq.js","./propIs":"../node_modules/ramda/es/propIs.js","./propOr":"../node_modules/ramda/es/propOr.js","./propSatisfies":"../node_modules/ramda/es/propSatisfies.js","./props":"../node_modules/ramda/es/props.js","./range":"../node_modules/ramda/es/range.js","./reduce":"../node_modules/ramda/es/reduce.js","./reduceBy":"../node_modules/ramda/es/reduceBy.js","./reduceRight":"../node_modules/ramda/es/reduceRight.js","./reduceWhile":"../node_modules/ramda/es/reduceWhile.js","./reduced":"../node_modules/ramda/es/reduced.js","./reject":"../node_modules/ramda/es/reject.js","./remove":"../node_modules/ramda/es/remove.js","./repeat":"../node_modules/ramda/es/repeat.js","./replace":"../node_modules/ramda/es/replace.js","./reverse":"../node_modules/ramda/es/reverse.js","./scan":"../node_modules/ramda/es/scan.js","./sequence":"../node_modules/ramda/es/sequence.js","./set":"../node_modules/ramda/es/set.js","./slice":"../node_modules/ramda/es/slice.js","./sort":"../node_modules/ramda/es/sort.js","./sortBy":"../node_modules/ramda/es/sortBy.js","./sortWith":"../node_modules/ramda/es/sortWith.js","./split":"../node_modules/ramda/es/split.js","./splitAt":"../node_modules/ramda/es/splitAt.js","./splitEvery":"../node_modules/ramda/es/splitEvery.js","./splitWhen":"../node_modules/ramda/es/splitWhen.js","./startsWith":"../node_modules/ramda/es/startsWith.js","./subtract":"../node_modules/ramda/es/subtract.js","./sum":"../node_modules/ramda/es/sum.js","./symmetricDifference":"../node_modules/ramda/es/symmetricDifference.js","./symmetricDifferenceWith":"../node_modules/ramda/es/symmetricDifferenceWith.js","./tail":"../node_modules/ramda/es/tail.js","./take":"../node_modules/ramda/es/take.js","./takeLast":"../node_modules/ramda/es/takeLast.js","./takeLastWhile":"../node_modules/ramda/es/takeLastWhile.js","./takeWhile":"../node_modules/ramda/es/takeWhile.js","./tap":"../node_modules/ramda/es/tap.js","./test":"../node_modules/ramda/es/test.js","./times":"../node_modules/ramda/es/times.js","./toLower":"../node_modules/ramda/es/toLower.js","./toPairs":"../node_modules/ramda/es/toPairs.js","./toPairsIn":"../node_modules/ramda/es/toPairsIn.js","./toString":"../node_modules/ramda/es/toString.js","./toUpper":"../node_modules/ramda/es/toUpper.js","./transduce":"../node_modules/ramda/es/transduce.js","./transpose":"../node_modules/ramda/es/transpose.js","./traverse":"../node_modules/ramda/es/traverse.js","./trim":"../node_modules/ramda/es/trim.js","./tryCatch":"../node_modules/ramda/es/tryCatch.js","./type":"../node_modules/ramda/es/type.js","./unapply":"../node_modules/ramda/es/unapply.js","./unary":"../node_modules/ramda/es/unary.js","./uncurryN":"../node_modules/ramda/es/uncurryN.js","./unfold":"../node_modules/ramda/es/unfold.js","./union":"../node_modules/ramda/es/union.js","./unionWith":"../node_modules/ramda/es/unionWith.js","./uniq":"../node_modules/ramda/es/uniq.js","./uniqBy":"../node_modules/ramda/es/uniqBy.js","./uniqWith":"../node_modules/ramda/es/uniqWith.js","./unless":"../node_modules/ramda/es/unless.js","./unnest":"../node_modules/ramda/es/unnest.js","./until":"../node_modules/ramda/es/until.js","./update":"../node_modules/ramda/es/update.js","./useWith":"../node_modules/ramda/es/useWith.js","./values":"../node_modules/ramda/es/values.js","./valuesIn":"../node_modules/ramda/es/valuesIn.js","./view":"../node_modules/ramda/es/view.js","./when":"../node_modules/ramda/es/when.js","./where":"../node_modules/ramda/es/where.js","./whereEq":"../node_modules/ramda/es/whereEq.js","./without":"../node_modules/ramda/es/without.js","./xprod":"../node_modules/ramda/es/xprod.js","./zip":"../node_modules/ramda/es/zip.js","./zipObj":"../node_modules/ramda/es/zipObj.js","./zipWith":"../node_modules/ramda/es/zipWith.js"}],"js/nori/browser/DOMToolbox.js":[function(require,module,exports) {
+},{"./F":"../node_modules/ramda/es/F.js","./T":"../node_modules/ramda/es/T.js","./__":"../node_modules/ramda/es/__.js","./add":"../node_modules/ramda/es/add.js","./addIndex":"../node_modules/ramda/es/addIndex.js","./adjust":"../node_modules/ramda/es/adjust.js","./all":"../node_modules/ramda/es/all.js","./allPass":"../node_modules/ramda/es/allPass.js","./always":"../node_modules/ramda/es/always.js","./and":"../node_modules/ramda/es/and.js","./any":"../node_modules/ramda/es/any.js","./anyPass":"../node_modules/ramda/es/anyPass.js","./ap":"../node_modules/ramda/es/ap.js","./aperture":"../node_modules/ramda/es/aperture.js","./append":"../node_modules/ramda/es/append.js","./apply":"../node_modules/ramda/es/apply.js","./applySpec":"../node_modules/ramda/es/applySpec.js","./applyTo":"../node_modules/ramda/es/applyTo.js","./ascend":"../node_modules/ramda/es/ascend.js","./assoc":"../node_modules/ramda/es/assoc.js","./assocPath":"../node_modules/ramda/es/assocPath.js","./binary":"../node_modules/ramda/es/binary.js","./bind":"../node_modules/ramda/es/bind.js","./both":"../node_modules/ramda/es/both.js","./call":"../node_modules/ramda/es/call.js","./chain":"../node_modules/ramda/es/chain.js","./clamp":"../node_modules/ramda/es/clamp.js","./clone":"../node_modules/ramda/es/clone.js","./comparator":"../node_modules/ramda/es/comparator.js","./complement":"../node_modules/ramda/es/complement.js","./compose":"../node_modules/ramda/es/compose.js","./composeK":"../node_modules/ramda/es/composeK.js","./composeP":"../node_modules/ramda/es/composeP.js","./concat":"../node_modules/ramda/es/concat.js","./cond":"../node_modules/ramda/es/cond.js","./construct":"../node_modules/ramda/es/construct.js","./constructN":"../node_modules/ramda/es/constructN.js","./contains":"../node_modules/ramda/es/contains.js","./converge":"../node_modules/ramda/es/converge.js","./countBy":"../node_modules/ramda/es/countBy.js","./curry":"../node_modules/ramda/es/curry.js","./curryN":"../node_modules/ramda/es/curryN.js","./dec":"../node_modules/ramda/es/dec.js","./defaultTo":"../node_modules/ramda/es/defaultTo.js","./descend":"../node_modules/ramda/es/descend.js","./difference":"../node_modules/ramda/es/difference.js","./differenceWith":"../node_modules/ramda/es/differenceWith.js","./dissoc":"../node_modules/ramda/es/dissoc.js","./dissocPath":"../node_modules/ramda/es/dissocPath.js","./divide":"../node_modules/ramda/es/divide.js","./drop":"../node_modules/ramda/es/drop.js","./dropLast":"../node_modules/ramda/es/dropLast.js","./dropLastWhile":"../node_modules/ramda/es/dropLastWhile.js","./dropRepeats":"../node_modules/ramda/es/dropRepeats.js","./dropRepeatsWith":"../node_modules/ramda/es/dropRepeatsWith.js","./dropWhile":"../node_modules/ramda/es/dropWhile.js","./either":"../node_modules/ramda/es/either.js","./empty":"../node_modules/ramda/es/empty.js","./endsWith":"../node_modules/ramda/es/endsWith.js","./eqBy":"../node_modules/ramda/es/eqBy.js","./eqProps":"../node_modules/ramda/es/eqProps.js","./equals":"../node_modules/ramda/es/equals.js","./evolve":"../node_modules/ramda/es/evolve.js","./filter":"../node_modules/ramda/es/filter.js","./find":"../node_modules/ramda/es/find.js","./findIndex":"../node_modules/ramda/es/findIndex.js","./findLast":"../node_modules/ramda/es/findLast.js","./findLastIndex":"../node_modules/ramda/es/findLastIndex.js","./flatten":"../node_modules/ramda/es/flatten.js","./flip":"../node_modules/ramda/es/flip.js","./forEach":"../node_modules/ramda/es/forEach.js","./forEachObjIndexed":"../node_modules/ramda/es/forEachObjIndexed.js","./fromPairs":"../node_modules/ramda/es/fromPairs.js","./groupBy":"../node_modules/ramda/es/groupBy.js","./groupWith":"../node_modules/ramda/es/groupWith.js","./gt":"../node_modules/ramda/es/gt.js","./gte":"../node_modules/ramda/es/gte.js","./has":"../node_modules/ramda/es/has.js","./hasIn":"../node_modules/ramda/es/hasIn.js","./head":"../node_modules/ramda/es/head.js","./identical":"../node_modules/ramda/es/identical.js","./identity":"../node_modules/ramda/es/identity.js","./ifElse":"../node_modules/ramda/es/ifElse.js","./inc":"../node_modules/ramda/es/inc.js","./indexBy":"../node_modules/ramda/es/indexBy.js","./indexOf":"../node_modules/ramda/es/indexOf.js","./init":"../node_modules/ramda/es/init.js","./innerJoin":"../node_modules/ramda/es/innerJoin.js","./insert":"../node_modules/ramda/es/insert.js","./insertAll":"../node_modules/ramda/es/insertAll.js","./intersection":"../node_modules/ramda/es/intersection.js","./intersperse":"../node_modules/ramda/es/intersperse.js","./into":"../node_modules/ramda/es/into.js","./invert":"../node_modules/ramda/es/invert.js","./invertObj":"../node_modules/ramda/es/invertObj.js","./invoker":"../node_modules/ramda/es/invoker.js","./is":"../node_modules/ramda/es/is.js","./isEmpty":"../node_modules/ramda/es/isEmpty.js","./isNil":"../node_modules/ramda/es/isNil.js","./join":"../node_modules/ramda/es/join.js","./juxt":"../node_modules/ramda/es/juxt.js","./keys":"../node_modules/ramda/es/keys.js","./keysIn":"../node_modules/ramda/es/keysIn.js","./last":"../node_modules/ramda/es/last.js","./lastIndexOf":"../node_modules/ramda/es/lastIndexOf.js","./length":"../node_modules/ramda/es/length.js","./lens":"../node_modules/ramda/es/lens.js","./lensIndex":"../node_modules/ramda/es/lensIndex.js","./lensPath":"../node_modules/ramda/es/lensPath.js","./lensProp":"../node_modules/ramda/es/lensProp.js","./lift":"../node_modules/ramda/es/lift.js","./liftN":"../node_modules/ramda/es/liftN.js","./lt":"../node_modules/ramda/es/lt.js","./lte":"../node_modules/ramda/es/lte.js","./map":"../node_modules/ramda/es/map.js","./mapAccum":"../node_modules/ramda/es/mapAccum.js","./mapAccumRight":"../node_modules/ramda/es/mapAccumRight.js","./mapObjIndexed":"../node_modules/ramda/es/mapObjIndexed.js","./match":"../node_modules/ramda/es/match.js","./mathMod":"../node_modules/ramda/es/mathMod.js","./max":"../node_modules/ramda/es/max.js","./maxBy":"../node_modules/ramda/es/maxBy.js","./mean":"../node_modules/ramda/es/mean.js","./median":"../node_modules/ramda/es/median.js","./memoize":"../node_modules/ramda/es/memoize.js","./memoizeWith":"../node_modules/ramda/es/memoizeWith.js","./merge":"../node_modules/ramda/es/merge.js","./mergeAll":"../node_modules/ramda/es/mergeAll.js","./mergeDeepLeft":"../node_modules/ramda/es/mergeDeepLeft.js","./mergeDeepRight":"../node_modules/ramda/es/mergeDeepRight.js","./mergeDeepWith":"../node_modules/ramda/es/mergeDeepWith.js","./mergeDeepWithKey":"../node_modules/ramda/es/mergeDeepWithKey.js","./mergeWith":"../node_modules/ramda/es/mergeWith.js","./mergeWithKey":"../node_modules/ramda/es/mergeWithKey.js","./min":"../node_modules/ramda/es/min.js","./minBy":"../node_modules/ramda/es/minBy.js","./modulo":"../node_modules/ramda/es/modulo.js","./multiply":"../node_modules/ramda/es/multiply.js","./nAry":"../node_modules/ramda/es/nAry.js","./negate":"../node_modules/ramda/es/negate.js","./none":"../node_modules/ramda/es/none.js","./not":"../node_modules/ramda/es/not.js","./nth":"../node_modules/ramda/es/nth.js","./nthArg":"../node_modules/ramda/es/nthArg.js","./o":"../node_modules/ramda/es/o.js","./objOf":"../node_modules/ramda/es/objOf.js","./of":"../node_modules/ramda/es/of.js","./omit":"../node_modules/ramda/es/omit.js","./once":"../node_modules/ramda/es/once.js","./or":"../node_modules/ramda/es/or.js","./over":"../node_modules/ramda/es/over.js","./pair":"../node_modules/ramda/es/pair.js","./partial":"../node_modules/ramda/es/partial.js","./partialRight":"../node_modules/ramda/es/partialRight.js","./partition":"../node_modules/ramda/es/partition.js","./path":"../node_modules/ramda/es/path.js","./pathEq":"../node_modules/ramda/es/pathEq.js","./pathOr":"../node_modules/ramda/es/pathOr.js","./pathSatisfies":"../node_modules/ramda/es/pathSatisfies.js","./pick":"../node_modules/ramda/es/pick.js","./pickAll":"../node_modules/ramda/es/pickAll.js","./pickBy":"../node_modules/ramda/es/pickBy.js","./pipe":"../node_modules/ramda/es/pipe.js","./pipeK":"../node_modules/ramda/es/pipeK.js","./pipeP":"../node_modules/ramda/es/pipeP.js","./pluck":"../node_modules/ramda/es/pluck.js","./prepend":"../node_modules/ramda/es/prepend.js","./product":"../node_modules/ramda/es/product.js","./project":"../node_modules/ramda/es/project.js","./prop":"../node_modules/ramda/es/prop.js","./propEq":"../node_modules/ramda/es/propEq.js","./propIs":"../node_modules/ramda/es/propIs.js","./propOr":"../node_modules/ramda/es/propOr.js","./propSatisfies":"../node_modules/ramda/es/propSatisfies.js","./props":"../node_modules/ramda/es/props.js","./range":"../node_modules/ramda/es/range.js","./reduce":"../node_modules/ramda/es/reduce.js","./reduceBy":"../node_modules/ramda/es/reduceBy.js","./reduceRight":"../node_modules/ramda/es/reduceRight.js","./reduceWhile":"../node_modules/ramda/es/reduceWhile.js","./reduced":"../node_modules/ramda/es/reduced.js","./reject":"../node_modules/ramda/es/reject.js","./remove":"../node_modules/ramda/es/remove.js","./repeat":"../node_modules/ramda/es/repeat.js","./replace":"../node_modules/ramda/es/replace.js","./reverse":"../node_modules/ramda/es/reverse.js","./scan":"../node_modules/ramda/es/scan.js","./sequence":"../node_modules/ramda/es/sequence.js","./set":"../node_modules/ramda/es/set.js","./slice":"../node_modules/ramda/es/slice.js","./sort":"../node_modules/ramda/es/sort.js","./sortBy":"../node_modules/ramda/es/sortBy.js","./sortWith":"../node_modules/ramda/es/sortWith.js","./split":"../node_modules/ramda/es/split.js","./splitAt":"../node_modules/ramda/es/splitAt.js","./splitEvery":"../node_modules/ramda/es/splitEvery.js","./splitWhen":"../node_modules/ramda/es/splitWhen.js","./startsWith":"../node_modules/ramda/es/startsWith.js","./subtract":"../node_modules/ramda/es/subtract.js","./sum":"../node_modules/ramda/es/sum.js","./symmetricDifference":"../node_modules/ramda/es/symmetricDifference.js","./symmetricDifferenceWith":"../node_modules/ramda/es/symmetricDifferenceWith.js","./tail":"../node_modules/ramda/es/tail.js","./take":"../node_modules/ramda/es/take.js","./takeLast":"../node_modules/ramda/es/takeLast.js","./takeLastWhile":"../node_modules/ramda/es/takeLastWhile.js","./takeWhile":"../node_modules/ramda/es/takeWhile.js","./tap":"../node_modules/ramda/es/tap.js","./test":"../node_modules/ramda/es/test.js","./times":"../node_modules/ramda/es/times.js","./toLower":"../node_modules/ramda/es/toLower.js","./toPairs":"../node_modules/ramda/es/toPairs.js","./toPairsIn":"../node_modules/ramda/es/toPairsIn.js","./toString":"../node_modules/ramda/es/toString.js","./toUpper":"../node_modules/ramda/es/toUpper.js","./transduce":"../node_modules/ramda/es/transduce.js","./transpose":"../node_modules/ramda/es/transpose.js","./traverse":"../node_modules/ramda/es/traverse.js","./trim":"../node_modules/ramda/es/trim.js","./tryCatch":"../node_modules/ramda/es/tryCatch.js","./type":"../node_modules/ramda/es/type.js","./unapply":"../node_modules/ramda/es/unapply.js","./unary":"../node_modules/ramda/es/unary.js","./uncurryN":"../node_modules/ramda/es/uncurryN.js","./unfold":"../node_modules/ramda/es/unfold.js","./union":"../node_modules/ramda/es/union.js","./unionWith":"../node_modules/ramda/es/unionWith.js","./uniq":"../node_modules/ramda/es/uniq.js","./uniqBy":"../node_modules/ramda/es/uniqBy.js","./uniqWith":"../node_modules/ramda/es/uniqWith.js","./unless":"../node_modules/ramda/es/unless.js","./unnest":"../node_modules/ramda/es/unnest.js","./until":"../node_modules/ramda/es/until.js","./update":"../node_modules/ramda/es/update.js","./useWith":"../node_modules/ramda/es/useWith.js","./values":"../node_modules/ramda/es/values.js","./valuesIn":"../node_modules/ramda/es/valuesIn.js","./view":"../node_modules/ramda/es/view.js","./when":"../node_modules/ramda/es/when.js","./where":"../node_modules/ramda/es/where.js","./whereEq":"../node_modules/ramda/es/whereEq.js","./without":"../node_modules/ramda/es/without.js","./xprod":"../node_modules/ramda/es/xprod.js","./zip":"../node_modules/ramda/es/zip.js","./zipObj":"../node_modules/ramda/es/zipObj.js","./zipWith":"../node_modules/ramda/es/zipWith.js"}],"js/nori/util/is.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = void 0;
+
+function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
+
+var _default = {
+  existy: function existy(x) {
+    return x !== null;
+  },
+  truthy: function truthy(x) {
+    return x !== false && this.existy(x);
+  },
+  falsey: function falsey(x) {
+    return !this.truthy(x);
+  },
+  func: function func(object) {
+    return typeof object === "function";
+  },
+  object: function object(_object) {
+    return Object.prototype.toString.call(_object) === "[object Object]";
+  },
+  objectEmpty: function objectEmpty(object) {
+    for (var key in object) {
+      if (object.hasOwnProperty(key)) {
+        return false;
+      }
+    }
+
+    return true;
+  },
+  string: function string(object) {
+    return Object.prototype.toString.call(object) === "[object String]";
+  },
+  array: function array(object) {
+    return Array.isArray(object); //return Object.prototype.toString.call(object) === '[object Array]';
+  },
+  promise: function promise(_promise) {
+    return _promise && typeof _promise.then === 'function';
+  },
+  observable: function observable(_observable) {
+    return _observable && typeof _observable.subscribe === 'function';
+  },
+  element: function element(obj) {
+    return (typeof HTMLElement === "undefined" ? "undefined" : _typeof(HTMLElement)) === 'object' ? obj instanceof HTMLElement || obj instanceof DocumentFragment : //DOM2
+    obj && _typeof(obj) === 'object' && obj !== null && (obj.nodeType === 1 || obj.nodeType === 11) && typeof obj.nodeName === 'string';
+  },
+  integer: function integer(str) {
+    return /^-?\d+$/.test(str);
+  }
+};
+exports.default = _default;
+},{}],"js/nori/browser/DOMToolbox.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -18754,749 +19496,7 @@ var centerElementInViewPort = function centerElementInViewPort(el) {
 };
 
 exports.centerElementInViewPort = centerElementInViewPort;
-},{"ramda":"../node_modules/ramda/es/index.js"}],"../node_modules/mustache/mustache.js":[function(require,module,exports) {
-var define;
-var global = arguments[3];
-/*!
- * mustache.js - Logic-less {{mustache}} templates with JavaScript
- * http://github.com/janl/mustache.js
- */
-
-/*global define: false Mustache: true*/
-
-(function defineMustache (global, factory) {
-  if (typeof exports === 'object' && exports && typeof exports.nodeName !== 'string') {
-    factory(exports); // CommonJS
-  } else if (typeof define === 'function' && define.amd) {
-    define(['exports'], factory); // AMD
-  } else {
-    global.Mustache = {};
-    factory(global.Mustache); // script, wsh, asp
-  }
-}(this, function mustacheFactory (mustache) {
-
-  var objectToString = Object.prototype.toString;
-  var isArray = Array.isArray || function isArrayPolyfill (object) {
-    return objectToString.call(object) === '[object Array]';
-  };
-
-  function isFunction (object) {
-    return typeof object === 'function';
-  }
-
-  /**
-   * More correct typeof string handling array
-   * which normally returns typeof 'object'
-   */
-  function typeStr (obj) {
-    return isArray(obj) ? 'array' : typeof obj;
-  }
-
-  function escapeRegExp (string) {
-    return string.replace(/[\-\[\]{}()*+?.,\\\^$|#\s]/g, '\\$&');
-  }
-
-  /**
-   * Null safe way of checking whether or not an object,
-   * including its prototype, has a given property
-   */
-  function hasProperty (obj, propName) {
-    return obj != null && typeof obj === 'object' && (propName in obj);
-  }
-
-  /**
-   * Safe way of detecting whether or not the given thing is a primitive and
-   * whether it has the given property
-   */
-  function primitiveHasOwnProperty (primitive, propName) {  
-    return (
-      primitive != null
-      && typeof primitive !== 'object'
-      && primitive.hasOwnProperty
-      && primitive.hasOwnProperty(propName)
-    );
-  }
-
-  // Workaround for https://issues.apache.org/jira/browse/COUCHDB-577
-  // See https://github.com/janl/mustache.js/issues/189
-  var regExpTest = RegExp.prototype.test;
-  function testRegExp (re, string) {
-    return regExpTest.call(re, string);
-  }
-
-  var nonSpaceRe = /\S/;
-  function isWhitespace (string) {
-    return !testRegExp(nonSpaceRe, string);
-  }
-
-  var entityMap = {
-    '&': '&amp;',
-    '<': '&lt;',
-    '>': '&gt;',
-    '"': '&quot;',
-    "'": '&#39;',
-    '/': '&#x2F;',
-    '`': '&#x60;',
-    '=': '&#x3D;'
-  };
-
-  function escapeHtml (string) {
-    return String(string).replace(/[&<>"'`=\/]/g, function fromEntityMap (s) {
-      return entityMap[s];
-    });
-  }
-
-  var whiteRe = /\s*/;
-  var spaceRe = /\s+/;
-  var equalsRe = /\s*=/;
-  var curlyRe = /\s*\}/;
-  var tagRe = /#|\^|\/|>|\{|&|=|!/;
-
-  /**
-   * Breaks up the given `template` string into a tree of tokens. If the `tags`
-   * argument is given here it must be an array with two string values: the
-   * opening and closing tags used in the template (e.g. [ "<%", "%>" ]). Of
-   * course, the default is to use mustaches (i.e. mustache.tags).
-   *
-   * A token is an array with at least 4 elements. The first element is the
-   * mustache symbol that was used inside the tag, e.g. "#" or "&". If the tag
-   * did not contain a symbol (i.e. {{myValue}}) this element is "name". For
-   * all text that appears outside a symbol this element is "text".
-   *
-   * The second element of a token is its "value". For mustache tags this is
-   * whatever else was inside the tag besides the opening symbol. For text tokens
-   * this is the text itself.
-   *
-   * The third and fourth elements of the token are the start and end indices,
-   * respectively, of the token in the original template.
-   *
-   * Tokens that are the root node of a subtree contain two more elements: 1) an
-   * array of tokens in the subtree and 2) the index in the original template at
-   * which the closing tag for that section begins.
-   */
-  function parseTemplate (template, tags) {
-    if (!template)
-      return [];
-
-    var sections = [];     // Stack to hold section tokens
-    var tokens = [];       // Buffer to hold the tokens
-    var spaces = [];       // Indices of whitespace tokens on the current line
-    var hasTag = false;    // Is there a {{tag}} on the current line?
-    var nonSpace = false;  // Is there a non-space char on the current line?
-
-    // Strips all whitespace tokens array for the current line
-    // if there was a {{#tag}} on it and otherwise only space.
-    function stripSpace () {
-      if (hasTag && !nonSpace) {
-        while (spaces.length)
-          delete tokens[spaces.pop()];
-      } else {
-        spaces = [];
-      }
-
-      hasTag = false;
-      nonSpace = false;
-    }
-
-    var openingTagRe, closingTagRe, closingCurlyRe;
-    function compileTags (tagsToCompile) {
-      if (typeof tagsToCompile === 'string')
-        tagsToCompile = tagsToCompile.split(spaceRe, 2);
-
-      if (!isArray(tagsToCompile) || tagsToCompile.length !== 2)
-        throw new Error('Invalid tags: ' + tagsToCompile);
-
-      openingTagRe = new RegExp(escapeRegExp(tagsToCompile[0]) + '\\s*');
-      closingTagRe = new RegExp('\\s*' + escapeRegExp(tagsToCompile[1]));
-      closingCurlyRe = new RegExp('\\s*' + escapeRegExp('}' + tagsToCompile[1]));
-    }
-
-    compileTags(tags || mustache.tags);
-
-    var scanner = new Scanner(template);
-
-    var start, type, value, chr, token, openSection;
-    while (!scanner.eos()) {
-      start = scanner.pos;
-
-      // Match any text between tags.
-      value = scanner.scanUntil(openingTagRe);
-
-      if (value) {
-        for (var i = 0, valueLength = value.length; i < valueLength; ++i) {
-          chr = value.charAt(i);
-
-          if (isWhitespace(chr)) {
-            spaces.push(tokens.length);
-          } else {
-            nonSpace = true;
-          }
-
-          tokens.push([ 'text', chr, start, start + 1 ]);
-          start += 1;
-
-          // Check for whitespace on the current line.
-          if (chr === '\n')
-            stripSpace();
-        }
-      }
-
-      // Match the opening tag.
-      if (!scanner.scan(openingTagRe))
-        break;
-
-      hasTag = true;
-
-      // Get the tag type.
-      type = scanner.scan(tagRe) || 'name';
-      scanner.scan(whiteRe);
-
-      // Get the tag value.
-      if (type === '=') {
-        value = scanner.scanUntil(equalsRe);
-        scanner.scan(equalsRe);
-        scanner.scanUntil(closingTagRe);
-      } else if (type === '{') {
-        value = scanner.scanUntil(closingCurlyRe);
-        scanner.scan(curlyRe);
-        scanner.scanUntil(closingTagRe);
-        type = '&';
-      } else {
-        value = scanner.scanUntil(closingTagRe);
-      }
-
-      // Match the closing tag.
-      if (!scanner.scan(closingTagRe))
-        throw new Error('Unclosed tag at ' + scanner.pos);
-
-      token = [ type, value, start, scanner.pos ];
-      tokens.push(token);
-
-      if (type === '#' || type === '^') {
-        sections.push(token);
-      } else if (type === '/') {
-        // Check section nesting.
-        openSection = sections.pop();
-
-        if (!openSection)
-          throw new Error('Unopened section "' + value + '" at ' + start);
-
-        if (openSection[1] !== value)
-          throw new Error('Unclosed section "' + openSection[1] + '" at ' + start);
-      } else if (type === 'name' || type === '{' || type === '&') {
-        nonSpace = true;
-      } else if (type === '=') {
-        // Set the tags for the next time around.
-        compileTags(value);
-      }
-    }
-
-    // Make sure there are no open sections when we're done.
-    openSection = sections.pop();
-
-    if (openSection)
-      throw new Error('Unclosed section "' + openSection[1] + '" at ' + scanner.pos);
-
-    return nestTokens(squashTokens(tokens));
-  }
-
-  /**
-   * Combines the values of consecutive text tokens in the given `tokens` array
-   * to a single token.
-   */
-  function squashTokens (tokens) {
-    var squashedTokens = [];
-
-    var token, lastToken;
-    for (var i = 0, numTokens = tokens.length; i < numTokens; ++i) {
-      token = tokens[i];
-
-      if (token) {
-        if (token[0] === 'text' && lastToken && lastToken[0] === 'text') {
-          lastToken[1] += token[1];
-          lastToken[3] = token[3];
-        } else {
-          squashedTokens.push(token);
-          lastToken = token;
-        }
-      }
-    }
-
-    return squashedTokens;
-  }
-
-  /**
-   * Forms the given array of `tokens` into a nested tree structure where
-   * tokens that represent a section have two additional items: 1) an array of
-   * all tokens that appear in that section and 2) the index in the original
-   * template that represents the end of that section.
-   */
-  function nestTokens (tokens) {
-    var nestedTokens = [];
-    var collector = nestedTokens;
-    var sections = [];
-
-    var token, section;
-    for (var i = 0, numTokens = tokens.length; i < numTokens; ++i) {
-      token = tokens[i];
-
-      switch (token[0]) {
-        case '#':
-        case '^':
-          collector.push(token);
-          sections.push(token);
-          collector = token[4] = [];
-          break;
-        case '/':
-          section = sections.pop();
-          section[5] = token[2];
-          collector = sections.length > 0 ? sections[sections.length - 1][4] : nestedTokens;
-          break;
-        default:
-          collector.push(token);
-      }
-    }
-
-    return nestedTokens;
-  }
-
-  /**
-   * A simple string scanner that is used by the template parser to find
-   * tokens in template strings.
-   */
-  function Scanner (string) {
-    this.string = string;
-    this.tail = string;
-    this.pos = 0;
-  }
-
-  /**
-   * Returns `true` if the tail is empty (end of string).
-   */
-  Scanner.prototype.eos = function eos () {
-    return this.tail === '';
-  };
-
-  /**
-   * Tries to match the given regular expression at the current position.
-   * Returns the matched text if it can match, the empty string otherwise.
-   */
-  Scanner.prototype.scan = function scan (re) {
-    var match = this.tail.match(re);
-
-    if (!match || match.index !== 0)
-      return '';
-
-    var string = match[0];
-
-    this.tail = this.tail.substring(string.length);
-    this.pos += string.length;
-
-    return string;
-  };
-
-  /**
-   * Skips all text until the given regular expression can be matched. Returns
-   * the skipped string, which is the entire tail if no match can be made.
-   */
-  Scanner.prototype.scanUntil = function scanUntil (re) {
-    var index = this.tail.search(re), match;
-
-    switch (index) {
-      case -1:
-        match = this.tail;
-        this.tail = '';
-        break;
-      case 0:
-        match = '';
-        break;
-      default:
-        match = this.tail.substring(0, index);
-        this.tail = this.tail.substring(index);
-    }
-
-    this.pos += match.length;
-
-    return match;
-  };
-
-  /**
-   * Represents a rendering context by wrapping a view object and
-   * maintaining a reference to the parent context.
-   */
-  function Context (view, parentContext) {
-    this.view = view;
-    this.cache = { '.': this.view };
-    this.parent = parentContext;
-  }
-
-  /**
-   * Creates a new context using the given view with this context
-   * as the parent.
-   */
-  Context.prototype.push = function push (view) {
-    return new Context(view, this);
-  };
-
-  /**
-   * Returns the value of the given name in this context, traversing
-   * up the context hierarchy if the value is absent in this context's view.
-   */
-  Context.prototype.lookup = function lookup (name) {
-    var cache = this.cache;
-
-    var value;
-    if (cache.hasOwnProperty(name)) {
-      value = cache[name];
-    } else {
-      var context = this, intermediateValue, names, index, lookupHit = false;
-
-      while (context) {
-        if (name.indexOf('.') > 0) {
-          intermediateValue = context.view;
-          names = name.split('.');
-          index = 0;
-
-          /**
-           * Using the dot notion path in `name`, we descend through the
-           * nested objects.
-           *
-           * To be certain that the lookup has been successful, we have to
-           * check if the last object in the path actually has the property
-           * we are looking for. We store the result in `lookupHit`.
-           *
-           * This is specially necessary for when the value has been set to
-           * `undefined` and we want to avoid looking up parent contexts.
-           *
-           * In the case where dot notation is used, we consider the lookup
-           * to be successful even if the last "object" in the path is
-           * not actually an object but a primitive (e.g., a string, or an
-           * integer), because it is sometimes useful to access a property
-           * of an autoboxed primitive, such as the length of a string.
-           **/
-          while (intermediateValue != null && index < names.length) {
-            if (index === names.length - 1)
-              lookupHit = (
-                hasProperty(intermediateValue, names[index]) 
-                || primitiveHasOwnProperty(intermediateValue, names[index])
-              );
-
-            intermediateValue = intermediateValue[names[index++]];
-          }
-        } else {
-          intermediateValue = context.view[name];
-
-          /**
-           * Only checking against `hasProperty`, which always returns `false` if
-           * `context.view` is not an object. Deliberately omitting the check
-           * against `primitiveHasOwnProperty` if dot notation is not used.
-           *
-           * Consider this example:
-           * ```
-           * Mustache.render("The length of a football field is {{#length}}{{length}}{{/length}}.", {length: "100 yards"})
-           * ```
-           *
-           * If we were to check also against `primitiveHasOwnProperty`, as we do
-           * in the dot notation case, then render call would return:
-           *
-           * "The length of a football field is 9."
-           *
-           * rather than the expected:
-           *
-           * "The length of a football field is 100 yards."
-           **/
-          lookupHit = hasProperty(context.view, name);
-        }
-
-        if (lookupHit) {
-          value = intermediateValue;
-          break;
-        }
-
-        context = context.parent;
-      }
-
-      cache[name] = value;
-    }
-
-    if (isFunction(value))
-      value = value.call(this.view);
-
-    return value;
-  };
-
-  /**
-   * A Writer knows how to take a stream of tokens and render them to a
-   * string, given a context. It also maintains a cache of templates to
-   * avoid the need to parse the same template twice.
-   */
-  function Writer () {
-    this.cache = {};
-  }
-
-  /**
-   * Clears all cached templates in this writer.
-   */
-  Writer.prototype.clearCache = function clearCache () {
-    this.cache = {};
-  };
-
-  /**
-   * Parses and caches the given `template` according to the given `tags` or
-   * `mustache.tags` if `tags` is omitted,  and returns the array of tokens
-   * that is generated from the parse.
-   */
-  Writer.prototype.parse = function parse (template, tags) {
-    var cache = this.cache;
-    var cacheKey = template + ':' + (tags || mustache.tags).join(':');
-    var tokens = cache[cacheKey];
-
-    if (tokens == null)
-      tokens = cache[cacheKey] = parseTemplate(template, tags);
-
-    return tokens;
-  };
-
-  /**
-   * High-level method that is used to render the given `template` with
-   * the given `view`.
-   *
-   * The optional `partials` argument may be an object that contains the
-   * names and templates of partials that are used in the template. It may
-   * also be a function that is used to load partial templates on the fly
-   * that takes a single argument: the name of the partial.
-   *
-   * If the optional `tags` argument is given here it must be an array with two
-   * string values: the opening and closing tags used in the template (e.g.
-   * [ "<%", "%>" ]). The default is to mustache.tags.
-   */
-  Writer.prototype.render = function render (template, view, partials, tags) {
-    var tokens = this.parse(template, tags);
-    var context = (view instanceof Context) ? view : new Context(view);
-    return this.renderTokens(tokens, context, partials, template);
-  };
-
-  /**
-   * Low-level method that renders the given array of `tokens` using
-   * the given `context` and `partials`.
-   *
-   * Note: The `originalTemplate` is only ever used to extract the portion
-   * of the original template that was contained in a higher-order section.
-   * If the template doesn't use higher-order sections, this argument may
-   * be omitted.
-   */
-  Writer.prototype.renderTokens = function renderTokens (tokens, context, partials, originalTemplate) {
-    var buffer = '';
-
-    var token, symbol, value;
-    for (var i = 0, numTokens = tokens.length; i < numTokens; ++i) {
-      value = undefined;
-      token = tokens[i];
-      symbol = token[0];
-
-      if (symbol === '#') value = this.renderSection(token, context, partials, originalTemplate);
-      else if (symbol === '^') value = this.renderInverted(token, context, partials, originalTemplate);
-      else if (symbol === '>') value = this.renderPartial(token, context, partials, originalTemplate);
-      else if (symbol === '&') value = this.unescapedValue(token, context);
-      else if (symbol === 'name') value = this.escapedValue(token, context);
-      else if (symbol === 'text') value = this.rawValue(token);
-
-      if (value !== undefined)
-        buffer += value;
-    }
-
-    return buffer;
-  };
-
-  Writer.prototype.renderSection = function renderSection (token, context, partials, originalTemplate) {
-    var self = this;
-    var buffer = '';
-    var value = context.lookup(token[1]);
-
-    // This function is used to render an arbitrary template
-    // in the current context by higher-order sections.
-    function subRender (template) {
-      return self.render(template, context, partials);
-    }
-
-    if (!value) return;
-
-    if (isArray(value)) {
-      for (var j = 0, valueLength = value.length; j < valueLength; ++j) {
-        buffer += this.renderTokens(token[4], context.push(value[j]), partials, originalTemplate);
-      }
-    } else if (typeof value === 'object' || typeof value === 'string' || typeof value === 'number') {
-      buffer += this.renderTokens(token[4], context.push(value), partials, originalTemplate);
-    } else if (isFunction(value)) {
-      if (typeof originalTemplate !== 'string')
-        throw new Error('Cannot use higher-order sections without the original template');
-
-      // Extract the portion of the original template that the section contains.
-      value = value.call(context.view, originalTemplate.slice(token[3], token[5]), subRender);
-
-      if (value != null)
-        buffer += value;
-    } else {
-      buffer += this.renderTokens(token[4], context, partials, originalTemplate);
-    }
-    return buffer;
-  };
-
-  Writer.prototype.renderInverted = function renderInverted (token, context, partials, originalTemplate) {
-    var value = context.lookup(token[1]);
-
-    // Use JavaScript's definition of falsy. Include empty arrays.
-    // See https://github.com/janl/mustache.js/issues/186
-    if (!value || (isArray(value) && value.length === 0))
-      return this.renderTokens(token[4], context, partials, originalTemplate);
-  };
-
-  Writer.prototype.renderPartial = function renderPartial (token, context, partials) {
-    if (!partials) return;
-
-    var value = isFunction(partials) ? partials(token[1]) : partials[token[1]];
-    if (value != null)
-      return this.renderTokens(this.parse(value), context, partials, value);
-  };
-
-  Writer.prototype.unescapedValue = function unescapedValue (token, context) {
-    var value = context.lookup(token[1]);
-    if (value != null)
-      return value;
-  };
-
-  Writer.prototype.escapedValue = function escapedValue (token, context) {
-    var value = context.lookup(token[1]);
-    if (value != null)
-      return mustache.escape(value);
-  };
-
-  Writer.prototype.rawValue = function rawValue (token) {
-    return token[1];
-  };
-
-  mustache.name = 'mustache.js';
-  mustache.version = '3.0.0';
-  mustache.tags = [ '{{', '}}' ];
-
-  // All high-level mustache.* functions use this writer.
-  var defaultWriter = new Writer();
-
-  /**
-   * Clears all cached templates in the default writer.
-   */
-  mustache.clearCache = function clearCache () {
-    return defaultWriter.clearCache();
-  };
-
-  /**
-   * Parses and caches the given template in the default writer and returns the
-   * array of tokens it contains. Doing this ahead of time avoids the need to
-   * parse templates on the fly as they are rendered.
-   */
-  mustache.parse = function parse (template, tags) {
-    return defaultWriter.parse(template, tags);
-  };
-
-  /**
-   * Renders the `template` with the given `view` and `partials` using the
-   * default writer. If the optional `tags` argument is given here it must be an
-   * array with two string values: the opening and closing tags used in the
-   * template (e.g. [ "<%", "%>" ]). The default is to mustache.tags.
-   */
-  mustache.render = function render (template, view, partials, tags) {
-    if (typeof template !== 'string') {
-      throw new TypeError('Invalid template! Template should be a "string" ' +
-                          'but "' + typeStr(template) + '" was given as the first ' +
-                          'argument for mustache#render(template, view, partials)');
-    }
-
-    return defaultWriter.render(template, view, partials, tags);
-  };
-
-  // This is here for backwards compatibility with 0.4.x.,
-  /*eslint-disable */ // eslint wants camel cased function name
-  mustache.to_html = function to_html (template, view, partials, send) {
-    /*eslint-enable*/
-
-    var result = mustache.render(template, view, partials);
-
-    if (isFunction(send)) {
-      send(result);
-    } else {
-      return result;
-    }
-  };
-
-  // Export the escaping function so that the user may override it.
-  // See https://github.com/janl/mustache.js/issues/244
-  mustache.escape = escapeHtml;
-
-  // Export these mainly for testing, but also for advanced usage.
-  mustache.Scanner = Scanner;
-  mustache.Context = Context;
-  mustache.Writer = Writer;
-
-  return mustache;
-}));
-
-},{}],"js/nori/util/is.js":[function(require,module,exports) {
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.default = void 0;
-
-function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
-
-var _default = {
-  existy: function existy(x) {
-    return x !== null;
-  },
-  truthy: function truthy(x) {
-    return x !== false && this.existy(x);
-  },
-  falsey: function falsey(x) {
-    return !this.truthy(x);
-  },
-  func: function func(object) {
-    return typeof object === "function";
-  },
-  object: function object(_object) {
-    return Object.prototype.toString.call(_object) === "[object Object]";
-  },
-  objectEmpty: function objectEmpty(object) {
-    for (var key in object) {
-      if (object.hasOwnProperty(key)) {
-        return false;
-      }
-    }
-
-    return true;
-  },
-  string: function string(object) {
-    return Object.prototype.toString.call(object) === "[object String]";
-  },
-  array: function array(object) {
-    return Array.isArray(object); //return Object.prototype.toString.call(object) === '[object Array]';
-  },
-  promise: function promise(_promise) {
-    return _promise && typeof _promise.then === 'function';
-  },
-  observable: function observable(_observable) {
-    return _observable && typeof _observable.subscribe === 'function';
-  },
-  element: function element(obj) {
-    return (typeof HTMLElement === "undefined" ? "undefined" : _typeof(HTMLElement)) === 'object' ? obj instanceof HTMLElement || obj instanceof DocumentFragment : //DOM2
-    obj && _typeof(obj) === 'object' && obj !== null && (obj.nodeType === 1 || obj.nodeType === 11) && typeof obj.nodeName === 'string';
-  },
-  integer: function integer(str) {
-    return /^-?\d+$/.test(str);
-  }
-};
-exports.default = _default;
-},{}],"js/nori/util/ElementIDCreator.js":[function(require,module,exports) {
+},{"ramda":"../node_modules/ramda/es/index.js"}],"js/nori/util/ElementIDCreator.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -19537,8 +19537,6 @@ var _ElementIDCreator = require("./util/ElementIDCreator");
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
-
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
 function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
@@ -19566,34 +19564,16 @@ function () {
   }
 
   _createClass(Component, [{
-    key: "$getChildValue",
-    value: function $getChildValue(child) {
-      var innerValue;
-
-      if (_is.default.string(child)) {
-        innerValue = _mustache.default.render(child, this.internalState);
-      } else if (_is.default.func(child)) {
-        innerValue = child();
-      } else if (_is.default.object(child) && typeof child.$getTag === 'function') {
-        innerValue = child.$getTag();
-      } else {
-        console.warn("Component ".concat(this.internalProps.id, " can't do anything with child of type ").concat(_typeof(child)));
-        innerValue = 'ERR';
-      }
-
-      return innerValue;
-    } // TODO don't render children as strings here
-
-  }, {
     key: "renderTo",
     value: function renderTo(root, onRenderFn) {
       var _this = this;
 
-      var element = (0, _DOMToolbox.HTMLStrToNode)(this.$getTag());
-      (0, _DOMToolbox.appendElement)(root, element); //TODO render children here and attach to this element
-
+      // TODO give each a unique data-id here
+      var element = (0, _DOMToolbox.HTMLStrToNode)("<".concat(this.tag, " ").concat(this.$getTagAttrsFromProps(this.internalProps), "/>"));
+      (0, _DOMToolbox.appendElement)(root, element);
       this.renderedElementParent = root;
       this.renderedElement = root.lastChild;
+      this.$renderChildren(this.renderedElement);
       this.$getEventsFromProps(this.internalProps).forEach(function (evt) {
         _this.renderedElement.addEventListener(evt.event, evt.handler);
       });
@@ -19603,12 +19583,28 @@ function () {
       }
     }
   }, {
-    key: "remove",
-    value: function remove() {
+    key: "$renderChildren",
+    value: function $renderChildren(root) {
       var _this2 = this;
 
+      this.children.forEach(function (child) {
+        if (_is.default.string(child)) {
+          var text = document.createTextNode(_mustache.default.render(child, _this2.internalState));
+          (0, _DOMToolbox.appendElement)(root, text);
+        } else if (_is.default.object(child) && typeof child.renderTo === 'function') {
+          return child.renderTo(root);
+        }
+      });
+    }
+  }, {
+    key: "remove",
+    value: function remove() {
+      var _this3 = this;
+
       this.$getEventsFromProps(this.internalProps).forEach(function (evt) {
-        _this2.renderedElement.removeEventListener(evt.event, evt.handler);
+        try {
+          _this3.renderedElement.removeEventListener(evt.event, evt.handler);
+        } catch (e) {}
       });
       this.children.forEach(function (child) {
         if (_is.default.object(child) && typeof child.remove === 'function') {
@@ -19616,8 +19612,8 @@ function () {
         }
       });
       (0, _DOMToolbox.removeElement)(this.renderedElement);
-      this.renderedElementParent = null;
       this.renderedElement = null;
+      this.renderedElementParent = null;
     }
   }, {
     key: "state",
@@ -19636,12 +19632,11 @@ function () {
     },
     get: function get() {
       return Object.assign({}, this.internalState);
-    }
-  }, {
-    key: "props",
-    get: function get() {
-      return Object.assign({}, this.internalProps);
-    }
+    } // YAGNI
+    // get props() {
+    //   return Object.assign({}, this.internalProps);
+    // }
+
   }, {
     key: "current",
     get: function get() {
@@ -19659,8 +19654,6 @@ function () {
 exports.default = Component;
 
 var _initialiseProps = function _initialiseProps() {
-  var _this3 = this;
-
   this.$getTagAttrsFromProps = function (props) {
     return Object.keys(props).reduce(function (acc, key) {
       var value = props[key];
@@ -19687,16 +19680,6 @@ var _initialiseProps = function _initialiseProps() {
       return acc;
     }, []);
   };
-
-  this.$getChildren = function (children) {
-    return children.map(function (child) {
-      return _this3.$getChildValue(child);
-    }).join('');
-  };
-
-  this.$getTag = function () {
-    return "<".concat(_this3.tag, " ").concat(_this3.$getTagAttrsFromProps(_this3.internalProps), ">").concat(_this3.$getChildren(_this3.children), "</").concat(_this3.tag, ">");
-  };
 };
 },{"mustache":"../node_modules/mustache/mustache.js","ramda":"../node_modules/ramda/es/index.js","./util/is":"js/nori/util/is.js","./browser/DOMToolbox":"js/nori/browser/DOMToolbox.js","./util/ElementIDCreator":"js/nori/util/ElementIDCreator.js"}],"js/index.js":[function(require,module,exports) {
 "use strict";
@@ -19704,8 +19687,6 @@ var _initialiseProps = function _initialiseProps() {
 var GlobalCSS = _interopRequireWildcard(require("./theme/Global"));
 
 var _emotion = require("emotion");
-
-var _DOMToolbox = require("./nori/browser/DOMToolbox");
 
 var _Component = _interopRequireDefault(require("./nori/Component"));
 
@@ -19739,7 +19720,11 @@ function _taggedTemplateLiteral(strings, raw) { if (!raw) { raw = strings.slice(
   var applicationRoot = document.querySelector('#js-application');
   var red = (0, _emotion.css)(_templateObject());
   var blue = (0, _emotion.css)(_templateObject2());
-  var text = new _Component.default("span", {}, 'Hi ');
+  var text = new _Component.default("span", {
+    mouseover: function mouseover(e) {
+      console.log(e);
+    }
+  }, 'Hi ');
   var text2 = new _Component.default("span", {
     class: blue
   }, [text, 'there ']);
@@ -19756,7 +19741,7 @@ function _taggedTemplateLiteral(strings, raw) { if (!raw) { raw = strings.slice(
     foo: 'bar'
   };
 })(window);
-},{"./theme/Global":"js/theme/Global.js","emotion":"../node_modules/emotion/dist/index.esm.js","./nori/browser/DOMToolbox":"js/nori/browser/DOMToolbox.js","./nori/Component":"js/nori/Component.js"}],"../node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
+},{"./theme/Global":"js/theme/Global.js","emotion":"../node_modules/emotion/dist/index.esm.js","./nori/Component":"js/nori/Component.js"}],"../node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
 var global = arguments[3];
 var OVERLAY_ID = '__parcel__error__overlay__';
 var OldModule = module.bundle.Module;
