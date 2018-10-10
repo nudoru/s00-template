@@ -19557,8 +19557,7 @@ function () {
     this.tag = tag;
     this.children = _is.default.array(children) ? children : [children];
     this.internalProps = props;
-    this.internalState = null;
-    this.internalProps.id = this.internalProps.id || (0, _ElementIDCreator.getNextId)();
+    this.internalState = {};
     this.renderedElement = null;
     this.renderedElementParent = null;
   }
@@ -19568,8 +19567,7 @@ function () {
     value: function renderTo(root, onRenderFn) {
       var _this = this;
 
-      // TODO give each a unique data-id here
-      var element = (0, _DOMToolbox.HTMLStrToNode)("<".concat(this.tag, " ").concat(this.$getTagAttrsFromProps(this.internalProps), "/>"));
+      var element = (0, _DOMToolbox.HTMLStrToNode)("<".concat(this.tag, " ").concat(this.$getTagAttrsFromProps(this.internalProps), " data-id=").concat((0, _ElementIDCreator.getNextId)(), "/>"));
       (0, _DOMToolbox.appendElement)(root, element);
       this.renderedElementParent = root;
       this.renderedElement = root.lastChild;
@@ -19632,11 +19630,12 @@ function () {
     },
     get: function get() {
       return Object.assign({}, this.internalState);
-    } // YAGNI
-    // get props() {
-    //   return Object.assign({}, this.internalProps);
-    // }
-
+    }
+  }, {
+    key: "props",
+    get: function get() {
+      return Object.assign({}, this.internalProps);
+    }
   }, {
     key: "current",
     get: function get() {
@@ -19645,6 +19644,21 @@ function () {
       }
 
       return this.renderedElement;
+    }
+  }, {
+    key: "position",
+    get: function get() {
+      return (0, _DOMToolbox.position)(this.current);
+    }
+  }, {
+    key: "offset",
+    get: function get() {
+      return (0, _DOMToolbox.offset)(this.current);
+    }
+  }, {
+    key: "isInViewport",
+    get: function get() {
+      return (0, _DOMToolbox.isElementInViewport)(this.current);
     }
   }]);
 
@@ -19681,7 +19695,54 @@ var _initialiseProps = function _initialiseProps() {
     }, []);
   };
 };
-},{"mustache":"../node_modules/mustache/mustache.js","ramda":"../node_modules/ramda/es/index.js","./util/is":"js/nori/util/is.js","./browser/DOMToolbox":"js/nori/browser/DOMToolbox.js","./util/ElementIDCreator":"js/nori/util/ElementIDCreator.js"}],"js/index.js":[function(require,module,exports) {
+},{"mustache":"../node_modules/mustache/mustache.js","ramda":"../node_modules/ramda/es/index.js","./util/is":"js/nori/util/is.js","./browser/DOMToolbox":"js/nori/browser/DOMToolbox.js","./util/ElementIDCreator":"js/nori/util/ElementIDCreator.js"}],"js/Greeter.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = void 0;
+
+var _Component2 = _interopRequireDefault(require("./nori/Component"));
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+function _possibleConstructorReturn(self, call) { if (call && (_typeof(call) === "object" || typeof call === "function")) { return call; } return _assertThisInitialized(self); }
+
+function _assertThisInitialized(self) { if (self === void 0) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return self; }
+
+function _getPrototypeOf(o) { _getPrototypeOf = Object.setPrototypeOf ? Object.getPrototypeOf : function _getPrototypeOf(o) { return o.__proto__ || Object.getPrototypeOf(o); }; return _getPrototypeOf(o); }
+
+function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function"); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, writable: true, configurable: true } }); if (superClass) _setPrototypeOf(subClass, superClass); }
+
+function _setPrototypeOf(o, p) { _setPrototypeOf = Object.setPrototypeOf || function _setPrototypeOf(o, p) { o.__proto__ = p; return o; }; return _setPrototypeOf(o, p); }
+
+var Greeter =
+/*#__PURE__*/
+function (_Component) {
+  _inherits(Greeter, _Component);
+
+  function Greeter() {
+    var _this;
+
+    _classCallCheck(this, Greeter);
+
+    _this = _possibleConstructorReturn(this, _getPrototypeOf(Greeter).call(this, 'h1', {}, ['Hello, {{name}}!']));
+    _this.internalState = {
+      name: 'Matt'
+    };
+    return _this;
+  }
+
+  return Greeter;
+}(_Component2.default);
+
+exports.default = Greeter;
+},{"./nori/Component":"js/nori/Component.js"}],"js/index.js":[function(require,module,exports) {
 "use strict";
 
 var GlobalCSS = _interopRequireWildcard(require("./theme/Global"));
@@ -19690,58 +19751,26 @@ var _emotion = require("emotion");
 
 var _Component = _interopRequireDefault(require("./nori/Component"));
 
+var _Greeter = _interopRequireDefault(require("./Greeter"));
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) { var desc = Object.defineProperty && Object.getOwnPropertyDescriptor ? Object.getOwnPropertyDescriptor(obj, key) : {}; if (desc.get || desc.set) { Object.defineProperty(newObj, key, desc); } else { newObj[key] = obj[key]; } } } } newObj.default = obj; return newObj; } }
 
-function _templateObject2() {
-  var data = _taggedTemplateLiteral(["color: blue"]);
-
-  _templateObject2 = function _templateObject2() {
-    return data;
-  };
-
-  return data;
-}
-
-function _templateObject() {
-  var data = _taggedTemplateLiteral(["color: red"]);
-
-  _templateObject = function _templateObject() {
-    return data;
-  };
-
-  return data;
-}
-
-function _taggedTemplateLiteral(strings, raw) { if (!raw) { raw = strings.slice(0); } return Object.freeze(Object.defineProperties(strings, { raw: { value: Object.freeze(raw) } })); }
-
+// For global CSS reset + a few styles for html and body
 (function ($global) {
-  var applicationRoot = document.querySelector('#js-application');
-  var red = (0, _emotion.css)(_templateObject());
-  var blue = (0, _emotion.css)(_templateObject2());
-  var text = new _Component.default("span", {
-    mouseover: function mouseover(e) {
-      console.log(e);
-    }
-  }, 'Hi ');
-  var text2 = new _Component.default("span", {
-    class: blue
-  }, [text, 'there ']);
-  var text3 = new _Component.default("span", {}, [text, text2, 'Matt']);
-  var greeting = new _Component.default("h1", {
-    class: red,
-    click: function click(e) {
-      greeting.remove();
-    }
-  }, [text3, text3]);
+  var applicationRoot = document.querySelector('#js-application'); // const red = css`color: red`;
+  // const blue = css`color: blue`;
+  // let text = new Component(`span`, {mouseover: (e) => {console.log(e)}}, 'Hi ');
+  // let text2 = new Component(`span`, {class: blue}, [text, 'there ']);
+  // let text3 = new Component(`span`, {}, [text, text2, 'Matt']);
+  //{class: red, click: (e) => {greeting.remove();}},
+  // let greeting = new Component(`h1`, {}, ['Hello {{foo}}']);
+
+  var greeting = new _Greeter.default();
   greeting.renderTo(applicationRoot);
-  console.log('Greeting rendered as ', greeting.current);
-  greeting.state = {
-    foo: 'bar'
-  };
 })(window);
-},{"./theme/Global":"js/theme/Global.js","emotion":"../node_modules/emotion/dist/index.esm.js","./nori/Component":"js/nori/Component.js"}],"../node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
+},{"./theme/Global":"js/theme/Global.js","emotion":"../node_modules/emotion/dist/index.esm.js","./nori/Component":"js/nori/Component.js","./Greeter":"js/Greeter.js"}],"../node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
 var global = arguments[3];
 var OVERLAY_ID = '__parcel__error__overlay__';
 var OldModule = module.bundle.Module;

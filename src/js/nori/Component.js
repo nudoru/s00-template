@@ -4,6 +4,9 @@ import Is from './util/is';
 import {
   appendElement,
   HTMLStrToNode,
+  isElementInViewport,
+  offset,
+  position,
   removeElement
 } from './browser/DOMToolbox';
 import {getNextId} from './util/ElementIDCreator';
@@ -18,8 +21,7 @@ export default class Component {
     this.children      = Is.array(children) ? children : [children];
     this.internalProps = props;
 
-    this.internalState         = null;
-    this.internalProps.id      = this.internalProps.id || getNextId();
+    this.internalState         = {};
     this.renderedElement       = null;
     this.renderedElementParent = null;
   }
@@ -43,16 +45,27 @@ export default class Component {
     return Object.assign({}, this.internalState);
   }
 
-  // YAGNI
-  // get props() {
-  //   return Object.assign({}, this.internalProps);
-  // }
+  get props() {
+    return Object.assign({}, this.internalProps);
+  }
 
   get current() {
     if (!this.renderedElement) {
       console.warn(`Component ${this.internalProps.id} hasn't been rendered yet`);
     }
     return this.renderedElement;
+  }
+
+  get position() {
+    return position(this.current);
+  }
+
+  get offset() {
+    return offset(this.current);
+  }
+
+  get isInViewport() {
+    return isElementInViewport(this.current);
   }
 
   $getTagAttrsFromProps = (props) => Object.keys(props).reduce((acc, key) => {
@@ -72,8 +85,7 @@ export default class Component {
   }, []);
 
   renderTo(root, onRenderFn) {
-    // TODO give each a unique data-id here
-    const element = HTMLStrToNode(`<${this.tag} ${this.$getTagAttrsFromProps(this.internalProps)}/>`);
+    const element = HTMLStrToNode(`<${this.tag} ${this.$getTagAttrsFromProps(this.internalProps)} data-id=${getNextId()}/>`);
     appendElement(root, element);
 
     this.renderedElementParent = root;
@@ -119,5 +131,4 @@ export default class Component {
     this.renderedElement       = null;
     this.renderedElementParent = null;
   }
-
 }
