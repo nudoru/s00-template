@@ -1,14 +1,20 @@
-import Global from './theme/Global'; // For global CSS reset + a few styles for html and body
-
+import * as GlobalCSS from './theme/Global'; // For global CSS reset + a few styles for html and body
+import {css} from 'emotion';
 import {appendElement, HTMLStrToNode} from "./nori/browser/DOMToolbox";
+import Component from './nori/Component';
 
 (($global)=> {
 
-  const mountPoint = document.querySelector('#js-application');
+  const applicationRoot = document.querySelector('#js-application');
 
-  let els = HTMLStrToNode('<h1>Hello!</h1>');
+  const red = css`color: red`;
 
-  appendElement('#js-application', els);
+  let greeting = new Component(`h1`,
+    `{{greeting}}, {{firstName}}`,
+    {className: red, click: (e) => {greeting.remove();}},
+    {greeting: 'Hi', firstName: 'Matt'});
 
+
+  greeting.renderTo(applicationRoot, e=> console.log('el',e));
 
 })(window);
