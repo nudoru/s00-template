@@ -8,13 +8,19 @@ import Component from './nori/Component';
   const applicationRoot = document.querySelector('#js-application');
 
   const red = css`color: red`;
+  const blue = css`color: blue`;
+
+  let text = new Component(`span`, {}, 'Hi ');
+  let text2 = new Component(`span`, {class: blue}, [text, 'there ']);
+  let text3 = new Component(`span`, {}, [text, text2, 'Matt']);
 
   let greeting = new Component(`h1`,
-    `{{greeting}}, {{firstName}}`,
-    {className: red, click: (e) => {greeting.remove();}},
-    {greeting: 'Hi', firstName: 'Matt'});
+    {class: red, click: (e) => {greeting.remove();}},
+    [text3, text3]);
 
 
-  greeting.renderTo(applicationRoot, e=> console.log('el',e));
+  greeting.renderTo(applicationRoot);
+  console.log('Greeting rendered as ', greeting.current);
+  greeting.state = {foo:'bar'};
 
 })(window);

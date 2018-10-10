@@ -18585,7 +18585,9 @@ var removeAllElements = function removeAllElements(el) {
 exports.removeAllElements = removeAllElements;
 
 var removeElement = function removeElement(el) {
-  el.parentNode.removeChild(el);
+  if (el && el.parentNode) {
+    el.parentNode.removeChild(el);
+  }
 };
 
 exports.removeElement = removeElement;
@@ -19525,6 +19527,8 @@ exports.default = void 0;
 
 var _mustache = _interopRequireDefault(require("mustache"));
 
+var _ramda = require("ramda");
+
 var _is = _interopRequireDefault(require("./util/is"));
 
 var _DOMToolbox = require("./browser/DOMToolbox");
@@ -19533,91 +19537,66 @@ var _ElementIDCreator = require("./util/ElementIDCreator");
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
+function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
+
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
 function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
 
 function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
 
-// 😱 at the mutations!
+/*
+Simple string based component to quickly get html on the screen
+ */
 var Component =
 /*#__PURE__*/
 function () {
-  function Component(tag, htmlStr) {
-    var props = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
-    var state = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : {};
-
+  function Component(tag, props, children) {
     _classCallCheck(this, Component);
 
-    if (!htmlStr || !tag) {
-      console.error('Component must be created with tag and html');
-    }
+    _initialiseProps.call(this);
 
     this.tag = tag;
-    this.htmlStr = htmlStr;
+    this.children = _is.default.array(children) ? children : [children];
     this.internalProps = props;
-    this.internalState = state;
+    this.internalState = null;
     this.internalProps.id = this.internalProps.id || (0, _ElementIDCreator.getNextId)();
-    this.elementFragment = null;
     this.renderedElement = null;
-    this.rootElement = null;
-    this.componentEvents = [];
+    this.renderedElementParent = null;
   }
 
   _createClass(Component, [{
-    key: "$getInnerHTML",
-    value: function $getInnerHTML() {
-      return _mustache.default.render(this.htmlStr, this.internalState);
-    }
-  }, {
-    key: "$getTagAttributes",
-    value: function $getTagAttributes() {
-      var _this = this;
+    key: "$getChildValue",
+    value: function $getChildValue(child) {
+      var innerValue;
 
-      return Object.keys(this.internalProps).reduce(function (acc, c) {
-        var key = c;
-        var value = _this.internalProps[key];
+      if (_is.default.string(child)) {
+        innerValue = _mustache.default.render(child, this.internalState);
+      } else if (_is.default.func(child)) {
+        innerValue = child();
+      } else if (_is.default.object(child) && typeof child.$getTag === 'function') {
+        innerValue = child.$getTag();
+      } else {
+        console.warn("Component ".concat(this.internalProps.id, " can't do anything with child of type ").concat(_typeof(child)));
+        innerValue = 'ERR';
+      }
 
-        if (c === 'className') {
-          key = 'class';
-        }
+      return innerValue;
+    } // TODO don't render children as strings here
 
-        if (_is.default.func(value)) {
-          // Assume these are vents, push it to a list and assign these after the fragment is created
-          _this.componentEvents.push({
-            event: key,
-            handler: value
-          });
-        } else {
-          acc.push("".concat(key, "=").concat(value));
-        }
-
-        return acc;
-      }, []).join(' ');
-    }
-  }, {
-    key: "$getTag",
-    value: function $getTag() {
-      return "<".concat(this.tag, " ").concat(this.$getTagAttributes(), ">").concat(this.$getInnerHTML(), "</").concat(this.tag, ">");
-    }
-  }, {
-    key: "$render",
-    value: function $render() {
-      var _this2 = this;
-
-      this.elementFragment = (0, _DOMToolbox.HTMLStrToNode)(this.$getTag()); //this is done on the id prop now this.elementFragment.firstElementChild.setAttribute('data-nid', this.props.id);
-
-      this.componentEvents.forEach(function (evt) {
-        _this2.elementFragment.firstElementChild.addEventListener(evt.event, evt.handler);
-      });
-    }
   }, {
     key: "renderTo",
     value: function renderTo(root, onRenderFn) {
-      this.rootElement = root;
-      this.$render();
-      (0, _DOMToolbox.appendElement)(root, this.elementFragment);
+      var _this = this;
+
+      var element = (0, _DOMToolbox.HTMLStrToNode)(this.$getTag());
+      (0, _DOMToolbox.appendElement)(root, element); //TODO render children here and attach to this element
+
+      this.renderedElementParent = root;
       this.renderedElement = root.lastChild;
+      this.$getEventsFromProps(this.internalProps).forEach(function (evt) {
+        _this.renderedElement.addEventListener(evt.event, evt.handler);
+      });
 
       if (onRenderFn) {
         onRenderFn(this.renderedElement);
@@ -19626,19 +19605,34 @@ function () {
   }, {
     key: "remove",
     value: function remove() {
-      var _this3 = this;
+      var _this2 = this;
 
-      this.componentEvents.forEach(function (evt) {
-        _this3.renderedElement.removeEventListener(evt.event, evt.handler);
+      this.$getEventsFromProps(this.internalProps).forEach(function (evt) {
+        _this2.renderedElement.removeEventListener(evt.event, evt.handler);
+      });
+      this.children.forEach(function (child) {
+        if (_is.default.object(child) && typeof child.remove === 'function') {
+          child.remove();
+        }
       });
       (0, _DOMToolbox.removeElement)(this.renderedElement);
+      this.renderedElementParent = null;
+      this.renderedElement = null;
     }
   }, {
     key: "state",
     set: function set(nextState) {
-      // TODO validate it's an object
-      // TODO deep compare?
-      this.internalState = Object.assign({}, this.internalState, nextState); // TODO some kind of notification or binding, rerender?
+      if (!_is.default.object(nextState)) {
+        console.warn('Component state must be an object');
+        return;
+      }
+
+      if ((0, _ramda.equals)(nextState, this.internalState)) {
+        return;
+      }
+
+      this.internalState = Object.assign({}, this.internalState, nextState); // TODO notification or binding
+      // TODO rerender
     },
     get: function get() {
       return Object.assign({}, this.internalState);
@@ -19651,7 +19645,7 @@ function () {
   }, {
     key: "current",
     get: function get() {
-      if (!this.elementFragment) {
+      if (!this.renderedElement) {
         console.warn("Component ".concat(this.internalProps.id, " hasn't been rendered yet"));
       }
 
@@ -19663,7 +19657,48 @@ function () {
 }();
 
 exports.default = Component;
-},{"mustache":"../node_modules/mustache/mustache.js","./util/is":"js/nori/util/is.js","./browser/DOMToolbox":"js/nori/browser/DOMToolbox.js","./util/ElementIDCreator":"js/nori/util/ElementIDCreator.js"}],"js/index.js":[function(require,module,exports) {
+
+var _initialiseProps = function _initialiseProps() {
+  var _this3 = this;
+
+  this.$getTagAttrsFromProps = function (props) {
+    return Object.keys(props).reduce(function (acc, key) {
+      var value = props[key];
+
+      if (!_is.default.func(value)) {
+        acc.push("".concat(key, "=").concat(value));
+      }
+
+      return acc;
+    }, []).join(' ');
+  };
+
+  this.$getEventsFromProps = function (props) {
+    return Object.keys(props).reduce(function (acc, key) {
+      var value = props[key];
+
+      if (_is.default.func(value)) {
+        acc.push({
+          event: key,
+          handler: value
+        });
+      }
+
+      return acc;
+    }, []);
+  };
+
+  this.$getChildren = function (children) {
+    return children.map(function (child) {
+      return _this3.$getChildValue(child);
+    }).join('');
+  };
+
+  this.$getTag = function () {
+    return "<".concat(_this3.tag, " ").concat(_this3.$getTagAttrsFromProps(_this3.internalProps), ">").concat(_this3.$getChildren(_this3.children), "</").concat(_this3.tag, ">");
+  };
+};
+},{"mustache":"../node_modules/mustache/mustache.js","ramda":"../node_modules/ramda/es/index.js","./util/is":"js/nori/util/is.js","./browser/DOMToolbox":"js/nori/browser/DOMToolbox.js","./util/ElementIDCreator":"js/nori/util/ElementIDCreator.js"}],"js/index.js":[function(require,module,exports) {
 "use strict";
 
 var GlobalCSS = _interopRequireWildcard(require("./theme/Global"));
@@ -19677,6 +19712,16 @@ var _Component = _interopRequireDefault(require("./nori/Component"));
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) { var desc = Object.defineProperty && Object.getOwnPropertyDescriptor ? Object.getOwnPropertyDescriptor(obj, key) : {}; if (desc.get || desc.set) { Object.defineProperty(newObj, key, desc); } else { newObj[key] = obj[key]; } } } } newObj.default = obj; return newObj; } }
+
+function _templateObject2() {
+  var data = _taggedTemplateLiteral(["color: blue"]);
+
+  _templateObject2 = function _templateObject2() {
+    return data;
+  };
+
+  return data;
+}
 
 function _templateObject() {
   var data = _taggedTemplateLiteral(["color: red"]);
@@ -19693,18 +19738,23 @@ function _taggedTemplateLiteral(strings, raw) { if (!raw) { raw = strings.slice(
 (function ($global) {
   var applicationRoot = document.querySelector('#js-application');
   var red = (0, _emotion.css)(_templateObject());
-  var greeting = new _Component.default("h1", "{{greeting}}, {{firstName}}", {
-    className: red,
+  var blue = (0, _emotion.css)(_templateObject2());
+  var text = new _Component.default("span", {}, 'Hi ');
+  var text2 = new _Component.default("span", {
+    class: blue
+  }, [text, 'there ']);
+  var text3 = new _Component.default("span", {}, [text, text2, 'Matt']);
+  var greeting = new _Component.default("h1", {
+    class: red,
     click: function click(e) {
       greeting.remove();
     }
-  }, {
-    greeting: 'Hi',
-    firstName: 'Matt'
-  });
-  greeting.renderTo(applicationRoot, function (e) {
-    return console.log('el', e);
-  });
+  }, [text3, text3]);
+  greeting.renderTo(applicationRoot);
+  console.log('Greeting rendered as ', greeting.current);
+  greeting.state = {
+    foo: 'bar'
+  };
 })(window);
 },{"./theme/Global":"js/theme/Global.js","emotion":"../node_modules/emotion/dist/index.esm.js","./nori/browser/DOMToolbox":"js/nori/browser/DOMToolbox.js","./nori/Component":"js/nori/Component.js"}],"../node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
 var global = arguments[3];

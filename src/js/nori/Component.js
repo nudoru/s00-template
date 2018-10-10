@@ -1,33 +1,42 @@
 import Mustache from 'mustache';
+import {equals} from 'ramda';
 import Is from './util/is';
-import {appendElement, removeElement, HTMLStrToNode} from './browser/DOMToolbox';
+import {
+  appendElement,
+  HTMLStrToNode,
+  removeElement
+} from './browser/DOMToolbox';
 import {getNextId} from './util/ElementIDCreator';
 
-// 😱 at the mutations!
+/*
+Simple string based component to quickly get html on the screen
+ */
 export default class Component {
 
-  constructor(tag, htmlStr, props = {}, state = {}) {
-    if (!htmlStr || !tag) {
-      console.error('Component must be created with tag and html');
-    }
-
+  constructor(tag, props, children) {
     this.tag           = tag;
-    this.htmlStr       = htmlStr;
+    this.children      = Is.array(children) ? children : [children];
     this.internalProps = props;
-    this.internalState = state;
 
-    this.internalProps.id = this.internalProps.id || getNextId();
-    this.elementFragment  = null;
-    this.renderedElement  = null;
-    this.rootElement      = null;
-    this.componentEvents = [];
+    this.internalState         = null;
+    this.internalProps.id      = this.internalProps.id || getNextId();
+    this.renderedElement       = null;
+    this.renderedElementParent = null;
   }
 
   set state(nextState) {
-    // TODO validate it's an object
-    // TODO deep compare?
+    if (!Is.object(nextState)) {
+      console.warn('Component state must be an object');
+      return;
+    }
+
+    if (equals(nextState, this.internalState)) {
+      return;
+    }
+
     this.internalState = Object.assign({}, this.internalState, nextState);
-    // TODO some kind of notification or binding, rerender?
+    // TODO notification or binding
+    // TODO rerender
   }
 
   get state() {
@@ -39,64 +48,80 @@ export default class Component {
   }
 
   get current() {
-    if (!this.elementFragment) {
+    if (!this.renderedElement) {
       console.warn(`Component ${this.internalProps.id} hasn't been rendered yet`);
     }
     return this.renderedElement;
   }
 
+  $getTagAttrsFromProps = (props) => Object.keys(props).reduce((acc, key) => {
+    let value = props[key];
+    if (!Is.func(value)) {
+      acc.push(`${key}=${value}`);
+    }
+    return acc;
+  }, []).join(' ');
 
-  $getInnerHTML() {
-    return Mustache.render(this.htmlStr, this.internalState);
+  $getEventsFromProps = (props) => Object.keys(props).reduce((acc, key) => {
+    let value = props[key];
+    if (Is.func(value)) {
+      acc.push({event: key, handler: value});
+    }
+    return acc;
+  }, []);
+
+  $getChildren = (children) => children.map(child => this.$getChildValue(child)).join('');
+
+  $getChildValue(child) {
+    let innerValue;
+    if (Is.string(child)) {
+      innerValue = Mustache.render(child, this.internalState);
+    } else if (Is.func(child)) {
+      innerValue = child();
+    } else if (Is.object(child) && typeof child.$getTag === 'function') {
+      innerValue = child.$getTag();
+    } else {
+      console.warn(`Component ${this.internalProps.id} can't do anything with child of type ${typeof child}`);
+      innerValue = 'ERR';
+    }
+    return innerValue;
   }
 
-  $getTagAttributes() {
-    return Object.keys(this.internalProps).reduce((acc, c) => {
-      let key = c;
-      let value = this.internalProps[key];
-
-      if(c === 'className') {
-        key = 'class';
-      }
-
-      if(Is.func(value)) {
-        // Assume these are vents, push it to a list and assign these after the fragment is created
-        this.componentEvents.push({event:key, handler:value});
-      } else {
-        acc.push(`${key}=${value}`);
-      }
-
-      return acc;
-    }, []).join(' ');
-  }
-
-  $getTag() {
-    return `<${this.tag} ${this.$getTagAttributes()}>${this.$getInnerHTML()}</${this.tag}>`
-  }
-
-  $render() {
-    this.elementFragment = HTMLStrToNode(this.$getTag());
-    //this is done on the id prop now this.elementFragment.firstElementChild.setAttribute('data-nid', this.props.id);
-    this.componentEvents.forEach(evt => {
-      this.elementFragment.firstElementChild.addEventListener(evt.event, evt.handler);
-    });
-  }
+  // TODO don't render children as strings here
+  $getTag = () => `<${this.tag} ${this.$getTagAttrsFromProps(this.internalProps)}>${this.$getChildren(this.children)}</${this.tag}>`;
 
   renderTo(root, onRenderFn) {
-    this.rootElement = root;
-    this.$render();
-    appendElement(root, this.elementFragment);
-    this.renderedElement = root.lastChild;
+    const element = HTMLStrToNode(this.$getTag());
+    appendElement(root, element);
+
+    //TODO render children here and attach to this element
+
+    this.renderedElementParent = root;
+    this.renderedElement       = root.lastChild;
+
+    this.$getEventsFromProps(this.internalProps).forEach(evt => {
+      this.renderedElement.addEventListener(evt.event, evt.handler);
+    });
+
     if (onRenderFn) {
       onRenderFn(this.renderedElement);
     }
   }
 
   remove() {
-    this.componentEvents.forEach(evt => {
+    this.$getEventsFromProps(this.internalProps).forEach(evt => {
       this.renderedElement.removeEventListener(evt.event, evt.handler);
     });
+
+    this.children.forEach(child => {
+      if(Is.object(child) && typeof child.remove === 'function') {
+        child.remove();
+      }
+    });
+
     removeElement(this.renderedElement);
+    this.renderedElementParent = null;
+    this.renderedElement       = null;
   }
 
 }

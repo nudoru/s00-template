@@ -76,7 +76,9 @@ export const removeAllElements = el => {
 };
 
 export const removeElement = el => {
-  el.parentNode.removeChild(el);
+  if(el && el.parentNode) {
+    el.parentNode.removeChild(el);
+  }
 };
 
 export const appendElement = (root, el) => {
