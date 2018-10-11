@@ -2,25 +2,33 @@ import Mustache from 'mustache';
 import {equals} from 'ramda';
 import Is from './util/is';
 import {
-  appendElement,
   HTMLStrToNode,
   isElementInViewport,
   offset,
   position,
-  removeElement
+  removeElement,
+  replaceElementWith
 } from './browser/DOMToolbox';
+
 import {getNextId} from './util/ElementIDCreator';
 
 /*
 Simple string based component to quickly get html on the screen
+
+TODO
+- h like helper fn that returns a new instance
+  - first param accepts string tag type or comp class?
+- support gsap tweens
+- rerender on state update
  */
 export default class Component {
 
   constructor(tag, props, children) {
-    this.tag           = tag;
-    this.children      = Is.array(children) ? children : [children];
-    this.internalProps = props;
+    this.tag      = tag;
+    this.children = Is.array(children) ? children : [children];
+    this.props    = props;
 
+    this.attrs                 = props.attrs || {};
     this.internalState         = {};
     this.renderedElement       = null;
     this.renderedElementParent = null;
@@ -37,21 +45,16 @@ export default class Component {
     }
 
     this.internalState = Object.assign({}, this.internalState, nextState);
-    // TODO notification or binding
-    // TODO rerender
+    this.$update();
   }
 
   get state() {
     return Object.assign({}, this.internalState);
   }
 
-  get props() {
-    return Object.assign({}, this.internalProps);
-  }
-
   get current() {
     if (!this.renderedElement) {
-      console.warn(`Component ${this.internalProps.id} hasn't been rendered yet`);
+      console.warn(`Component ${this.attrs.id} hasn't been rendered yet`);
     }
     return this.renderedElement;
   }
@@ -68,7 +71,7 @@ export default class Component {
     return isElementInViewport(this.current);
   }
 
-  $getTagAttrsFromProps = (props) => Object.keys(props).reduce((acc, key) => {
+  $getTagAttrs = (props) => Object.keys(props).reduce((acc, key) => {
     let value = props[key];
     if (!Is.func(value)) {
       acc.push(`${key}=${value}`);
@@ -76,7 +79,7 @@ export default class Component {
     return acc;
   }, []).join(' ');
 
-  $getEventsFromProps = (props) => Object.keys(props).reduce((acc, key) => {
+  $getEventsAttrs = (props) => Object.keys(props).reduce((acc, key) => {
     let value = props[key];
     if (Is.func(value)) {
       acc.push({event: key, handler: value});
@@ -84,37 +87,60 @@ export default class Component {
     return acc;
   }, []);
 
-  renderTo(root, onRenderFn) {
-    const element = HTMLStrToNode(`<${this.tag} ${this.$getTagAttrsFromProps(this.internalProps)} data-id=${getNextId()}/>`);
-    appendElement(root, element);
 
-    this.renderedElementParent = root;
-    this.renderedElement       = root.lastChild;
 
-    this.$renderChildren(this.renderedElement);
+  $render() {
+    let fragment = document.createDocumentFragment();
+    let element = document.createElement(this.tag);
+    this.attrs['data-nid'] = getNextId(); // create a unique ID for every render
+    this.$setTagAttrs(element)(this.attrs);
+    this.$renderChildren(element);
+    fragment.appendChild(element);
 
-    this.$getEventsFromProps(this.internalProps).forEach(evt => {
-      this.renderedElement.addEventListener(evt.event, evt.handler);
+    this.$getEventsAttrs(this.attrs).forEach(evt => {
+      element.addEventListener(evt.event, evt.handler);
     });
 
-    if (onRenderFn) {
-      onRenderFn(this.renderedElement);
-    }
+    return element;
   }
+
+  $setTagAttrs = (element) => (props) => Object.keys(props).forEach(key => {
+    let value = props[key];
+    if (!Is.func(value)) {
+      element.setAttribute(key, value);
+    }
+  });
 
   $renderChildren(root) {
     this.children.forEach(child => {
       if (Is.string(child)) {
-        let text = document.createTextNode(Mustache.render(child, this.internalState));
-        appendElement(root, text);
+        let text = HTMLStrToNode(Mustache.render(child, this.internalState));
+        root.appendChild(text);
       } else if (Is.object(child) && typeof child.renderTo === 'function') {
         return child.renderTo(root);
       }
     });
   }
 
+  renderTo(root) {
+    if(!root) {
+      console.error(`Can't render component to null root`);
+    }
+    const element = this.$render();
+    root.appendChild(element);
+
+    this.renderedElementParent = root;
+    this.renderedElement       = root.lastChild;
+  }
+
+  $update() {
+    this.remove();
+    // this.renderTo(this.renderedElementParent);
+    this.renderedElement = replaceElementWith(this.renderedElementParent, this.renderedElement, this.$render())
+  }
+
   remove() {
-    this.$getEventsFromProps(this.internalProps).forEach(evt => {
+    this.$getEventsAttrs(this.attrs).forEach(evt => {
       try {
         this.renderedElement.removeEventListener(evt.event, evt.handler);
       } catch (e) {
@@ -126,9 +152,19 @@ export default class Component {
         child.remove();
       }
     });
+    // removeElement(this.renderedElement);
+  }
 
+  delete() {
+    this.remove();
+    this.children.forEach(child => {
+      if (Is.object(child) && typeof child.delete === 'function') {
+        child.delete();
+      }
+    });
     removeElement(this.renderedElement);
     this.renderedElement       = null;
     this.renderedElementParent = null;
   }
+
 }

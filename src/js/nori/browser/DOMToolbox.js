@@ -91,7 +91,7 @@ export const appendElement = (root, el) => {
 };
 
 export const replaceElement = (root, el) => {
-  if (el.parent) {
+  if (el.parentElement) {
     let parent      = isDomObj(root) ? root : document.querySelector(root),
         nextSibling = el.nextSibling;
     if (parent) {
@@ -101,8 +101,26 @@ export const replaceElement = (root, el) => {
       console.warn('Can\'t append element, selector not found: ', root);
     }
   } else {
-    append(el, root);
+    appendElement(el, root);
   }
+  return el;
+};
+
+export const replaceElementWith = (root, oldEl, newEl) => {
+  if (oldEl.parentElement) {
+    let parent      = isDomObj(root) ? root : document.querySelector(root),
+        nextSibling = oldEl.nextSibling;
+    if (parent) {
+      console.log(parent, nextSibling);
+      parent.removeChild(oldEl);
+      parent.insertBefore(newEl, nextSibling);
+    } else {
+      console.warn('Can\'t append element, selector not found: ', root);
+    }
+  } else {
+    appendElement(newEl, root);
+  }
+  return newEl;
 };
 
 //https://davidwalsh.name/convert-html-stings-dom-nodes

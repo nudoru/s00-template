@@ -19229,7 +19229,7 @@ exports.default = _default;
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.centerElementInViewPort = exports.querySelectorAllAsArray = exports.computeWindowScale = exports.applyCSS = exports.toggleClass = exports.removeClass = exports.addClass = exports.hasClass = exports.closest = exports.wrapElement = exports.HTMLStrToNode = exports.replaceElement = exports.appendElement = exports.removeElement = exports.removeAllElements = exports.offset = exports.position = exports.isDomObj = exports.isElementInViewport = exports.isElementEntirelyInViewport = exports.pxToInt = exports.getElStyleProp = exports.getElStyle = exports.$$ = exports.$ = void 0;
+exports.centerElementInViewPort = exports.querySelectorAllAsArray = exports.computeWindowScale = exports.applyCSS = exports.toggleClass = exports.removeClass = exports.addClass = exports.hasClass = exports.closest = exports.wrapElement = exports.HTMLStrToNode = exports.replaceElementWith = exports.replaceElement = exports.appendElement = exports.removeElement = exports.removeAllElements = exports.offset = exports.position = exports.isDomObj = exports.isElementInViewport = exports.isElementEntirelyInViewport = exports.pxToInt = exports.getElStyleProp = exports.getElStyle = exports.$$ = exports.$ = void 0;
 
 var _ramda = require("ramda");
 
@@ -19347,7 +19347,7 @@ var appendElement = function appendElement(root, el) {
 exports.appendElement = appendElement;
 
 var replaceElement = function replaceElement(root, el) {
-  if (el.parent) {
+  if (el.parentElement) {
     var parent = isDomObj(root) ? root : document.querySelector(root),
         nextSibling = el.nextSibling;
 
@@ -19358,12 +19358,35 @@ var replaceElement = function replaceElement(root, el) {
       console.warn('Can\'t append element, selector not found: ', root);
     }
   } else {
-    append(el, root);
+    appendElement(el, root);
   }
+
+  return el;
+};
+
+exports.replaceElement = replaceElement;
+
+var replaceElementWith = function replaceElementWith(root, oldEl, newEl) {
+  if (oldEl.parentElement) {
+    var parent = isDomObj(root) ? root : document.querySelector(root),
+        nextSibling = oldEl.nextSibling;
+
+    if (parent) {
+      console.log(parent, nextSibling);
+      parent.removeChild(oldEl);
+      parent.insertBefore(newEl, nextSibling);
+    } else {
+      console.warn('Can\'t append element, selector not found: ', root);
+    }
+  } else {
+    appendElement(newEl, root);
+  }
+
+  return newEl;
 }; //https://davidwalsh.name/convert-html-stings-dom-nodes
 
 
-exports.replaceElement = replaceElement;
+exports.replaceElementWith = replaceElementWith;
 
 var HTMLStrToNode = function HTMLStrToNode(str) {
   return document.createRange().createContextualFragment(str);
@@ -19545,6 +19568,12 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
 
 /*
 Simple string based component to quickly get html on the screen
+
+TODO
+- h like helper fn that returns a new instance
+  - first param accepts string tag type or comp class?
+- support gsap tweens
+- rerender on state update
  */
 var Component =
 /*#__PURE__*/
@@ -19556,57 +19585,84 @@ function () {
 
     this.tag = tag;
     this.children = _is.default.array(children) ? children : [children];
-    this.internalProps = props;
+    this.props = props;
+    this.attrs = props.attrs || {};
     this.internalState = {};
     this.renderedElement = null;
     this.renderedElementParent = null;
   }
 
   _createClass(Component, [{
-    key: "renderTo",
-    value: function renderTo(root, onRenderFn) {
-      var _this = this;
+    key: "$render",
+    value: function $render() {
+      var fragment = document.createDocumentFragment();
+      var element = document.createElement(this.tag);
+      this.attrs['data-nid'] = (0, _ElementIDCreator.getNextId)(); // create a unique ID for every render
 
-      var element = (0, _DOMToolbox.HTMLStrToNode)("<".concat(this.tag, " ").concat(this.$getTagAttrsFromProps(this.internalProps), " data-id=").concat((0, _ElementIDCreator.getNextId)(), "/>"));
-      (0, _DOMToolbox.appendElement)(root, element);
-      this.renderedElementParent = root;
-      this.renderedElement = root.lastChild;
-      this.$renderChildren(this.renderedElement);
-      this.$getEventsFromProps(this.internalProps).forEach(function (evt) {
-        _this.renderedElement.addEventListener(evt.event, evt.handler);
+      this.$setTagAttrs(element)(this.attrs);
+      this.$renderChildren(element);
+      fragment.appendChild(element);
+      this.$getEventsAttrs(this.attrs).forEach(function (evt) {
+        element.addEventListener(evt.event, evt.handler);
       });
-
-      if (onRenderFn) {
-        onRenderFn(this.renderedElement);
-      }
+      return element;
     }
   }, {
     key: "$renderChildren",
     value: function $renderChildren(root) {
-      var _this2 = this;
+      var _this = this;
 
       this.children.forEach(function (child) {
         if (_is.default.string(child)) {
-          var text = document.createTextNode(_mustache.default.render(child, _this2.internalState));
-          (0, _DOMToolbox.appendElement)(root, text);
+          var text = (0, _DOMToolbox.HTMLStrToNode)(_mustache.default.render(child, _this.internalState));
+          root.appendChild(text);
         } else if (_is.default.object(child) && typeof child.renderTo === 'function') {
           return child.renderTo(root);
         }
       });
     }
   }, {
+    key: "renderTo",
+    value: function renderTo(root) {
+      if (!root) {
+        console.error("Can't render component to null root");
+      }
+
+      var element = this.$render();
+      root.appendChild(element);
+      this.renderedElementParent = root;
+      this.renderedElement = root.lastChild;
+    }
+  }, {
+    key: "$update",
+    value: function $update() {
+      this.remove(); // this.renderTo(this.renderedElementParent);
+
+      this.renderedElement = (0, _DOMToolbox.replaceElementWith)(this.renderedElementParent, this.renderedElement, this.$render());
+    }
+  }, {
     key: "remove",
     value: function remove() {
-      var _this3 = this;
+      var _this2 = this;
 
-      this.$getEventsFromProps(this.internalProps).forEach(function (evt) {
+      this.$getEventsAttrs(this.attrs).forEach(function (evt) {
         try {
-          _this3.renderedElement.removeEventListener(evt.event, evt.handler);
+          _this2.renderedElement.removeEventListener(evt.event, evt.handler);
         } catch (e) {}
       });
       this.children.forEach(function (child) {
         if (_is.default.object(child) && typeof child.remove === 'function') {
           child.remove();
+        }
+      }); // removeElement(this.renderedElement);
+    }
+  }, {
+    key: "delete",
+    value: function _delete() {
+      this.remove();
+      this.children.forEach(function (child) {
+        if (_is.default.object(child) && typeof child.delete === 'function') {
+          child.delete();
         }
       });
       (0, _DOMToolbox.removeElement)(this.renderedElement);
@@ -19625,22 +19681,17 @@ function () {
         return;
       }
 
-      this.internalState = Object.assign({}, this.internalState, nextState); // TODO notification or binding
-      // TODO rerender
+      this.internalState = Object.assign({}, this.internalState, nextState);
+      this.$update();
     },
     get: function get() {
       return Object.assign({}, this.internalState);
     }
   }, {
-    key: "props",
-    get: function get() {
-      return Object.assign({}, this.internalProps);
-    }
-  }, {
     key: "current",
     get: function get() {
       if (!this.renderedElement) {
-        console.warn("Component ".concat(this.internalProps.id, " hasn't been rendered yet"));
+        console.warn("Component ".concat(this.attrs.id, " hasn't been rendered yet"));
       }
 
       return this.renderedElement;
@@ -19668,7 +19719,7 @@ function () {
 exports.default = Component;
 
 var _initialiseProps = function _initialiseProps() {
-  this.$getTagAttrsFromProps = function (props) {
+  this.$getTagAttrs = function (props) {
     return Object.keys(props).reduce(function (acc, key) {
       var value = props[key];
 
@@ -19680,7 +19731,7 @@ var _initialiseProps = function _initialiseProps() {
     }, []).join(' ');
   };
 
-  this.$getEventsFromProps = function (props) {
+  this.$getEventsAttrs = function (props) {
     return Object.keys(props).reduce(function (acc, key) {
       var value = props[key];
 
@@ -19693,6 +19744,18 @@ var _initialiseProps = function _initialiseProps() {
 
       return acc;
     }, []);
+  };
+
+  this.$setTagAttrs = function (element) {
+    return function (props) {
+      return Object.keys(props).forEach(function (key) {
+        var value = props[key];
+
+        if (!_is.default.func(value)) {
+          element.setAttribute(key, value);
+        }
+      });
+    };
   };
 };
 },{"mustache":"../node_modules/mustache/mustache.js","ramda":"../node_modules/ramda/es/index.js","./util/is":"js/nori/util/is.js","./browser/DOMToolbox":"js/nori/browser/DOMToolbox.js","./util/ElementIDCreator":"js/nori/util/ElementIDCreator.js"}],"js/Greeter.js":[function(require,module,exports) {
@@ -19731,7 +19794,7 @@ function (_Component) {
 
     _classCallCheck(this, Greeter);
 
-    _this = _possibleConstructorReturn(this, _getPrototypeOf(Greeter).call(this, 'h1', {}, ['Hello, {{name}}!']));
+    _this = _possibleConstructorReturn(this, _getPrototypeOf(Greeter).call(this, 'h1', {}, ['Hello, <em>{{name}}!</em>']));
     _this.internalState = {
       name: 'Matt'
     };
@@ -19742,7 +19805,343 @@ function (_Component) {
 }(_Component2.default);
 
 exports.default = Greeter;
-},{"./nori/Component":"js/nori/Component.js"}],"js/index.js":[function(require,module,exports) {
+},{"./nori/Component":"js/nori/Component.js"}],"js/nori/util/NumberUtils.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.distanceTL = exports.isBetween = exports.clamp = exports.rndNumber = exports.isInteger = void 0;
+
+var isInteger = function isInteger(str) {
+  return /^-?\d+$/.test(str);
+};
+
+exports.isInteger = isInteger;
+
+var rndNumber = function rndNumber(min, max) {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+};
+
+exports.rndNumber = rndNumber;
+
+var clamp = function clamp(val, min, max) {
+  return Math.max(min, Math.min(max, val));
+};
+
+exports.clamp = clamp;
+
+var isBetween = function isBetween(val, min, max) {
+  return val > min && val < max;
+};
+
+exports.isBetween = isBetween;
+
+var distanceTL = function distanceTL(point1, point2) {
+  var xd = point2.left - point1.left,
+      yd = point2.top - point1.top;
+  return Math.sqrt(xd * xd + yd * yd);
+};
+
+exports.distanceTL = distanceTL;
+},{}],"js/nori/util/StringUtils.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.unslugify = exports.slugify = exports.removeWhiteSpace = exports.DOMtoCSSStyle = exports.dasherize = exports.underscore = exports.capitalize = exports.unescapeHTML = exports.removeEntities = exports.removeTags = exports.ellipses = exports.toTitleCase = exports.capitalizeFirstLetter = void 0;
+
+var _this = void 0;
+
+var capitalizeFirstLetter = function capitalizeFirstLetter(str) {
+  return str.charAt(0).toUpperCase() + str.substring(1);
+};
+
+exports.capitalizeFirstLetter = capitalizeFirstLetter;
+
+var toTitleCase = function toTitleCase(str) {
+  return str.replace(/\w\S*/g, function (txt) {
+    return txt.charAt(0).toUpperCase() + txt.substr(1);
+  });
+};
+
+exports.toTitleCase = toTitleCase;
+
+var ellipses = function ellipses(len) {
+  return _this.length > len ? _this.substr(0, len) + "..." : _this;
+}; // From https://github.com/sstephenson/prototype/blob/d9411e5/src/prototype/lang/string.js#L426
+// export const removeTags2 = (str) => {
+//   return str.replace(/<\w+(\s+("[^"]*"|'[^']*'|[^>])+)?>|<\/\w+>/gi, '');
+// };
+
+
+exports.ellipses = ellipses;
+
+var removeTags = function removeTags(str) {
+  return str.replace(/(<([^>]+)>)/ig, '');
+};
+
+exports.removeTags = removeTags;
+
+var removeEntities = function removeEntities(str) {
+  return str.replace(/(&(#?)(?:[a-z\d]+|#\d+|#x[a-f\d]+);)/ig, '');
+}; // From https://github.com/sstephenson/prototype/blob/d9411e5/src/prototype/lang/string.js#L426
+
+
+exports.removeEntities = removeEntities;
+
+var unescapeHTML = function unescapeHTML(str) {
+  // Warning: In 1.7 String#unescapeHTML will no longer call String#stripTags.
+  return removeTags(str).replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&');
+};
+
+exports.unescapeHTML = unescapeHTML;
+
+var capitalize = function capitalize(str) {
+  return str.charAt(0).toUpperCase() + _this.substring(1).toLowerCase();
+};
+
+exports.capitalize = capitalize;
+
+var underscore = function underscore(str) {
+  return str.replace(/::/g, '/').replace(/([A-Z]+)([A-Z][a-z])/g, '$1_$2').replace(/([a-z\d])([A-Z])/g, '$1_$2').replace(/-/g, '_').toLowerCase();
+};
+
+exports.underscore = underscore;
+
+var dasherize = function dasherize(str) {
+  return str.replace(/_/g, '-');
+};
+
+exports.dasherize = dasherize;
+
+var DOMtoCSSStyle = function DOMtoCSSStyle(str) {
+  return dasherize(underscore(str));
+};
+
+exports.DOMtoCSSStyle = DOMtoCSSStyle;
+
+var removeWhiteSpace = function removeWhiteSpace(str) {
+  return str.replace(/(\r\n|\n|\r|\t|\s)/gm, '').replace(/>\s+</g, '><');
+};
+
+exports.removeWhiteSpace = removeWhiteSpace;
+
+var slugify = function slugify(str) {
+  return str.split(' ').map(function (s) {
+    return s.toLowerCase();
+  }).join('_');
+};
+
+exports.slugify = slugify;
+
+var unslugify = function unslugify(str) {
+  return str.split('_').map(function (s) {
+    return s.charAt(0).toUpperCase() + s.substring(1);
+  }).join(' ');
+};
+
+exports.unslugify = unslugify;
+},{}],"js/nori/util/Toolbox.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.sleep = exports.decodeParameterString = exports.getParameterString = void 0;
+
+/*eslint no-undef: "error"*/
+
+/*eslint-env node*/
+
+/*
+ Collected utility functions
+ */
+
+/**
+ * Turn an object of {paramname:value[,...]} into paramname=value[&...] for a
+ * URL rest query
+ */
+var getParameterString = function getParameterString(objArry) {
+  return Object.keys(objArry).reduce(function (p, c, i) {
+    p += (i > 0 ? '&' : '') + c + '=' + encodeURIComponent(objArry[c]);
+    return p;
+  }, '');
+};
+
+exports.getParameterString = getParameterString;
+
+var decodeParameterString = function decodeParameterString(str) {
+  return str.split('&').reduce(function (p, c) {
+    var pair = c.split('=');
+    p[pair[0]] = decodeURIComponent(pair[1]);
+    return p;
+  }, {});
+};
+
+exports.decodeParameterString = decodeParameterString;
+
+var sleep = function sleep(time) {
+  return new Promise(function (resolve) {
+    window.setTimeout(resolve, time);
+  });
+};
+
+exports.sleep = sleep;
+},{}],"js/nori/util/Lorem.js":[function(require,module,exports) {
+"use strict";
+
+var _NumberUtils = require("./NumberUtils");
+
+var _StringUtils = require("./StringUtils");
+
+var _currentText = [],
+    _defaultTextSet,
+    _maleFirstNames = [],
+    _femaleFirstNames = [],
+    _lastNames = [],
+    _punctuation = [],
+    _months,
+    _days,
+    _toolbox = require('./Toolbox');
+
+_defaultTextSet = 'Perhaps a re-engineering of your current world view will re-energize your online nomenclature to enable a new holistic interactive enterprise internet communication solution Upscaling the resurgent networking exchange solutions achieving a breakaway systemic electronic data interchange system synchronization thereby exploiting technical environments for mission critical broad based capacity constrained systems Fundamentally transforming well designed actionable information whose semantic content is virtually null To more fully clarify the current exchange a few aggregate issues will require addressing to facilitate this distributed communication venue In integrating non-aligned structures into existing legacy systems a holistic gateway blueprint is a backward compatible packaging tangible';
+_lastNames = 'Smith Johnson Williams Jones Brown Davis Miller Wilson Moore Taylor Anderson Thomas Jackson White Harris Martin Thompson Garcia Martinez Robinson Clark Rodriguez Lewis Lee Walker Hall Allen Young Hernandez King Wright Lopez Hill Scott Green Adams Baker Gonzalez Nelson Carter Mitchell Perez Roberts Turner Phillips Campbell Parker Evans Edwards Collins Stewart Sanchez Morris Rogers Reed Cook Morgan Bell Murphy'.split(' ');
+_maleFirstNames = 'Thomas Arthur Lewis Clarence Leonard Albert Paul Carl Ralph Roy Earl Samuel Howard Richard Francis Laurence Herbert Elmer Ernest Theodore David Alfred Donald Russell Eugene Andrew Kenneth Herman Jesse Lester Floyd Michael Edwin Clifford Benjamin Clyde Glen Oscar Daniel'.split(' ');
+_femaleFirstNames = 'Elizabeth Ann Helen Margaret Ellen Catherine Lily Florence Ada Lou Ethel Emily Ruth Rose Frances Alice Bertha Clara Mabel Minnie Grace Jane Evelyn Gertrude Edna Pearl Laura Hazel Edith Esther Harriet Sarah May Matilda Martha Myrtle Josephine Maud Agnes Keri Julia Irene Mildred Cora'.split(' ');
+_punctuation = ['.', '.', '.', '.', '?', '!'];
+_months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+_days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
+_currentText = _defaultTextSet.toLowerCase().split(' ');
+
+function rNumber(min, max) {
+  return (0, _NumberUtils.rndNumber)(min, max);
+}
+
+function oneOf(arry) {
+  return arry[rNumber(0, arry.length - 1)];
+}
+
+function severalOf(num, arry) {
+  if (num >= arry.length) {
+    return arry;
+  }
+
+  var res = [];
+
+  for (var i = 0; i < num; i++) {
+    res.push(oneOf(arry));
+  }
+
+  return res;
+}
+
+function sentence(min, max) {
+  return capitalizeFirstLetterStr(text(min, max)) + oneOf(_punctuation);
+}
+
+function title(min, max) {
+  return toTitleCaseStr(text(min, max));
+}
+
+function paragraph(min, max) {
+  var str = '',
+      delim = ' ',
+      len = rNumber(min, max),
+      i = 0;
+
+  for (; i < len; i++) {
+    if (i === len - 1) {
+      delim = '';
+    }
+
+    str += sentence(1, 10) + delim;
+  }
+
+  return str;
+}
+
+function text(min, max) {
+  var str = '',
+      delim = ' ',
+      len = rNumber(min, max),
+      i = 0;
+
+  for (; i < len; i++) {
+    if (i === len - 1) {
+      delim = '';
+    }
+
+    str += oneOf(_currentText) + delim;
+  }
+
+  return str;
+}
+
+function getFirstName() {
+  return rNumber(0, 1) ? oneOf(_maleFirstNames) : oneOf(_femaleFirstNames);
+}
+
+function getLastName() {
+  return oneOf(_lastNames);
+}
+
+function firstLastName() {
+  return getFirstName() + ' ' + getLastName();
+}
+
+function lastFirstName() {
+  return getLastName() + ', ' + getFirstName();
+}
+/**
+ * Better implementation http://stackoverflow.com/questions/9035627/elegant-method-to-generate-array-of-random-dates-within-two-dates
+ * @returns {{monthNumber: *, monthName: *, monthDay, weekDayNumber: *, weekDay: *, year}}
+ */
+
+
+function date() {
+  var month = rNumber(0, 11),
+      wkday = rNumber(0, 4),
+      date = {
+    monthNumber: month + 1,
+    monthName: _months[month],
+    monthDay: rNumber(1, 28),
+    weekDayNumber: wkday + 1,
+    weekDay: _days[wkday],
+    year: _toolbox.rndElement(['2018'])
+  };
+  date.string = date.monthName + ' ' + date.monthDay + ', ' + date.year;
+  return date;
+}
+/**
+ * http://stackoverflow.com/questions/105034/create-guid-uuid-in-javascript
+ * @returns {string}
+ */
+
+
+function guid() {
+  function s4() {
+    return Math.floor((1 + Math.random()) * 0x10000).toString(16).substring(1);
+  }
+
+  return s4() + s4() + '-' + s4() + '-' + s4() + '-' + s4() + '-' + s4() + s4() + s4();
+}
+
+module.exports = {
+  rNumber: rNumber,
+  oneOf: oneOf,
+  severalOf: severalOf,
+  text: text,
+  sentence: sentence,
+  title: title,
+  paragraph: paragraph,
+  firstLastName: firstLastName,
+  lastFirstName: lastFirstName,
+  date: date,
+  guid: guid
+};
+},{"./NumberUtils":"js/nori/util/NumberUtils.js","./StringUtils":"js/nori/util/StringUtils.js","./Toolbox":"js/nori/util/Toolbox.js"}],"js/index.js":[function(require,module,exports) {
 "use strict";
 
 var GlobalCSS = _interopRequireWildcard(require("./theme/Global"));
@@ -19753,24 +20152,77 @@ var _Component = _interopRequireDefault(require("./nori/Component"));
 
 var _Greeter = _interopRequireDefault(require("./Greeter"));
 
+var Lorem = _interopRequireWildcard(require("./nori/util/Lorem"));
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) { var desc = Object.defineProperty && Object.getOwnPropertyDescriptor ? Object.getOwnPropertyDescriptor(obj, key) : {}; if (desc.get || desc.set) { Object.defineProperty(newObj, key, desc); } else { newObj[key] = obj[key]; } } } } newObj.default = obj; return newObj; } }
 
-// For global CSS reset + a few styles for html and body
-(function ($global) {
-  var applicationRoot = document.querySelector('#js-application'); // const red = css`color: red`;
-  // const blue = css`color: blue`;
-  // let text = new Component(`span`, {mouseover: (e) => {console.log(e)}}, 'Hi ');
-  // let text2 = new Component(`span`, {class: blue}, [text, 'there ']);
-  // let text3 = new Component(`span`, {}, [text, text2, 'Matt']);
-  //{class: red, click: (e) => {greeting.remove();}},
-  // let greeting = new Component(`h1`, {}, ['Hello {{foo}}']);
+function _templateObject2() {
+  var data = _taggedTemplateLiteral(["color: blue"]);
 
-  var greeting = new _Greeter.default();
+  _templateObject2 = function _templateObject2() {
+    return data;
+  };
+
+  return data;
+}
+
+function _templateObject() {
+  var data = _taggedTemplateLiteral(["color: red; cursor: pointer;"]);
+
+  _templateObject = function _templateObject() {
+    return data;
+  };
+
+  return data;
+}
+
+function _taggedTemplateLiteral(strings, raw) { if (!raw) { raw = strings.slice(0); } return Object.freeze(Object.defineProperties(strings, { raw: { value: Object.freeze(raw) } })); }
+
+(function ($global) {
+  var applicationRoot = document.querySelector('#js-application');
+  var red = (0, _emotion.css)(_templateObject());
+  var blue = (0, _emotion.css)(_templateObject2());
+  var text = new _Component.default("span", {
+    attrs: {
+      mouseover: function mouseover(e) {
+        console.log(e);
+      }
+    }
+  }, 'Hi ');
+  var text2 = new _Component.default("span", {
+    attrs: {
+      class: blue
+    }
+  }, [text, 'there ']);
+  var text3 = new _Component.default("span", {}, [text, text2, 'Matt']);
+  var text4 = new _Component.default("h3", {
+    attrs: {
+      class: blue
+    }
+  }, [text, 'there ']); //{class: red, click: (e) => {greeting.remove();}},
+
+  var greeting = new _Component.default("p", {
+    attrs: {
+      class: red,
+      click: function click(e) {
+        greeting.state = {
+          foo: Lorem.firstLastName(),
+          bar: Lorem.text(2, 6)
+        };
+      }
+    }
+  }, ['Hello <strong>{{foo}}</strong>', text, text2, text3, 'What\'s the {{bar}}']); // let greeting = new Greeter();
+  // console.log(greeting.$render());
+
+  text4.renderTo(applicationRoot);
+  text4.renderTo(applicationRoot);
   greeting.renderTo(applicationRoot);
+  text4.renderTo(applicationRoot);
+  text4.renderTo(applicationRoot);
 })(window);
-},{"./theme/Global":"js/theme/Global.js","emotion":"../node_modules/emotion/dist/index.esm.js","./nori/Component":"js/nori/Component.js","./Greeter":"js/Greeter.js"}],"../node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
+},{"./theme/Global":"js/theme/Global.js","emotion":"../node_modules/emotion/dist/index.esm.js","./nori/Component":"js/nori/Component.js","./Greeter":"js/Greeter.js","./nori/util/Lorem":"js/nori/util/Lorem.js"}],"../node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
 var global = arguments[3];
 var OVERLAY_ID = '__parcel__error__overlay__';
 var OldModule = module.bundle.Module;
