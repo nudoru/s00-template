@@ -19366,23 +19366,18 @@ var replaceElement = function replaceElement(root, el) {
 
 exports.replaceElement = replaceElement;
 
-var replaceElementWith = function replaceElementWith(root, oldEl, newEl) {
-  if (oldEl.parentElement) {
-    var parent = isDomObj(root) ? root : document.querySelector(root),
-        nextSibling = oldEl.nextSibling;
+var replaceElementWith = function replaceElementWith(oldEl, newEl) {
+  var parent = oldEl.parentElement;
 
-    if (parent) {
-      console.log(parent, nextSibling);
-      parent.removeChild(oldEl);
-      parent.insertBefore(newEl, nextSibling);
-    } else {
-      console.warn('Can\'t append element, selector not found: ', root);
-    }
-  } else {
-    appendElement(newEl, root);
+  if (parent) {
+    var nextSibling = oldEl.nextSibling;
+    parent.removeChild(oldEl);
+    parent.insertBefore(newEl, nextSibling);
+    return newEl;
   }
 
-  return newEl;
+  console.warn('Can\'t replace element, no parent found', parent);
+  return false;
 }; //https://davidwalsh.name/convert-html-stings-dom-nodes
 
 
@@ -19636,9 +19631,8 @@ function () {
   }, {
     key: "$update",
     value: function $update() {
-      this.remove(); // this.renderTo(this.renderedElementParent);
-
-      this.renderedElement = (0, _DOMToolbox.replaceElementWith)(this.renderedElementParent, this.renderedElement, this.$render());
+      this.remove();
+      this.renderedElement = (0, _DOMToolbox.replaceElementWith)(this.renderedElement, this.$render());
     }
   }, {
     key: "remove",
@@ -19654,7 +19648,7 @@ function () {
         if (_is.default.object(child) && typeof child.remove === 'function') {
           child.remove();
         }
-      }); // removeElement(this.renderedElement);
+      });
     }
   }, {
     key: "delete",
@@ -19719,18 +19713,6 @@ function () {
 exports.default = Component;
 
 var _initialiseProps = function _initialiseProps() {
-  this.$getTagAttrs = function (props) {
-    return Object.keys(props).reduce(function (acc, key) {
-      var value = props[key];
-
-      if (!_is.default.func(value)) {
-        acc.push("".concat(key, "=").concat(value));
-      }
-
-      return acc;
-    }, []).join(' ');
-  };
-
   this.$getEventsAttrs = function (props) {
     return Object.keys(props).reduce(function (acc, key) {
       var value = props[key];

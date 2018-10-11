@@ -71,14 +71,6 @@ export default class Component {
     return isElementInViewport(this.current);
   }
 
-  $getTagAttrs = (props) => Object.keys(props).reduce((acc, key) => {
-    let value = props[key];
-    if (!Is.func(value)) {
-      acc.push(`${key}=${value}`);
-    }
-    return acc;
-  }, []).join(' ');
-
   $getEventsAttrs = (props) => Object.keys(props).reduce((acc, key) => {
     let value = props[key];
     if (Is.func(value)) {
@@ -86,8 +78,6 @@ export default class Component {
     }
     return acc;
   }, []);
-
-
 
   $render() {
     let fragment = document.createDocumentFragment();
@@ -135,8 +125,7 @@ export default class Component {
 
   $update() {
     this.remove();
-    // this.renderTo(this.renderedElementParent);
-    this.renderedElement = replaceElementWith(this.renderedElementParent, this.renderedElement, this.$render())
+    this.renderedElement = replaceElementWith(this.renderedElement, this.$render())
   }
 
   remove() {
@@ -146,13 +135,11 @@ export default class Component {
       } catch (e) {
       }
     });
-
     this.children.forEach(child => {
       if (Is.object(child) && typeof child.remove === 'function') {
         child.remove();
       }
     });
-    // removeElement(this.renderedElement);
   }
 
   delete() {

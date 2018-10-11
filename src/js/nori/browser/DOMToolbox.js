@@ -3,7 +3,7 @@ Different stuff collected over time. Most of it used in one project or another
 in the past.
  */
 
-import { memoize, curry } from 'ramda';
+import {curry, memoize} from 'ramda';
 
 export const $ = (selector, context) => {
   return (context || document).querySelector(selector);
@@ -76,7 +76,7 @@ export const removeAllElements = el => {
 };
 
 export const removeElement = el => {
-  if(el && el.parentNode) {
+  if (el && el.parentNode) {
     el.parentNode.removeChild(el);
   }
 };
@@ -106,21 +106,16 @@ export const replaceElement = (root, el) => {
   return el;
 };
 
-export const replaceElementWith = (root, oldEl, newEl) => {
-  if (oldEl.parentElement) {
-    let parent      = isDomObj(root) ? root : document.querySelector(root),
-        nextSibling = oldEl.nextSibling;
-    if (parent) {
-      console.log(parent, nextSibling);
-      parent.removeChild(oldEl);
-      parent.insertBefore(newEl, nextSibling);
-    } else {
-      console.warn('Can\'t append element, selector not found: ', root);
-    }
-  } else {
-    appendElement(newEl, root);
+export const replaceElementWith = (oldEl, newEl) => {
+  let parent = oldEl.parentElement;
+  if (parent) {
+    let nextSibling = oldEl.nextSibling;
+    parent.removeChild(oldEl);
+    parent.insertBefore(newEl, nextSibling);
+    return newEl;
   }
-  return newEl;
+  console.warn('Can\'t replace element, no parent found', parent);
+  return false;
 };
 
 //https://davidwalsh.name/convert-html-stings-dom-nodes
