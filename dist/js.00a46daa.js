@@ -19565,10 +19565,34 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
 Simple string based component to quickly get html on the screen
 
 TODO
+- break out events into own key in the props
+- break out tweens into own key in the props - on over, out, click, move, enter, exit
+- styles
+- return a function that renders?
+- COMPOSITION enable more functionality
+  withShadow(alignRight(rootComp))
+  are these styles or functionality?
+  BOTH
 - h like helper fn that returns a new instance
   - first param accepts string tag type or comp class?
 - support gsap tweens
 - rerender on state update
+
+Mouse over and out
+Click
+Mouse down
+Mouse up
+Hover
+Scroll
+Resize
+
+Enter view
+Exit view
+Mouse near - Proximity
+On render
+On state change
+On update
+On remove
  */
 var Component =
 /*#__PURE__*/
@@ -19582,6 +19606,8 @@ function () {
     this.children = _is.default.array(children) ? children : [children];
     this.props = props;
     this.attrs = props.attrs || {};
+    this.triggers = props.triggers || {};
+    this.tweens = props.tweens || {};
     this.internalState = {};
     this.renderedElement = null;
     this.renderedElementParent = null;
@@ -19597,9 +19623,7 @@ function () {
       this.$setTagAttrs(element)(this.attrs);
       this.$renderChildren(element);
       fragment.appendChild(element);
-      this.$getEventsAttrs(this.attrs).forEach(function (evt) {
-        element.addEventListener(evt.event, evt.handler);
-      });
+      this.$applyTriggers(element, this.$mapTriggers(this.triggers));
       return element;
     }
   }, {
@@ -19620,7 +19644,7 @@ function () {
     key: "renderTo",
     value: function renderTo(root) {
       if (!root) {
-        console.error("Can't render component to null root");
+        console.error("Componenet: Can't render component to null root");
       }
 
       var element = this.$render();
@@ -19631,19 +19655,18 @@ function () {
   }, {
     key: "$update",
     value: function $update() {
-      this.remove();
-      this.renderedElement = (0, _DOMToolbox.replaceElementWith)(this.renderedElement, this.$render());
+      if (this.renderedElement) {
+        this.remove();
+        this.renderedElement = (0, _DOMToolbox.replaceElementWith)(this.renderedElement, this.$render());
+      } else {
+        console.log(this.tag, this.props);
+        console.warn("can't update because it's not here!!!");
+      }
     }
   }, {
     key: "remove",
     value: function remove() {
-      var _this2 = this;
-
-      this.$getEventsAttrs(this.attrs).forEach(function (evt) {
-        try {
-          _this2.renderedElement.removeEventListener(evt.event, evt.handler);
-        } catch (e) {}
-      });
+      this.$removeTriggers(this.renderedElement, this.$mapTriggers(this.triggers));
       this.children.forEach(function (child) {
         if (_is.default.object(child) && typeof child.remove === 'function') {
           child.remove();
@@ -19713,29 +19736,60 @@ function () {
 exports.default = Component;
 
 var _initialiseProps = function _initialiseProps() {
-  this.$getEventsAttrs = function (props) {
+  var _this2 = this;
+
+  this.$mapTriggers = function (props) {
     return Object.keys(props).reduce(function (acc, key) {
       var value = props[key];
-
-      if (_is.default.func(value)) {
-        acc.push({
-          event: key,
-          handler: value
-        });
-      }
-
+      acc.push({
+        event: key,
+        externalHandler: value,
+        internalHandler: null
+      });
       return acc;
     }, []);
+  };
+
+  this.$applyTriggers = function (element, triggerMap) {
+    triggerMap.forEach(function (evt) {
+      evt.internalHandler = _this2.$handleEventTrigger(evt);
+      element.addEventListener(evt.event, evt.internalHandler);
+    });
+  };
+
+  this.$createEventPacket = function (e) {
+    return {
+      event: e,
+      component: _this2,
+      element: _this2.current
+    };
+  };
+
+  this.$handleObservableTrigger = function (condition) {
+    return function (e) {// TODO implement
+    };
+  };
+
+  this.$handleEventTrigger = function (evt) {
+    return function (e) {
+      evt.externalHandler(_this2.$createEventPacket(e));
+    };
+  };
+
+  this.$removeTriggers = function (element, triggerMap) {
+    triggerMap.forEach(function (evt) {
+      try {
+        element.removeEventListener(evt.event, evt.internalHandler);
+      } catch (e) {}
+    });
   };
 
   this.$setTagAttrs = function (element) {
     return function (props) {
       return Object.keys(props).forEach(function (key) {
-        var value = props[key];
+        var value = props[key]; //if (!Is.func(value)) {
 
-        if (!_is.default.func(value)) {
-          element.setAttribute(key, value);
-        }
+        element.setAttribute(key, value); //}
       });
     };
   };
@@ -19756,9 +19810,17 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
+function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
+
+function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
+
 function _possibleConstructorReturn(self, call) { if (call && (_typeof(call) === "object" || typeof call === "function")) { return call; } return _assertThisInitialized(self); }
 
 function _assertThisInitialized(self) { if (self === void 0) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return self; }
+
+function _get(target, property, receiver) { if (typeof Reflect !== "undefined" && Reflect.get) { _get = Reflect.get; } else { _get = function _get(target, property, receiver) { var base = _superPropBase(target, property); if (!base) return; var desc = Object.getOwnPropertyDescriptor(base, property); if (desc.get) { return desc.get.call(receiver); } return desc.value; }; } return _get(target, property, receiver || target); }
+
+function _superPropBase(object, property) { while (!Object.prototype.hasOwnProperty.call(object, property)) { object = _getPrototypeOf(object); if (object === null) break; } return object; }
 
 function _getPrototypeOf(o) { _getPrototypeOf = Object.setPrototypeOf ? Object.getPrototypeOf : function _getPrototypeOf(o) { return o.__proto__ || Object.getPrototypeOf(o); }; return _getPrototypeOf(o); }
 
@@ -19766,6 +19828,9 @@ function _inherits(subClass, superClass) { if (typeof superClass !== "function" 
 
 function _setPrototypeOf(o, p) { _setPrototypeOf = Object.setPrototypeOf || function _setPrototypeOf(o, p) { o.__proto__ = p; return o; }; return _setPrototypeOf(o, p); }
 
+/*
+How to scope THIS?
+ */
 var Greeter =
 /*#__PURE__*/
 function (_Component) {
@@ -19774,14 +19839,30 @@ function (_Component) {
   function Greeter() {
     var _this;
 
+    var props = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+    var children = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : [];
+
     _classCallCheck(this, Greeter);
 
+    //{attrs:{click: this._onClick}
     _this = _possibleConstructorReturn(this, _getPrototypeOf(Greeter).call(this, 'h1', {}, ['Hello, <em>{{name}}!</em>']));
+
+    _this._onClick = function (e) {
+      return console.log('greeter click!');
+    };
+
     _this.internalState = {
       name: 'Matt'
     };
     return _this;
   }
+
+  _createClass(Greeter, [{
+    key: "renderTo",
+    value: function renderTo(el) {
+      _get(_getPrototypeOf(Greeter.prototype), "renderTo", this).call(this, el);
+    }
+  }]);
 
   return Greeter;
 }(_Component2.default);
@@ -20123,7 +20204,37 @@ module.exports = {
   date: date,
   guid: guid
 };
-},{"./NumberUtils":"js/nori/util/NumberUtils.js","./StringUtils":"js/nori/util/StringUtils.js","./Toolbox":"js/nori/util/Toolbox.js"}],"js/index.js":[function(require,module,exports) {
+},{"./NumberUtils":"js/nori/util/NumberUtils.js","./StringUtils":"js/nori/util/StringUtils.js","./Toolbox":"js/nori/util/Toolbox.js"}],"js/nori/C.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.render = exports.c = void 0;
+
+var _Component = _interopRequireDefault(require("./Component"));
+
+var _is = _interopRequireDefault(require("./util/is"));
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+var c = function c(componentType, props, children) {
+  if (_is.default.string(componentType)) {
+    return new _Component.default(componentType, props, children);
+  } // TODO what should this be other than a div
+
+
+  return new componentType("div", props, children);
+};
+
+exports.c = c;
+
+var render = function render(component, root) {
+  component.renderTo(root);
+};
+
+exports.render = render;
+},{"./Component":"js/nori/Component.js","./util/is":"js/nori/util/is.js"}],"js/index.js":[function(require,module,exports) {
 "use strict";
 
 var GlobalCSS = _interopRequireWildcard(require("./theme/Global"));
@@ -20135,6 +20246,8 @@ var _Component = _interopRequireDefault(require("./nori/Component"));
 var _Greeter = _interopRequireDefault(require("./Greeter"));
 
 var Lorem = _interopRequireWildcard(require("./nori/util/Lorem"));
+
+var _C = require("./nori/C");
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -20183,28 +20296,40 @@ function _taggedTemplateLiteral(strings, raw) { if (!raw) { raw = strings.slice(
     attrs: {
       class: blue
     }
-  }, [text, 'there ']); //{class: red, click: (e) => {greeting.remove();}},
+  }, [text, 'there ']);
+
+  var _onGreetClick = function _onGreetClick(evt) {
+    console.log('greet!', evt);
+    evt.component.state = {
+      foo: Lorem.firstLastName(),
+      bar: Lorem.text(2, 6)
+    };
+  }; //{class: red, click: (e) => {greeting.remove();}},
+
 
   var greeting = new _Component.default("p", {
     attrs: {
-      class: red,
-      click: function click(e) {
-        greeting.state = {
-          foo: Lorem.firstLastName(),
-          bar: Lorem.text(2, 6)
-        };
-      }
+      class: red
+    },
+    triggers: {
+      click: _onGreetClick
     }
-  }, ['Hello <strong>{{foo}}</strong>', text, text2, text3, 'What\'s the {{bar}}']); // let greeting = new Greeter();
-  // console.log(greeting.$render());
+  }, ['Hello <strong>{{foo}}</strong>', text, text2, text3, 'What\'s the {{bar}}']); // text4.renderTo(applicationRoot);
+  // text4.renderTo(applicationRoot);
+  // greeting.renderTo(applicationRoot);
+  // text4.renderTo(applicationRoot);
+  // text4.renderTo(applicationRoot);
+  // let com = c(`p`,
+  //   {attrs:{class: red, click: (e) => {this.state = {foo:Lorem.firstLastName(), bar:Lorem.text(2,6)};}}},
+  //   ['Hello <strong>{{foo}}</strong>', text, text2, text3, 'What\'s the {{bar}}' ]);
+  //
+  // let com = c(Greeter, {},[]);
+  // render(com, applicationRoot);
+  // let greeting = new Greeter({}, []);
 
-  text4.renderTo(applicationRoot);
-  text4.renderTo(applicationRoot);
   greeting.renderTo(applicationRoot);
-  text4.renderTo(applicationRoot);
-  text4.renderTo(applicationRoot);
 })(window);
-},{"./theme/Global":"js/theme/Global.js","emotion":"../node_modules/emotion/dist/index.esm.js","./nori/Component":"js/nori/Component.js","./Greeter":"js/Greeter.js","./nori/util/Lorem":"js/nori/util/Lorem.js"}],"../node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
+},{"./theme/Global":"js/theme/Global.js","emotion":"../node_modules/emotion/dist/index.esm.js","./nori/Component":"js/nori/Component.js","./Greeter":"js/Greeter.js","./nori/util/Lorem":"js/nori/util/Lorem.js","./nori/C":"js/nori/C.js"}],"../node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
 var global = arguments[3];
 var OVERLAY_ID = '__parcel__error__overlay__';
 var OldModule = module.bundle.Module;

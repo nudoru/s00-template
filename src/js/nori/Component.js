@@ -16,10 +16,34 @@ import {getNextId} from './util/ElementIDCreator';
 Simple string based component to quickly get html on the screen
 
 TODO
+- break out events into own key in the props
+- break out tweens into own key in the props - on over, out, click, move, enter, exit
+- styles
+- return a function that renders?
+- COMPOSITION enable more functionality
+  withShadow(alignRight(rootComp))
+  are these styles or functionality?
+  BOTH
 - h like helper fn that returns a new instance
   - first param accepts string tag type or comp class?
 - support gsap tweens
 - rerender on state update
+
+Mouse over and out
+Click
+Mouse down
+Mouse up
+Hover
+Scroll
+Resize
+
+Enter view
+Exit view
+Mouse near - Proximity
+On render
+On state change
+On update
+On remove
  */
 export default class Component {
 
@@ -29,6 +53,8 @@ export default class Component {
     this.props    = props;
 
     this.attrs                 = props.attrs || {};
+    this.triggers              = props.triggers || {};
+    this.tweens                = props.tweens || {};
     this.internalState         = {};
     this.renderedElement       = null;
     this.renderedElementParent = null;
@@ -71,34 +97,60 @@ export default class Component {
     return isElementInViewport(this.current);
   }
 
-  $getEventsAttrs = (props) => Object.keys(props).reduce((acc, key) => {
+  $mapTriggers = (props) => Object.keys(props).reduce((acc, key) => {
     let value = props[key];
-    if (Is.func(value)) {
-      acc.push({event: key, handler: value});
-    }
+    acc.push({event: key, externalHandler: value, internalHandler: null});
     return acc;
   }, []);
 
+  $applyTriggers = (element, triggerMap) => {
+    triggerMap.forEach(evt => {
+      evt.internalHandler = this.$handleEventTrigger(evt);
+      element.addEventListener(evt.event, evt.internalHandler);
+    });
+  };
+
+  $createEventPacket = e => ({
+    event    : e,
+    component: this,
+    element  : this.current
+  });
+
+  $handleObservableTrigger = condition => e => {
+    // TODO implement
+  };
+
+  $handleEventTrigger = evt => e => {
+    evt.externalHandler(this.$createEventPacket(e));
+  };
+
+  $removeTriggers = (element, triggerMap) => {
+    triggerMap.forEach(evt => {
+      try {
+        element.removeEventListener(evt.event, evt.internalHandler);
+      } catch (e) {
+      }
+    });
+  };
+
   $render() {
-    let fragment = document.createDocumentFragment();
-    let element = document.createElement(this.tag);
+    let fragment           = document.createDocumentFragment();
+    let element            = document.createElement(this.tag);
     this.attrs['data-nid'] = getNextId(); // create a unique ID for every render
     this.$setTagAttrs(element)(this.attrs);
     this.$renderChildren(element);
     fragment.appendChild(element);
 
-    this.$getEventsAttrs(this.attrs).forEach(evt => {
-      element.addEventListener(evt.event, evt.handler);
-    });
+    this.$applyTriggers(element, this.$mapTriggers(this.triggers));
 
     return element;
   }
 
   $setTagAttrs = (element) => (props) => Object.keys(props).forEach(key => {
     let value = props[key];
-    if (!Is.func(value)) {
-      element.setAttribute(key, value);
-    }
+    //if (!Is.func(value)) {
+    element.setAttribute(key, value);
+    //}
   });
 
   $renderChildren(root) {
@@ -113,8 +165,8 @@ export default class Component {
   }
 
   renderTo(root) {
-    if(!root) {
-      console.error(`Can't render component to null root`);
+    if (!root) {
+      console.error(`Componenet: Can't render component to null root`);
     }
     const element = this.$render();
     root.appendChild(element);
@@ -124,17 +176,17 @@ export default class Component {
   }
 
   $update() {
-    this.remove();
-    this.renderedElement = replaceElementWith(this.renderedElement, this.$render())
+    if (this.renderedElement) {
+      this.remove();
+      this.renderedElement = replaceElementWith(this.renderedElement, this.$render())
+    } else {
+      console.log(this.tag, this.props);
+      console.warn(`can't update because it's not here!!!`)
+    }
   }
 
   remove() {
-    this.$getEventsAttrs(this.attrs).forEach(evt => {
-      try {
-        this.renderedElement.removeEventListener(evt.event, evt.handler);
-      } catch (e) {
-      }
-    });
+    this.$removeTriggers(this.renderedElement, this.$mapTriggers(this.triggers));
     this.children.forEach(child => {
       if (Is.object(child) && typeof child.remove === 'function') {
         child.remove();
