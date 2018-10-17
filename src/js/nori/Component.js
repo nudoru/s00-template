@@ -103,12 +103,10 @@ export default class Component {
     return acc;
   }, []);
 
-  $applyTriggers = (element, triggerMap) => {
-    triggerMap.forEach(evt => {
-      evt.internalHandler = this.$handleEventTrigger(evt);
-      element.addEventListener(evt.event, evt.internalHandler);
-    });
-  };
+  $applyTriggers = (element, triggerMap) => triggerMap.forEach(evt => {
+    evt.internalHandler = this.$handleEventTrigger(evt);
+    element.addEventListener(evt.event, evt.internalHandler);
+  });
 
   $createEventPacket = e => ({
     event    : e,
@@ -120,53 +118,43 @@ export default class Component {
     // TODO implement
   };
 
-  $handleEventTrigger = evt => e => {
-    evt.externalHandler(this.$createEventPacket(e));
-  };
+  $handleEventTrigger = evt => e => evt.externalHandler(this.$createEventPacket(e));
 
-  $removeTriggers = (element, triggerMap) => {
-    triggerMap.forEach(evt => {
-      try {
-        element.removeEventListener(evt.event, evt.internalHandler);
-      } catch (e) {
-      }
-    });
-  };
+  $removeTriggers = (element, triggerMap) => triggerMap.forEach(evt => {
+    try {
+      element.removeEventListener(evt.event, evt.internalHandler);
+    } catch (e) {
+    }
+  });
 
   $render() {
     let fragment           = document.createDocumentFragment();
     let element            = document.createElement(this.tag);
     this.attrs['data-nid'] = getNextId(); // create a unique ID for every render
-    this.$setTagAttrs(element)(this.attrs);
+    this.$setTagAttrs(element, this.attrs);
     this.$renderChildren(element);
     fragment.appendChild(element);
-
     this.$applyTriggers(element, this.$mapTriggers(this.triggers));
-
     return element;
   }
 
-  $setTagAttrs = (element) => (props) => Object.keys(props).forEach(key => {
-    let value = props[key];
-    //if (!Is.func(value)) {
+  $setTagAttrs = (element, attributes) => Object.keys(attributes).forEach(key => {
+    let value = attributes[key];
     element.setAttribute(key, value);
-    //}
   });
 
-  $renderChildren(root) {
-    this.children.forEach(child => {
-      if (Is.string(child)) {
-        let text = HTMLStrToNode(Mustache.render(child, this.internalState));
-        root.appendChild(text);
-      } else if (Is.object(child) && typeof child.renderTo === 'function') {
-        return child.renderTo(root);
-      }
-    });
-  }
+  $renderChildren = root => this.children.forEach(child => {
+    if (Is.string(child)) {
+      let text = HTMLStrToNode(Mustache.render(child, this.internalState));
+      root.appendChild(text);
+    } else if (Is.object(child) && typeof child.renderTo === 'function') {
+      child.renderTo(root);
+    }
+  });
 
   renderTo(root) {
     if (!root) {
-      console.error(`Componenet: Can't render component to null root`);
+      console.error(`Component: Can't render component to null root`);
     }
     const element = this.$render();
     root.appendChild(element);

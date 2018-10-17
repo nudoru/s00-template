@@ -19620,31 +19620,17 @@ function () {
       var element = document.createElement(this.tag);
       this.attrs['data-nid'] = (0, _ElementIDCreator.getNextId)(); // create a unique ID for every render
 
-      this.$setTagAttrs(element)(this.attrs);
+      this.$setTagAttrs(element, this.attrs);
       this.$renderChildren(element);
       fragment.appendChild(element);
       this.$applyTriggers(element, this.$mapTriggers(this.triggers));
       return element;
     }
   }, {
-    key: "$renderChildren",
-    value: function $renderChildren(root) {
-      var _this = this;
-
-      this.children.forEach(function (child) {
-        if (_is.default.string(child)) {
-          var text = (0, _DOMToolbox.HTMLStrToNode)(_mustache.default.render(child, _this.internalState));
-          root.appendChild(text);
-        } else if (_is.default.object(child) && typeof child.renderTo === 'function') {
-          return child.renderTo(root);
-        }
-      });
-    }
-  }, {
     key: "renderTo",
     value: function renderTo(root) {
       if (!root) {
-        console.error("Componenet: Can't render component to null root");
+        console.error("Component: Can't render component to null root");
       }
 
       var element = this.$render();
@@ -19736,7 +19722,7 @@ function () {
 exports.default = Component;
 
 var _initialiseProps = function _initialiseProps() {
-  var _this2 = this;
+  var _this = this;
 
   this.$mapTriggers = function (props) {
     return Object.keys(props).reduce(function (acc, key) {
@@ -19751,8 +19737,8 @@ var _initialiseProps = function _initialiseProps() {
   };
 
   this.$applyTriggers = function (element, triggerMap) {
-    triggerMap.forEach(function (evt) {
-      evt.internalHandler = _this2.$handleEventTrigger(evt);
+    return triggerMap.forEach(function (evt) {
+      evt.internalHandler = _this.$handleEventTrigger(evt);
       element.addEventListener(evt.event, evt.internalHandler);
     });
   };
@@ -19760,8 +19746,8 @@ var _initialiseProps = function _initialiseProps() {
   this.$createEventPacket = function (e) {
     return {
       event: e,
-      component: _this2,
-      element: _this2.current
+      component: _this,
+      element: _this.current
     };
   };
 
@@ -19772,26 +19758,34 @@ var _initialiseProps = function _initialiseProps() {
 
   this.$handleEventTrigger = function (evt) {
     return function (e) {
-      evt.externalHandler(_this2.$createEventPacket(e));
+      return evt.externalHandler(_this.$createEventPacket(e));
     };
   };
 
   this.$removeTriggers = function (element, triggerMap) {
-    triggerMap.forEach(function (evt) {
+    return triggerMap.forEach(function (evt) {
       try {
         element.removeEventListener(evt.event, evt.internalHandler);
       } catch (e) {}
     });
   };
 
-  this.$setTagAttrs = function (element) {
-    return function (props) {
-      return Object.keys(props).forEach(function (key) {
-        var value = props[key]; //if (!Is.func(value)) {
+  this.$setTagAttrs = function (element, attributes) {
+    return Object.keys(attributes).forEach(function (key) {
+      var value = attributes[key];
+      element.setAttribute(key, value);
+    });
+  };
 
-        element.setAttribute(key, value); //}
-      });
-    };
+  this.$renderChildren = function (root) {
+    return _this.children.forEach(function (child) {
+      if (_is.default.string(child)) {
+        var text = (0, _DOMToolbox.HTMLStrToNode)(_mustache.default.render(child, _this.internalState));
+        root.appendChild(text);
+      } else if (_is.default.object(child) && typeof child.renderTo === 'function') {
+        child.renderTo(root);
+      }
+    });
   };
 };
 },{"mustache":"../node_modules/mustache/mustache.js","ramda":"../node_modules/ramda/es/index.js","./util/is":"js/nori/util/is.js","./browser/DOMToolbox":"js/nori/browser/DOMToolbox.js","./util/ElementIDCreator":"js/nori/util/ElementIDCreator.js"}],"js/Greeter.js":[function(require,module,exports) {
