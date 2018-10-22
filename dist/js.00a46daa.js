@@ -1565,11 +1565,12 @@ var theme = {
   },
   radii: ['3px', modularScale.ms0],
   fontSizes: [modularScale['ms-1'], '0.8rem', modularScale.ms0, modularScale.ms2],
-  habitat: {
-    cardWidth: 300,
-    cardHeight: 350,
-    backgroundSize: 100,
-    backgroundSizeSelected: 300
+  animation: {
+    vfast: 0.1,
+    fast: 0.2,
+    default: 0.3,
+    slow: 0.4,
+    vslow: 0.5
   }
 };
 exports.theme = theme;
