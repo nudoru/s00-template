@@ -21,11 +21,24 @@ import {c, render} from './nori/C';
     evt.component.state = {foo:Lorem.firstLastName(), bar:Lorem.text(2,6)};
   };
 
+  const _onGreetRender = evt => {
+    console.log('greet rendered!', evt);
+  };
+
+  const _onGreetUpdate = evt => {
+    console.log('greet update!', evt);
+  };
+
   //{class: red, click: (e) => {greeting.remove();}},
   let greeting = new Component(`p`,
     {
       attrs:{class: red},
-      triggers:{click: _onGreetClick}
+      triggers:{
+        click: _onGreetClick,
+        render: _onGreetRender,
+        update: _onGreetUpdate,
+
+      }
     },
     ['Hello <strong>{{foo}}</strong>', text, text2, text3, 'What\'s the {{bar}}' ]);
 

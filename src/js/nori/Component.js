@@ -9,7 +9,7 @@ import {
   removeElement,
   replaceElementWith
 } from './browser/DOMToolbox';
-
+import {isDomEvent} from "./events/DomEvents";
 import {getNextId} from './util/ElementIDCreator';
 
 /*
@@ -27,24 +27,23 @@ TODO
 - h like helper fn that returns a new instance
   - first param accepts string tag type or comp class?
 - support gsap tweens
-- rerender on state update
 
-Mouse over and out
-Click
-Mouse down
-Mouse up
-Hover
-Scroll
-Resize
 
-Enter view
-Exit view
-Mouse near - Proximity
-On render
-On state change
-On update
-On remove
  */
+
+const TRIGGER_EVENT    = 'event';
+const TRIGGER_BEHAVIOR = 'behavior';
+
+export const BEHAVIOR_SCOLLIN     = 'scrollIn';
+export const BEHAVIOR_SCROLLOUT   = 'scrollOut';
+export const BEHAVIOR_MOUSENEAR   = 'mouseNear';
+export const BEHAVIOR_RENDER      = 'render';       // on initial render only
+export const BEHAVIOR_STATECHANGE = 'stateChange';
+export const BEHAVIOR_UPDATE      = 'update';       // rerender
+export const BEHAVIOR_WILLREMOVE  = 'willRemove';
+
+const BEHAVIORS = [BEHAVIOR_MOUSENEAR, BEHAVIOR_WILLREMOVE, BEHAVIOR_RENDER, BEHAVIOR_SCOLLIN, BEHAVIOR_SCROLLOUT, BEHAVIOR_STATECHANGE, BEHAVIOR_UPDATE];
+
 export default class Component {
 
   constructor(tag, props, children) {
@@ -52,10 +51,12 @@ export default class Component {
     this.children = Is.array(children) ? children : [children];
     this.props    = props;
 
-    this.attrs                 = props.attrs || {};
-    this.triggers              = props.triggers || {};
-    this.tweens                = props.tweens || {};
-    this.internalState         = {};
+    this.attrs         = props.attrs || {};
+    // this.triggers              = props.triggers || {};
+    this.tweens        = props.tweens || {};
+    this.internalState = props.state || {};
+    this.triggerMap    = this.$mapTriggers(props.triggers || {});
+
     this.renderedElement       = null;
     this.renderedElementParent = null;
   }
@@ -71,6 +72,9 @@ export default class Component {
     }
 
     this.internalState = Object.assign({}, this.internalState, nextState);
+
+    this.$performBehavior(BEHAVIOR_STATECHANGE);
+
     this.$update();
   }
 
@@ -97,15 +101,46 @@ export default class Component {
     return isElementInViewport(this.current);
   }
 
+  // $hasBehaviorTrigger = behavior =>
+
+  $onScroll = e => {
+    // TEST for in to view?
+  };
+
+  $onMouseMove = e => {
+    // test for proximity
+  };
+
   $mapTriggers = (props) => Object.keys(props).reduce((acc, key) => {
     let value = props[key];
-    acc.push({event: key, externalHandler: value, internalHandler: null});
+    if (isDomEvent(key)) {
+      acc.push({
+        type           : TRIGGER_EVENT,
+        event          : key,
+        externalHandler: value, // passed in handler
+        internalHandler: null   // Will be assigned in $applyTriggers
+      });
+    } else if (BEHAVIORS.indexOf(key)) {
+      acc.push({
+        type           : TRIGGER_BEHAVIOR,
+        event          : key,
+        externalHandler: value, // passed in handler
+        internalHandler: null   // Not used for behavior
+      });
+    } else {
+      console.warn(`Unknown component trigger '${key}'`);
+    }
+
     return acc;
   }, []);
 
   $applyTriggers = (element, triggerMap) => triggerMap.forEach(evt => {
-    evt.internalHandler = this.$handleEventTrigger(evt);
-    element.addEventListener(evt.event, evt.internalHandler);
+    if (evt.type === TRIGGER_EVENT) {
+      evt.internalHandler = this.$handleEventTrigger(evt);
+      element.addEventListener(evt.event, evt.internalHandler);
+    } else {
+      // evt.internalHandler = this.$handleBehaviorTrigger(evt);
+    }
   });
 
   $createEventPacket = e => ({
@@ -114,17 +149,26 @@ export default class Component {
     element  : this.current
   });
 
-  $handleObservableTrigger = condition => e => {
-    // TODO implement
+  $handleBehaviorTrigger = behavior => e => {
+    console.log(`${behavior}:`, e)
   };
+
+  $performBehavior = (behavior, e) => this.triggerMap.forEach(evt => {
+    if (evt.type === TRIGGER_BEHAVIOR && evt.event === behavior) {
+      // fake an event object
+      let event = e || {type: behavior, target: this.current};
+      evt.externalHandler(this.$createEventPacket(event));
+    }
+  });
 
   $handleEventTrigger = evt => e => evt.externalHandler(this.$createEventPacket(e));
 
   $removeTriggers = (element, triggerMap) => triggerMap.forEach(evt => {
-    try {
+    // try {
+    if (evt.type === TRIGGER_EVENT) {
       element.removeEventListener(evt.event, evt.internalHandler);
-    } catch (e) {
     }
+    // } catch (e) {}
   });
 
   $render() {
@@ -134,7 +178,7 @@ export default class Component {
     this.$setTagAttrs(element, this.attrs);
     this.$renderChildren(element);
     fragment.appendChild(element);
-    this.$applyTriggers(element, this.$mapTriggers(this.triggers));
+    this.$applyTriggers(element, this.triggerMap);
     return element;
   }
 
@@ -161,12 +205,15 @@ export default class Component {
 
     this.renderedElementParent = root;
     this.renderedElement       = root.lastChild;
+
+    this.$performBehavior(BEHAVIOR_RENDER);
   }
 
   $update() {
     if (this.renderedElement) {
       this.remove();
       this.renderedElement = replaceElementWith(this.renderedElement, this.$render())
+      this.$performBehavior(BEHAVIOR_UPDATE);
     } else {
       console.log(this.tag, this.props);
       console.warn(`can't update because it's not here!!!`)
@@ -174,7 +221,9 @@ export default class Component {
   }
 
   remove() {
-    this.$removeTriggers(this.renderedElement, this.$mapTriggers(this.triggers));
+    this.$performBehavior(BEHAVIOR_WILLREMOVE);
+
+    this.$removeTriggers(this.renderedElement, this.triggerMap);
     this.children.forEach(child => {
       if (Is.object(child) && typeof child.remove === 'function') {
         child.remove();
@@ -192,6 +241,7 @@ export default class Component {
     removeElement(this.renderedElement);
     this.renderedElement       = null;
     this.renderedElementParent = null;
+
   }
 
 }

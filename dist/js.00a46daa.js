@@ -19514,7 +19514,23 @@ var centerElementInViewPort = function centerElementInViewPort(el) {
 };
 
 exports.centerElementInViewPort = centerElementInViewPort;
-},{"ramda":"../node_modules/ramda/es/index.js"}],"js/nori/util/ElementIDCreator.js":[function(require,module,exports) {
+},{"ramda":"../node_modules/ramda/es/index.js"}],"js/nori/events/DomEvents.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.isDomEvent = exports.DomEvents = void 0;
+//https://developer.mozilla.org/en-US/docs/Web/Events
+var DomEvents = ['focus', 'blur', 'resize', 'scroll', 'keydown', 'keypress', 'keyup', 'mouseenter', 'mousemove', 'mousedown', 'mouseup', 'click', 'dblclick', 'contextmenu', 'wheel', 'mouseleave', 'mouseout', 'select'];
+exports.DomEvents = DomEvents;
+
+var isDomEvent = function isDomEvent(e) {
+  return DomEvents.indexOf(e) > -1;
+};
+
+exports.isDomEvent = isDomEvent;
+},{}],"js/nori/util/ElementIDCreator.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -19541,7 +19557,7 @@ exports.getNextId = getNextId;
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.default = void 0;
+exports.default = exports.BEHAVIOR_WILLREMOVE = exports.BEHAVIOR_UPDATE = exports.BEHAVIOR_STATECHANGE = exports.BEHAVIOR_RENDER = exports.BEHAVIOR_MOUSENEAR = exports.BEHAVIOR_SCROLLOUT = exports.BEHAVIOR_SCOLLIN = void 0;
 
 var _mustache = _interopRequireDefault(require("mustache"));
 
@@ -19550,6 +19566,8 @@ var _ramda = require("ramda");
 var _is = _interopRequireDefault(require("./util/is"));
 
 var _DOMToolbox = require("./browser/DOMToolbox");
+
+var _DomEvents = require("./events/DomEvents");
 
 var _ElementIDCreator = require("./util/ElementIDCreator");
 
@@ -19576,24 +19594,29 @@ TODO
 - h like helper fn that returns a new instance
   - first param accepts string tag type or comp class?
 - support gsap tweens
-- rerender on state update
 
-Mouse over and out
-Click
-Mouse down
-Mouse up
-Hover
-Scroll
-Resize
 
-Enter view
-Exit view
-Mouse near - Proximity
-On render
-On state change
-On update
-On remove
  */
+var TRIGGER_EVENT = 'event';
+var TRIGGER_BEHAVIOR = 'behavior';
+var BEHAVIOR_SCOLLIN = 'scrollIn';
+exports.BEHAVIOR_SCOLLIN = BEHAVIOR_SCOLLIN;
+var BEHAVIOR_SCROLLOUT = 'scrollOut';
+exports.BEHAVIOR_SCROLLOUT = BEHAVIOR_SCROLLOUT;
+var BEHAVIOR_MOUSENEAR = 'mouseNear';
+exports.BEHAVIOR_MOUSENEAR = BEHAVIOR_MOUSENEAR;
+var BEHAVIOR_RENDER = 'render'; // on initial render only
+
+exports.BEHAVIOR_RENDER = BEHAVIOR_RENDER;
+var BEHAVIOR_STATECHANGE = 'stateChange';
+exports.BEHAVIOR_STATECHANGE = BEHAVIOR_STATECHANGE;
+var BEHAVIOR_UPDATE = 'update'; // rerender
+
+exports.BEHAVIOR_UPDATE = BEHAVIOR_UPDATE;
+var BEHAVIOR_WILLREMOVE = 'willRemove';
+exports.BEHAVIOR_WILLREMOVE = BEHAVIOR_WILLREMOVE;
+var BEHAVIORS = [BEHAVIOR_MOUSENEAR, BEHAVIOR_WILLREMOVE, BEHAVIOR_RENDER, BEHAVIOR_SCOLLIN, BEHAVIOR_SCROLLOUT, BEHAVIOR_STATECHANGE, BEHAVIOR_UPDATE];
+
 var Component =
 /*#__PURE__*/
 function () {
@@ -19605,10 +19628,11 @@ function () {
     this.tag = tag;
     this.children = _is.default.array(children) ? children : [children];
     this.props = props;
-    this.attrs = props.attrs || {};
-    this.triggers = props.triggers || {};
+    this.attrs = props.attrs || {}; // this.triggers              = props.triggers || {};
+
     this.tweens = props.tweens || {};
-    this.internalState = {};
+    this.internalState = props.state || {};
+    this.triggerMap = this.$mapTriggers(props.triggers || {});
     this.renderedElement = null;
     this.renderedElementParent = null;
   }
@@ -19623,7 +19647,7 @@ function () {
       this.$setTagAttrs(element, this.attrs);
       this.$renderChildren(element);
       fragment.appendChild(element);
-      this.$applyTriggers(element, this.$mapTriggers(this.triggers));
+      this.$applyTriggers(element, this.triggerMap);
       return element;
     }
   }, {
@@ -19637,6 +19661,7 @@ function () {
       root.appendChild(element);
       this.renderedElementParent = root;
       this.renderedElement = root.lastChild;
+      this.$performBehavior(BEHAVIOR_RENDER);
     }
   }, {
     key: "$update",
@@ -19644,6 +19669,7 @@ function () {
       if (this.renderedElement) {
         this.remove();
         this.renderedElement = (0, _DOMToolbox.replaceElementWith)(this.renderedElement, this.$render());
+        this.$performBehavior(BEHAVIOR_UPDATE);
       } else {
         console.log(this.tag, this.props);
         console.warn("can't update because it's not here!!!");
@@ -19652,7 +19678,8 @@ function () {
   }, {
     key: "remove",
     value: function remove() {
-      this.$removeTriggers(this.renderedElement, this.$mapTriggers(this.triggers));
+      this.$performBehavior(BEHAVIOR_WILLREMOVE);
+      this.$removeTriggers(this.renderedElement, this.triggerMap);
       this.children.forEach(function (child) {
         if (_is.default.object(child) && typeof child.remove === 'function') {
           child.remove();
@@ -19685,6 +19712,7 @@ function () {
       }
 
       this.internalState = Object.assign({}, this.internalState, nextState);
+      this.$performBehavior(BEHAVIOR_STATECHANGE);
       this.$update();
     },
     get: function get() {
@@ -19713,7 +19741,8 @@ function () {
     key: "isInViewport",
     get: function get() {
       return (0, _DOMToolbox.isElementInViewport)(this.current);
-    }
+    } // $hasBehaviorTrigger = behavior =>
+
   }]);
 
   return Component;
@@ -19724,22 +19753,49 @@ exports.default = Component;
 var _initialiseProps = function _initialiseProps() {
   var _this = this;
 
+  this.$onScroll = function (e) {// TEST for in to view?
+  };
+
+  this.$onMouseMove = function (e) {// test for proximity
+  };
+
   this.$mapTriggers = function (props) {
     return Object.keys(props).reduce(function (acc, key) {
       var value = props[key];
-      acc.push({
-        event: key,
-        externalHandler: value,
-        internalHandler: null
-      });
+
+      if ((0, _DomEvents.isDomEvent)(key)) {
+        acc.push({
+          type: TRIGGER_EVENT,
+          event: key,
+          externalHandler: value,
+          // passed in handler
+          internalHandler: null // Will be assigned in $applyTriggers
+
+        });
+      } else if (BEHAVIORS.indexOf(key)) {
+        acc.push({
+          type: TRIGGER_BEHAVIOR,
+          event: key,
+          externalHandler: value,
+          // passed in handler
+          internalHandler: null // Not used for behavior
+
+        });
+      } else {
+        console.warn("Unknown component trigger '".concat(key, "'"));
+      }
+
       return acc;
     }, []);
   };
 
   this.$applyTriggers = function (element, triggerMap) {
     return triggerMap.forEach(function (evt) {
-      evt.internalHandler = _this.$handleEventTrigger(evt);
-      element.addEventListener(evt.event, evt.internalHandler);
+      if (evt.type === TRIGGER_EVENT) {
+        evt.internalHandler = _this.$handleEventTrigger(evt);
+        element.addEventListener(evt.event, evt.internalHandler);
+      } else {// evt.internalHandler = this.$handleBehaviorTrigger(evt);
+      }
     });
   };
 
@@ -19751,9 +19807,23 @@ var _initialiseProps = function _initialiseProps() {
     };
   };
 
-  this.$handleObservableTrigger = function (condition) {
-    return function (e) {// TODO implement
+  this.$handleBehaviorTrigger = function (behavior) {
+    return function (e) {
+      console.log("".concat(behavior, ":"), e);
     };
+  };
+
+  this.$performBehavior = function (behavior, e) {
+    return _this.triggerMap.forEach(function (evt) {
+      if (evt.type === TRIGGER_BEHAVIOR && evt.event === behavior) {
+        // fake an event object
+        var event = e || {
+          type: behavior,
+          target: _this.current
+        };
+        evt.externalHandler(_this.$createEventPacket(event));
+      }
+    });
   };
 
   this.$handleEventTrigger = function (evt) {
@@ -19764,9 +19834,11 @@ var _initialiseProps = function _initialiseProps() {
 
   this.$removeTriggers = function (element, triggerMap) {
     return triggerMap.forEach(function (evt) {
-      try {
+      // try {
+      if (evt.type === TRIGGER_EVENT) {
         element.removeEventListener(evt.event, evt.internalHandler);
-      } catch (e) {}
+      } // } catch (e) {}
+
     });
   };
 
@@ -19788,7 +19860,7 @@ var _initialiseProps = function _initialiseProps() {
     });
   };
 };
-},{"mustache":"../node_modules/mustache/mustache.js","ramda":"../node_modules/ramda/es/index.js","./util/is":"js/nori/util/is.js","./browser/DOMToolbox":"js/nori/browser/DOMToolbox.js","./util/ElementIDCreator":"js/nori/util/ElementIDCreator.js"}],"js/Greeter.js":[function(require,module,exports) {
+},{"mustache":"../node_modules/mustache/mustache.js","ramda":"../node_modules/ramda/es/index.js","./util/is":"js/nori/util/is.js","./browser/DOMToolbox":"js/nori/browser/DOMToolbox.js","./events/DomEvents":"js/nori/events/DomEvents.js","./util/ElementIDCreator":"js/nori/util/ElementIDCreator.js"}],"js/Greeter.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -20298,6 +20370,14 @@ function _taggedTemplateLiteral(strings, raw) { if (!raw) { raw = strings.slice(
       foo: Lorem.firstLastName(),
       bar: Lorem.text(2, 6)
     };
+  };
+
+  var _onGreetRender = function _onGreetRender(evt) {
+    console.log('greet rendered!', evt);
+  };
+
+  var _onGreetUpdate = function _onGreetUpdate(evt) {
+    console.log('greet update!', evt);
   }; //{class: red, click: (e) => {greeting.remove();}},
 
 
@@ -20306,7 +20386,9 @@ function _taggedTemplateLiteral(strings, raw) { if (!raw) { raw = strings.slice(
       class: red
     },
     triggers: {
-      click: _onGreetClick
+      click: _onGreetClick,
+      render: _onGreetRender,
+      update: _onGreetUpdate
     }
   }, ['Hello <strong>{{foo}}</strong>', text, text2, text3, 'What\'s the {{bar}}']); // text4.renderTo(applicationRoot);
   // text4.renderTo(applicationRoot);
