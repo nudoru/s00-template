@@ -19558,7 +19558,7 @@ exports.getNextId = getNextId;
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.default = exports.BEHAVIOR_WILLREMOVE = exports.BEHAVIOR_UPDATE = exports.BEHAVIOR_STATECHANGE = exports.BEHAVIOR_RENDER = exports.BEHAVIOR_MOUSENEAR = exports.BEHAVIOR_SCROLLOUT = exports.BEHAVIOR_SCOLLIN = void 0;
+exports.default = exports.BEHAVIOR_DIDDELETE = exports.BEHAVIOR_WILLREMOVE = exports.BEHAVIOR_UPDATE = exports.BEHAVIOR_STATECHANGE = exports.BEHAVIOR_RENDER = exports.BEHAVIOR_MOUSENEAR = exports.BEHAVIOR_SCROLLOUT = exports.BEHAVIOR_SCOLLIN = void 0;
 
 var _mustache = _interopRequireDefault(require("mustache"));
 
@@ -19616,6 +19616,8 @@ var BEHAVIOR_UPDATE = 'update'; // rerender
 exports.BEHAVIOR_UPDATE = BEHAVIOR_UPDATE;
 var BEHAVIOR_WILLREMOVE = 'willRemove';
 exports.BEHAVIOR_WILLREMOVE = BEHAVIOR_WILLREMOVE;
+var BEHAVIOR_DIDDELETE = 'didDelete';
+exports.BEHAVIOR_DIDDELETE = BEHAVIOR_DIDDELETE;
 var BEHAVIORS = [BEHAVIOR_MOUSENEAR, BEHAVIOR_WILLREMOVE, BEHAVIOR_RENDER, BEHAVIOR_SCOLLIN, BEHAVIOR_SCROLLOUT, BEHAVIOR_STATECHANGE, BEHAVIOR_UPDATE];
 
 var Component =
@@ -19639,6 +19641,19 @@ function () {
   }
 
   _createClass(Component, [{
+    key: "getDistanceFromCursor",
+    // also touch
+    value: function getDistanceFromCursor(mevt) {
+      var offset = this.offset;
+    } // also touch
+
+  }, {
+    key: "getCursorPositionOnElement",
+    value: function getCursorPositionOnElement(mevt) {} // $handleBehaviorTrigger = behavior => e => {
+    //   console.log(`${behavior}:`, e)
+    // };
+
+  }, {
     key: "$render",
     value: function $render() {
       var fragment = document.createDocumentFragment();
@@ -19699,6 +19714,7 @@ function () {
       (0, _DOMToolbox.removeElement)(this.renderedElement);
       this.renderedElement = null;
       this.renderedElementParent = null;
+      this.$performBehavior(BEHAVIOR_DIDDELETE);
     }
   }, {
     key: "state",
@@ -19742,8 +19758,7 @@ function () {
     key: "isInViewport",
     get: function get() {
       return (0, _DOMToolbox.isElementInViewport)(this.current);
-    } // $hasBehaviorTrigger = behavior =>
-
+    }
   }]);
 
   return Component;
@@ -19795,8 +19810,9 @@ var _initialiseProps = function _initialiseProps() {
       if (evt.type === TRIGGER_EVENT) {
         evt.internalHandler = _this.$handleEventTrigger(evt);
         element.addEventListener(evt.event, evt.internalHandler);
-      } else {// evt.internalHandler = this.$handleBehaviorTrigger(evt);
-      }
+      } else if (evt.type === TRIGGER_BEHAVIOR) {// Triggers are broadcast directly from the function where they occur
+      } else {//
+        }
     });
   };
 
@@ -19808,9 +19824,9 @@ var _initialiseProps = function _initialiseProps() {
     };
   };
 
-  this.$handleBehaviorTrigger = function (behavior) {
+  this.$handleEventTrigger = function (evt) {
     return function (e) {
-      console.log("".concat(behavior, ":"), e);
+      return evt.externalHandler(_this.$createEventPacket(e));
     };
   };
 
@@ -19827,19 +19843,12 @@ var _initialiseProps = function _initialiseProps() {
     });
   };
 
-  this.$handleEventTrigger = function (evt) {
-    return function (e) {
-      return evt.externalHandler(_this.$createEventPacket(e));
-    };
-  };
-
   this.$removeTriggers = function (element, triggerMap) {
     return triggerMap.forEach(function (evt) {
-      // try {
       if (evt.type === TRIGGER_EVENT) {
         element.removeEventListener(evt.event, evt.internalHandler);
-      } // } catch (e) {}
-
+      } else if (evt.type === TRIGGER_BEHAVIOR) {// Behavior?
+      }
     });
   };
 

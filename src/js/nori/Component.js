@@ -27,20 +27,19 @@ TODO
 - h like helper fn that returns a new instance
   - first param accepts string tag type or comp class?
 - support gsap tweens
-
-
  */
 
 const TRIGGER_EVENT    = 'event';
 const TRIGGER_BEHAVIOR = 'behavior';
 
-export const BEHAVIOR_SCOLLIN     = 'scrollIn';
-export const BEHAVIOR_SCROLLOUT   = 'scrollOut';
-export const BEHAVIOR_MOUSENEAR   = 'mouseNear';
+// export const BEHAVIOR_SCOLLIN     = 'scrollIn';
+// export const BEHAVIOR_SCROLLOUT   = 'scrollOut';
+// export const BEHAVIOR_MOUSENEAR   = 'mouseNear';
 export const BEHAVIOR_RENDER      = 'render';       // on initial render only
 export const BEHAVIOR_STATECHANGE = 'stateChange';
 export const BEHAVIOR_UPDATE      = 'update';       // rerender
 export const BEHAVIOR_WILLREMOVE  = 'willRemove';
+export const BEHAVIOR_DIDDELETE   = 'didDelete';
 
 const BEHAVIORS = [BEHAVIOR_MOUSENEAR, BEHAVIOR_WILLREMOVE, BEHAVIOR_RENDER, BEHAVIOR_SCOLLIN, BEHAVIOR_SCROLLOUT, BEHAVIOR_STATECHANGE, BEHAVIOR_UPDATE];
 
@@ -52,7 +51,6 @@ export default class Component {
     this.props    = props;
 
     this.attrs         = props.attrs || {};
-    // this.triggers              = props.triggers || {};
     this.tweens        = props.tweens || {};
     this.internalState = props.state || {};
     this.triggerMap    = this.$mapTriggers(props.triggers || {});
@@ -101,15 +99,24 @@ export default class Component {
     return isElementInViewport(this.current);
   }
 
-  // $hasBehaviorTrigger = behavior =>
-
-  $onScroll = e => {
-    // TEST for in to view?
-  };
-
-  $onMouseMove = e => {
-    // test for proximity
-  };
+  // // also touch
+  // getDistanceFromCursor(mevt) {
+  //
+  //   const offset = this.offset;
+  // }
+  //
+  // // also touch
+  // getCursorPositionOnElement(mevt) {
+  //
+  // }
+  //
+  // $onScroll = e => {
+  //   // TEST for in to view?
+  // };
+  //
+  // $onMouseMove = e => {
+  //   // test for proximity
+  // };
 
   $mapTriggers = (props) => Object.keys(props).reduce((acc, key) => {
     let value = props[key];
@@ -137,9 +144,12 @@ export default class Component {
   $applyTriggers = (element, triggerMap) => triggerMap.forEach(evt => {
     if (evt.type === TRIGGER_EVENT) {
       evt.internalHandler = this.$handleEventTrigger(evt);
+      // TODO implement options and useCapture? https://developer.mozilla.org/en-US/docs/Web/API/EventTarget/addEventListener
       element.addEventListener(evt.event, evt.internalHandler);
+    } else if (evt.type === TRIGGER_BEHAVIOR) {
+      // Triggers are broadcast directly from the function where they occur
     } else {
-      // evt.internalHandler = this.$handleBehaviorTrigger(evt);
+      //
     }
   });
 
@@ -149,9 +159,11 @@ export default class Component {
     element  : this.current
   });
 
-  $handleBehaviorTrigger = behavior => e => {
-    console.log(`${behavior}:`, e)
-  };
+  $handleEventTrigger = evt => e => evt.externalHandler(this.$createEventPacket(e));
+
+  // $handleBehaviorTrigger = behavior => e => {
+  //   console.log(`${behavior}:`, e)
+  // };
 
   $performBehavior = (behavior, e) => this.triggerMap.forEach(evt => {
     if (evt.type === TRIGGER_BEHAVIOR && evt.event === behavior) {
@@ -161,14 +173,12 @@ export default class Component {
     }
   });
 
-  $handleEventTrigger = evt => e => evt.externalHandler(this.$createEventPacket(e));
-
   $removeTriggers = (element, triggerMap) => triggerMap.forEach(evt => {
-    // try {
     if (evt.type === TRIGGER_EVENT) {
       element.removeEventListener(evt.event, evt.internalHandler);
+    } else if (evt.type === TRIGGER_BEHAVIOR) {
+      // Behavior?
     }
-    // } catch (e) {}
   });
 
   $render() {
@@ -212,11 +222,11 @@ export default class Component {
   $update() {
     if (this.renderedElement) {
       this.remove();
-      this.renderedElement = replaceElementWith(this.renderedElement, this.$render())
+      this.renderedElement = replaceElementWith(this.renderedElement, this.$render());
       this.$performBehavior(BEHAVIOR_UPDATE);
     } else {
+      console.warn(`Component not rendered, can't update!`);
       console.log(this.tag, this.props);
-      console.warn(`can't update because it's not here!!!`)
     }
   }
 
@@ -242,6 +252,7 @@ export default class Component {
     this.renderedElement       = null;
     this.renderedElementParent = null;
 
+    this.$performBehavior(BEHAVIOR_DIDDELETE);
   }
 
 }
