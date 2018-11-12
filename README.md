@@ -64,7 +64,9 @@ Behaviors roughly translate to React Life-Cycle hooks:
 #### Lifecycle
 
 [Calling component.renderTo()] -> render
+
 [State update] -> stateChange -> willRemove -> update
+
 [Calling component.delete()] -> willRemove -> didDelete
 
 ### Event callback functions

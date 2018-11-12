@@ -1,5 +1,5 @@
 import Mustache from 'mustache';
-import {equals} from 'ramda';
+import {equals, defaultTo} from 'ramda';
 import Is from './util/is';
 import {
   HTMLStrToNode,
@@ -41,19 +41,19 @@ export const BEHAVIOR_UPDATE      = 'update';       // rerender
 export const BEHAVIOR_WILLREMOVE  = 'willRemove';
 export const BEHAVIOR_DIDDELETE   = 'didDelete';
 
-const BEHAVIORS = [BEHAVIOR_MOUSENEAR, BEHAVIOR_WILLREMOVE, BEHAVIOR_RENDER, BEHAVIOR_SCOLLIN, BEHAVIOR_SCROLLOUT, BEHAVIOR_STATECHANGE, BEHAVIOR_UPDATE];
+const BEHAVIORS = [BEHAVIOR_WILLREMOVE, BEHAVIOR_RENDER, BEHAVIOR_STATECHANGE, BEHAVIOR_UPDATE];
 
 export default class Component {
 
-  constructor(tag, props, children) {
+  constructor(tag, props={}, children=null) {
     this.tag      = tag;
     this.children = Is.array(children) ? children : [children];
-    this.props    = props;
+    this.props    = props || {};
 
-    this.attrs         = props.attrs || {};
-    this.tweens        = props.tweens || {};
-    this.internalState = props.state || {};
-    this.triggerMap    = this.$mapTriggers(props.triggers || {});
+    this.attrs         = props.hasOwnProperty('attrs') ? props.attrs : {};
+    this.tweens        = props.hasOwnProperty('tweens') ? props.tweens : {};
+    this.internalState = props.hasOwnProperty('state') ? props.state : {};
+    this.triggerMap    = this.$mapTriggers(props.hasOwnProperty('triggers') ? props.triggers : {});
 
     this.renderedElement       = null;
     this.renderedElementParent = null;

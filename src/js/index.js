@@ -1,15 +1,32 @@
+/* @jsx c */
+
+
 import * as GlobalCSS from './theme/Global'; // For global CSS reset + a few styles for html and body
 import {css} from 'emotion';
 import Component from './nori/Component';
 import Greeter from './Greeter';
 import * as Lorem from './nori/util/Lorem';
 import {c, render} from './nori/C';
-(($global)=> {
 
-  const applicationRoot = document.querySelector('#js-application');
+(($global)=> {
 
   const red = css`color: red; cursor: pointer;`;
   const blue = css`color: blue`;
+
+  const applicationRoot = document.querySelector('#js-application');
+
+  let test = <p>Hi, <strong>There!</strong></p>;
+
+  console.log('test is',test);
+
+  render(test, applicationRoot);
+
+})(window);
+
+/*
+
+
+
 
   let text = new Component(`span`, {attrs: {mouseover: (e) => {console.log(e)}}}, 'Hi ');
   let text2 = new Component(`span`, {attrs:{class: blue}}, [text, 'there ']);
@@ -57,4 +74,5 @@ import {c, render} from './nori/C';
   // let greeting = new Greeter({}, []);
   greeting.renderTo(applicationRoot);
 
-})(window);
+
+ */

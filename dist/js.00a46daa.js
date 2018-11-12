@@ -19558,7 +19558,7 @@ exports.getNextId = getNextId;
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.default = exports.BEHAVIOR_DIDDELETE = exports.BEHAVIOR_WILLREMOVE = exports.BEHAVIOR_UPDATE = exports.BEHAVIOR_STATECHANGE = exports.BEHAVIOR_RENDER = exports.BEHAVIOR_MOUSENEAR = exports.BEHAVIOR_SCROLLOUT = exports.BEHAVIOR_SCOLLIN = void 0;
+exports.default = exports.BEHAVIOR_DIDDELETE = exports.BEHAVIOR_WILLREMOVE = exports.BEHAVIOR_UPDATE = exports.BEHAVIOR_STATECHANGE = exports.BEHAVIOR_RENDER = void 0;
 
 var _mustache = _interopRequireDefault(require("mustache"));
 
@@ -19595,17 +19595,12 @@ TODO
 - h like helper fn that returns a new instance
   - first param accepts string tag type or comp class?
 - support gsap tweens
-
-
  */
 var TRIGGER_EVENT = 'event';
-var TRIGGER_BEHAVIOR = 'behavior';
-var BEHAVIOR_SCOLLIN = 'scrollIn';
-exports.BEHAVIOR_SCOLLIN = BEHAVIOR_SCOLLIN;
-var BEHAVIOR_SCROLLOUT = 'scrollOut';
-exports.BEHAVIOR_SCROLLOUT = BEHAVIOR_SCROLLOUT;
-var BEHAVIOR_MOUSENEAR = 'mouseNear';
-exports.BEHAVIOR_MOUSENEAR = BEHAVIOR_MOUSENEAR;
+var TRIGGER_BEHAVIOR = 'behavior'; // export const BEHAVIOR_SCOLLIN     = 'scrollIn';
+// export const BEHAVIOR_SCROLLOUT   = 'scrollOut';
+// export const BEHAVIOR_MOUSENEAR   = 'mouseNear';
+
 var BEHAVIOR_RENDER = 'render'; // on initial render only
 
 exports.BEHAVIOR_RENDER = BEHAVIOR_RENDER;
@@ -19618,42 +19613,31 @@ var BEHAVIOR_WILLREMOVE = 'willRemove';
 exports.BEHAVIOR_WILLREMOVE = BEHAVIOR_WILLREMOVE;
 var BEHAVIOR_DIDDELETE = 'didDelete';
 exports.BEHAVIOR_DIDDELETE = BEHAVIOR_DIDDELETE;
-var BEHAVIORS = [BEHAVIOR_MOUSENEAR, BEHAVIOR_WILLREMOVE, BEHAVIOR_RENDER, BEHAVIOR_SCOLLIN, BEHAVIOR_SCROLLOUT, BEHAVIOR_STATECHANGE, BEHAVIOR_UPDATE];
+var BEHAVIORS = [BEHAVIOR_WILLREMOVE, BEHAVIOR_RENDER, BEHAVIOR_STATECHANGE, BEHAVIOR_UPDATE];
 
 var Component =
 /*#__PURE__*/
 function () {
-  function Component(tag, props, children) {
+  function Component(tag) {
+    var props = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
+    var children = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : null;
+
     _classCallCheck(this, Component);
 
     _initialiseProps.call(this);
 
     this.tag = tag;
     this.children = _is.default.array(children) ? children : [children];
-    this.props = props;
-    this.attrs = props.attrs || {}; // this.triggers              = props.triggers || {};
-
-    this.tweens = props.tweens || {};
-    this.internalState = props.state || {};
-    this.triggerMap = this.$mapTriggers(props.triggers || {});
+    this.props = props || {};
+    this.attrs = props.hasOwnProperty('attrs') ? props.attrs : {};
+    this.tweens = props.hasOwnProperty('tweens') ? props.tweens : {};
+    this.internalState = props.hasOwnProperty('state') ? props.state : {};
+    this.triggerMap = this.$mapTriggers(props.hasOwnProperty('triggers') ? props.triggers : {});
     this.renderedElement = null;
     this.renderedElementParent = null;
   }
 
   _createClass(Component, [{
-    key: "getDistanceFromCursor",
-    // also touch
-    value: function getDistanceFromCursor(mevt) {
-      var offset = this.offset;
-    } // also touch
-
-  }, {
-    key: "getCursorPositionOnElement",
-    value: function getCursorPositionOnElement(mevt) {} // $handleBehaviorTrigger = behavior => e => {
-    //   console.log(`${behavior}:`, e)
-    // };
-
-  }, {
     key: "$render",
     value: function $render() {
       var fragment = document.createDocumentFragment();
@@ -19687,8 +19671,8 @@ function () {
         this.renderedElement = (0, _DOMToolbox.replaceElementWith)(this.renderedElement, this.$render());
         this.$performBehavior(BEHAVIOR_UPDATE);
       } else {
+        console.warn("Component not rendered, can't update!");
         console.log(this.tag, this.props);
-        console.warn("can't update because it's not here!!!");
       }
     }
   }, {
@@ -19758,7 +19742,28 @@ function () {
     key: "isInViewport",
     get: function get() {
       return (0, _DOMToolbox.isElementInViewport)(this.current);
-    }
+    } // // also touch
+    // getDistanceFromCursor(mevt) {
+    //
+    //   const offset = this.offset;
+    // }
+    //
+    // // also touch
+    // getCursorPositionOnElement(mevt) {
+    //
+    // }
+    //
+    // $onScroll = e => {
+    //   // TEST for in to view?
+    // };
+    //
+    // $onMouseMove = e => {
+    //   // test for proximity
+    // };
+    // $handleBehaviorTrigger = behavior => e => {
+    //   console.log(`${behavior}:`, e)
+    // };
+
   }]);
 
   return Component;
@@ -19768,12 +19773,6 @@ exports.default = Component;
 
 var _initialiseProps = function _initialiseProps() {
   var _this = this;
-
-  this.$onScroll = function (e) {// TEST for in to view?
-  };
-
-  this.$onMouseMove = function (e) {// test for proximity
-  };
 
   this.$mapTriggers = function (props) {
     return Object.keys(props).reduce(function (acc, key) {
@@ -19808,7 +19807,8 @@ var _initialiseProps = function _initialiseProps() {
   this.$applyTriggers = function (element, triggerMap) {
     return triggerMap.forEach(function (evt) {
       if (evt.type === TRIGGER_EVENT) {
-        evt.internalHandler = _this.$handleEventTrigger(evt);
+        evt.internalHandler = _this.$handleEventTrigger(evt); // TODO implement options and useCapture? https://developer.mozilla.org/en-US/docs/Web/API/EventTarget/addEventListener
+
         element.addEventListener(evt.event, evt.internalHandler);
       } else if (evt.type === TRIGGER_BEHAVIOR) {// Triggers are broadcast directly from the function where they occur
       } else {//
@@ -20294,13 +20294,26 @@ var _is = _interopRequireDefault(require("./util/is"));
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-var c = function c(componentType, props, children) {
-  if (_is.default.string(componentType)) {
-    return new _Component.default(componentType, props, children);
-  } // TODO what should this be other than a div
+//https://jasonformat.com/wtf-is-jsx/
+//https://medium.com/@bluepnume/jsx-is-a-stellar-invention-even-with-react-out-of-the-picture-c597187134b7
+var c = function c(tag, props) {
+  var _ref;
+
+  props = props || {};
+
+  for (var _len = arguments.length, args = new Array(_len > 2 ? _len - 2 : 0), _key = 2; _key < _len; _key++) {
+    args[_key - 2] = arguments[_key];
+  }
+
+  console.log('C!', tag, props, args);
+  var children = args.length ? (_ref = []).concat.apply(_ref, args) : null;
+
+  if (_is.default.string(tag)) {
+    return new _Component.default(tag, props, children);
+  } // TODO what should this be other than a div?
 
 
-  return new componentType("div", props, children);
+  return new tag("div", props, children);
 };
 
 exports.c = c;
@@ -20352,55 +20365,50 @@ function _templateObject() {
 function _taggedTemplateLiteral(strings, raw) { if (!raw) { raw = strings.slice(0); } return Object.freeze(Object.defineProperties(strings, { raw: { value: Object.freeze(raw) } })); }
 
 (function ($global) {
-  var applicationRoot = document.querySelector('#js-application');
   var red = (0, _emotion.css)(_templateObject());
   var blue = (0, _emotion.css)(_templateObject2());
-  var text = new _Component.default("span", {
-    attrs: {
-      mouseover: function mouseover(e) {
-        console.log(e);
-      }
-    }
-  }, 'Hi ');
-  var text2 = new _Component.default("span", {
-    attrs: {
-      class: blue
-    }
-  }, [text, 'there ']);
-  var text3 = new _Component.default("span", {}, [text, text2, 'Matt']);
-  var text4 = new _Component.default("h3", {
-    attrs: {
-      class: blue
-    }
-  }, [text, 'there ']);
+  var applicationRoot = document.querySelector('#js-application');
+  var test = (0, _C.c)("p", null, "Hi, ", (0, _C.c)("strong", null, "There!"));
+  console.log('test is', test);
+  (0, _C.render)(test, applicationRoot);
+})(window);
+/*
 
-  var _onGreetClick = function _onGreetClick(evt) {
-    console.log('greet!', evt);
-    evt.component.state = {
-      foo: Lorem.firstLastName(),
-      bar: Lorem.text(2, 6)
-    };
+
+
+
+  let text = new Component(`span`, {attrs: {mouseover: (e) => {console.log(e)}}}, 'Hi ');
+  let text2 = new Component(`span`, {attrs:{class: blue}}, [text, 'there ']);
+  let text3 = new Component(`span`, {}, [text, text2, 'Matt']);
+  let text4 = new Component(`h3`, {attrs:{class: blue}}, [text, 'there ']);
+
+  const _onGreetClick = evt => {
+    console.log('greet!',evt);
+    evt.component.state = {foo:Lorem.firstLastName(), bar:Lorem.text(2,6)};
   };
 
-  var _onGreetRender = function _onGreetRender(evt) {
+  const _onGreetRender = evt => {
     console.log('greet rendered!', evt);
   };
 
-  var _onGreetUpdate = function _onGreetUpdate(evt) {
+  const _onGreetUpdate = evt => {
     console.log('greet update!', evt);
-  }; //{class: red, click: (e) => {greeting.remove();}},
+  };
 
+  //{class: red, click: (e) => {greeting.remove();}},
+  let greeting = new Component(`p`,
+    {
+      attrs:{class: red},
+      triggers:{
+        click: _onGreetClick,
+        render: _onGreetRender,
+        update: _onGreetUpdate,
 
-  var greeting = new _Component.default("p", {
-    attrs: {
-      class: red
+      }
     },
-    triggers: {
-      click: _onGreetClick,
-      render: _onGreetRender,
-      update: _onGreetUpdate
-    }
-  }, ['Hello <strong>{{foo}}</strong>', text, text2, text3, 'What\'s the {{bar}}']); // text4.renderTo(applicationRoot);
+    ['Hello <strong>{{foo}}</strong>', text, text2, text3, 'What\'s the {{bar}}' ]);
+
+  // text4.renderTo(applicationRoot);
   // text4.renderTo(applicationRoot);
   // greeting.renderTo(applicationRoot);
   // text4.renderTo(applicationRoot);
@@ -20411,10 +20419,12 @@ function _taggedTemplateLiteral(strings, raw) { if (!raw) { raw = strings.slice(
   //
   // let com = c(Greeter, {},[]);
   // render(com, applicationRoot);
-  // let greeting = new Greeter({}, []);
 
+  // let greeting = new Greeter({}, []);
   greeting.renderTo(applicationRoot);
-})(window);
+
+
+ */
 },{"./theme/Global":"js/theme/Global.js","emotion":"../node_modules/emotion/dist/index.esm.js","./nori/Component":"js/nori/Component.js","./Greeter":"js/Greeter.js","./nori/util/Lorem":"js/nori/util/Lorem.js","./nori/C":"js/nori/C.js"}],"../node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
 var global = arguments[3];
 var OVERLAY_ID = '__parcel__error__overlay__';

@@ -8,7 +8,7 @@
     "prestart": "rm -rf ./dist",
     "start": "parcel ./src/index.html --hmr-port 40827",
     "prebuild": "rm -rf ./dist",
-    "build": "parcel build ./src/index.html --out-dir ./dist --public-url ./",
+    "build": "parcel build --detailed-report ./src/index.html --out-dir ./dist --public-url ./",
     "deploy": "gh-pages -d dist"
   },
   "author": "Matt Perkins, hello@mattperkins.me",
@@ -21,6 +21,7 @@
     "babel-plugin-transform-object-rest-spread": "^6.26.0",
     "babel-polyfill": "^6.26.0",
     "babel-preset-env": "^1.7.0",
+    "babel-preset-react": "^6.24.1",
     "emotion": "^9.2.8",
     "gh-pages": "^1.2.0",
     "gsap": "^2.0.2",
