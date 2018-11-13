@@ -16,6 +16,8 @@ import {getNextId} from './util/ElementIDCreator';
 Simple string based component to quickly get html on the screen
 
 TODO
+- treat 'class' prop like React does and rename it to 'className'?
+- FRAGMENT - empty node that just renders it's children
 - break out events into own key in the props
 - break out tweens into own key in the props - on over, out, click, move, enter, exit
 - styles
@@ -23,15 +25,14 @@ TODO
 - COMPOSITION enable more functionality
   withShadow(alignRight(rootComp))
   are these styles or functionality?
-  BOTH
-- h like helper fn that returns a new instance
-  - first param accepts string tag type or comp class?
 - support gsap tweens
+- extract DOM code to another module? Keep this "virtual"
  */
 
 const TRIGGER_EVENT    = 'event';
 const TRIGGER_BEHAVIOR = 'behavior';
 
+// These will require listeners
 // export const BEHAVIOR_SCOLLIN     = 'scrollIn';
 // export const BEHAVIOR_SCROLLOUT   = 'scrollOut';
 // export const BEHAVIOR_MOUSENEAR   = 'mouseNear';
@@ -43,14 +44,16 @@ export const BEHAVIOR_DIDDELETE   = 'didDelete';
 
 const BEHAVIORS = [BEHAVIOR_WILLREMOVE, BEHAVIOR_RENDER, BEHAVIOR_STATECHANGE, BEHAVIOR_UPDATE];
 
+const SPECIAL_PROPS = ['tweens','state','triggers'];
+
 export default class Component {
 
-  constructor(tag, props={}, children=null) {
+  constructor(tag, props, children) {
     this.tag      = tag;
     this.children = Is.array(children) ? children : [children];
     this.props    = props || {};
 
-    this.attrs         = props.hasOwnProperty('attrs') ? props.attrs : {};
+    this.attrs         = this.$filterSpecialProps(this.props); //props.hasOwnProperty('attrs') ? props.attrs : {};
     this.tweens        = props.hasOwnProperty('tweens') ? props.tweens : {};
     this.internalState = props.hasOwnProperty('state') ? props.state : {};
     this.triggerMap    = this.$mapTriggers(props.hasOwnProperty('triggers') ? props.triggers : {});
@@ -58,6 +61,13 @@ export default class Component {
     this.renderedElement       = null;
     this.renderedElementParent = null;
   }
+
+  $filterSpecialProps = (props) => Object.keys(props).reduce((acc, key) => {
+    if(!SPECIAL_PROPS.includes(key)) {
+      acc[key] = props[key];
+    }
+    return acc;
+  }, {});
 
   set state(nextState) {
     if (!Is.object(nextState)) {

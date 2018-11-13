@@ -1,20 +1,12 @@
 import Component from './nori/Component';
 
-/*
-How to scope THIS?
- */
-
-
 export default class Greeter extends Component {
-  constructor(props={}, children=[]) {
-    //{attrs:{click: this._onClick}
-    super('h1', {}, ['Hello, <em>{{name}}!</em>']);
-    this.internalState = {name: 'Matt'};
-  }
 
-  _onClick = e => console.log('greeter click!');
+  internalState = {name: 'Matt'};
 
-  renderTo(el) {
-    super.renderTo(el);
+  // Subclasses should only take passed props and children
+  constructor(props, children) {
+    // call super and pass what's needed
+    super('h1', props, ['Hello, <em>{{name}}!</em>']);
   }
 }

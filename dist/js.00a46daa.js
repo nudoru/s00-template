@@ -19584,6 +19584,8 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
 Simple string based component to quickly get html on the screen
 
 TODO
+- treat 'class' prop like React does and rename it to 'className'?
+- FRAGMENT - empty node that just renders it's children
 - break out events into own key in the props
 - break out tweens into own key in the props - on over, out, click, move, enter, exit
 - styles
@@ -19591,13 +19593,12 @@ TODO
 - COMPOSITION enable more functionality
   withShadow(alignRight(rootComp))
   are these styles or functionality?
-  BOTH
-- h like helper fn that returns a new instance
-  - first param accepts string tag type or comp class?
 - support gsap tweens
+- extract DOM code to another module? Keep this "virtual"
  */
 var TRIGGER_EVENT = 'event';
-var TRIGGER_BEHAVIOR = 'behavior'; // export const BEHAVIOR_SCOLLIN     = 'scrollIn';
+var TRIGGER_BEHAVIOR = 'behavior'; // These will require listeners
+// export const BEHAVIOR_SCOLLIN     = 'scrollIn';
 // export const BEHAVIOR_SCROLLOUT   = 'scrollOut';
 // export const BEHAVIOR_MOUSENEAR   = 'mouseNear';
 
@@ -19614,14 +19615,12 @@ exports.BEHAVIOR_WILLREMOVE = BEHAVIOR_WILLREMOVE;
 var BEHAVIOR_DIDDELETE = 'didDelete';
 exports.BEHAVIOR_DIDDELETE = BEHAVIOR_DIDDELETE;
 var BEHAVIORS = [BEHAVIOR_WILLREMOVE, BEHAVIOR_RENDER, BEHAVIOR_STATECHANGE, BEHAVIOR_UPDATE];
+var SPECIAL_PROPS = ['tweens', 'state', 'triggers'];
 
 var Component =
 /*#__PURE__*/
 function () {
-  function Component(tag) {
-    var props = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
-    var children = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : null;
-
+  function Component(tag, props, children) {
     _classCallCheck(this, Component);
 
     _initialiseProps.call(this);
@@ -19629,7 +19628,8 @@ function () {
     this.tag = tag;
     this.children = _is.default.array(children) ? children : [children];
     this.props = props || {};
-    this.attrs = props.hasOwnProperty('attrs') ? props.attrs : {};
+    this.attrs = this.$filterSpecialProps(this.props); //props.hasOwnProperty('attrs') ? props.attrs : {};
+
     this.tweens = props.hasOwnProperty('tweens') ? props.tweens : {};
     this.internalState = props.hasOwnProperty('state') ? props.state : {};
     this.triggerMap = this.$mapTriggers(props.hasOwnProperty('triggers') ? props.triggers : {});
@@ -19774,6 +19774,16 @@ exports.default = Component;
 var _initialiseProps = function _initialiseProps() {
   var _this = this;
 
+  this.$filterSpecialProps = function (props) {
+    return Object.keys(props).reduce(function (acc, key) {
+      if (!SPECIAL_PROPS.includes(key)) {
+        acc[key] = props[key];
+      }
+
+      return acc;
+    }, {});
+  };
+
   this.$mapTriggers = function (props) {
     return Object.keys(props).reduce(function (acc, key) {
       var value = props[key];
@@ -19886,17 +19896,9 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
-function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
-
-function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
-
 function _possibleConstructorReturn(self, call) { if (call && (_typeof(call) === "object" || typeof call === "function")) { return call; } return _assertThisInitialized(self); }
 
 function _assertThisInitialized(self) { if (self === void 0) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return self; }
-
-function _get(target, property, receiver) { if (typeof Reflect !== "undefined" && Reflect.get) { _get = Reflect.get; } else { _get = function _get(target, property, receiver) { var base = _superPropBase(target, property); if (!base) return; var desc = Object.getOwnPropertyDescriptor(base, property); if (desc.get) { return desc.get.call(receiver); } return desc.value; }; } return _get(target, property, receiver || target); }
-
-function _superPropBase(object, property) { while (!Object.prototype.hasOwnProperty.call(object, property)) { object = _getPrototypeOf(object); if (object === null) break; } return object; }
 
 function _getPrototypeOf(o) { _getPrototypeOf = Object.setPrototypeOf ? Object.getPrototypeOf : function _getPrototypeOf(o) { return o.__proto__ || Object.getPrototypeOf(o); }; return _getPrototypeOf(o); }
 
@@ -19904,41 +19906,24 @@ function _inherits(subClass, superClass) { if (typeof superClass !== "function" 
 
 function _setPrototypeOf(o, p) { _setPrototypeOf = Object.setPrototypeOf || function _setPrototypeOf(o, p) { o.__proto__ = p; return o; }; return _setPrototypeOf(o, p); }
 
-/*
-How to scope THIS?
- */
 var Greeter =
 /*#__PURE__*/
 function (_Component) {
   _inherits(Greeter, _Component);
 
-  function Greeter() {
+  // Subclasses should only take passed props and children
+  function Greeter(props, children) {
     var _this;
-
-    var props = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
-    var children = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : [];
 
     _classCallCheck(this, Greeter);
 
-    //{attrs:{click: this._onClick}
-    _this = _possibleConstructorReturn(this, _getPrototypeOf(Greeter).call(this, 'h1', {}, ['Hello, <em>{{name}}!</em>']));
-
-    _this._onClick = function (e) {
-      return console.log('greeter click!');
-    };
-
+    // call super and pass what's needed
+    _this = _possibleConstructorReturn(this, _getPrototypeOf(Greeter).call(this, 'h1', props, ['Hello, <em>{{name}}!</em>']));
     _this.internalState = {
       name: 'Matt'
     };
     return _this;
   }
-
-  _createClass(Greeter, [{
-    key: "renderTo",
-    value: function renderTo(el) {
-      _get(_getPrototypeOf(Greeter.prototype), "renderTo", this).call(this, el);
-    }
-  }]);
 
   return Greeter;
 }(_Component2.default);
@@ -20292,11 +20277,13 @@ var _Component = _interopRequireDefault(require("./Component"));
 
 var _is = _interopRequireDefault(require("./util/is"));
 
+var _DOMToolbox = require("./browser/DOMToolbox");
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 //https://jasonformat.com/wtf-is-jsx/
 //https://medium.com/@bluepnume/jsx-is-a-stellar-invention-even-with-react-out-of-the-picture-c597187134b7
-var c = function c(tag, props) {
+var c = function c(node, props) {
   var _ref;
 
   props = props || {};
@@ -20305,25 +20292,30 @@ var c = function c(tag, props) {
     args[_key - 2] = arguments[_key];
   }
 
-  console.log('C!', tag, props, args);
+  console.log('C:', node, props, args);
   var children = args.length ? (_ref = []).concat.apply(_ref, args) : null;
 
-  if (_is.default.string(tag)) {
-    return new _Component.default(tag, props, children);
-  } // TODO what should this be other than a div?
+  if (_is.default.string(node)) {
+    return new _Component.default(node, props, children);
+  }
 
-
-  return new tag("div", props, children);
+  return new node(props, children);
 };
 
 exports.c = c;
 
-var render = function render(component, root) {
-  component.renderTo(root);
+var render = function render(component, domRoot) {
+  var removeExisting = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : true;
+
+  if (removeExisting) {
+    (0, _DOMToolbox.removeAllElements)(domRoot);
+  }
+
+  component.renderTo(domRoot);
 };
 
 exports.render = render;
-},{"./Component":"js/nori/Component.js","./util/is":"js/nori/util/is.js"}],"js/index.js":[function(require,module,exports) {
+},{"./Component":"js/nori/Component.js","./util/is":"js/nori/util/is.js","./browser/DOMToolbox":"js/nori/browser/DOMToolbox.js"}],"js/index.js":[function(require,module,exports) {
 "use strict";
 
 var GlobalCSS = _interopRequireWildcard(require("./theme/Global"));
@@ -20368,8 +20360,32 @@ function _taggedTemplateLiteral(strings, raw) { if (!raw) { raw = strings.slice(
   var red = (0, _emotion.css)(_templateObject());
   var blue = (0, _emotion.css)(_templateObject2());
   var applicationRoot = document.querySelector('#js-application');
-  var test = (0, _C.c)("p", null, "Hi, ", (0, _C.c)("strong", null, "There!"));
-  console.log('test is', test);
+
+  var _onGreetClick = function _onGreetClick(evt) {
+    console.log('greet!', evt);
+    evt.component.state = {
+      name: Lorem.firstLastName()
+    };
+  };
+
+  var _onGreetRender = function _onGreetRender(evt) {
+    console.log('greet rendered!', evt);
+  };
+
+  var _onGreetUpdate = function _onGreetUpdate(evt) {
+    console.log('greet update!', evt.component.state);
+  }; // let test = <p>Hi, <strong>There!</strong></p>;
+
+
+  var test = (0, _C.c)("p", {
+    "class": blue
+  }, "Hi, ", (0, _C.c)(_Greeter.default, {
+    triggers: {
+      click: _onGreetClick,
+      render: _onGreetRender,
+      update: _onGreetUpdate
+    }
+  }, "There"));
   (0, _C.render)(test, applicationRoot);
 })(window);
 /*
@@ -20382,18 +20398,7 @@ function _taggedTemplateLiteral(strings, raw) { if (!raw) { raw = strings.slice(
   let text3 = new Component(`span`, {}, [text, text2, 'Matt']);
   let text4 = new Component(`h3`, {attrs:{class: blue}}, [text, 'there ']);
 
-  const _onGreetClick = evt => {
-    console.log('greet!',evt);
-    evt.component.state = {foo:Lorem.firstLastName(), bar:Lorem.text(2,6)};
-  };
 
-  const _onGreetRender = evt => {
-    console.log('greet rendered!', evt);
-  };
-
-  const _onGreetUpdate = evt => {
-    console.log('greet update!', evt);
-  };
 
   //{class: red, click: (e) => {greeting.remove();}},
   let greeting = new Component(`p`,
