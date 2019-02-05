@@ -1,4 +1,4 @@
-# Sketch 00 - Vanilla JS Template of CRUFT
+# Sketch 00 - Vanilla JS Template
 
 Taking a break from React and playing around with the new Vanilla JS framework for experimentation and fun.
 
@@ -6,7 +6,7 @@ Taking a break from React and playing around with the new Vanilla JS framework f
 
 The component class abstracts the creation and basic management of a DOM node in a "Reactish" kinda-sorta way. Because the goal is to get DOM elements on the screen, no virtual DOM is used - just plain old appendChild. Snabbdom may be implemented in the future.
 
-`let myComponent = new Component(`base_tag`, {attrs:{dom_element_attributes}, triggers:{events}, state:{initial_state}}, [`Text {{content}}` || [child_array]]);`
+`let myComponent = new Component('base_tag', {attrs:{dom_element_attributes}, triggers:{events}, state:{initial_state}}, ['Text {{content}}' || [child_array]]);`
 
 
 ### base_tag
@@ -81,5 +81,46 @@ In the case of a **trigger behavior**, the event object has two keys:
 
 - type : the behavior string
 - target : the DOM element
+
+## Subclassing
+
+Create custom components by subclassing. Reference the template below:
+
+    import Component from './nori/Component';
+    
+    export default class Greeter extends Component {
+    
+      // Default state
+      internalState = {name: 'Matt'};
+    
+      // Subclasses should only take passed props and children
+      constructor(props, children) {
+        // call super and pass what's needed
+        super('h1', props, ['Hello, <em>{{name}}!</em>']);
+      }
+    
+      // Override fn's
+    }
+
+## JSX Support
+
+The Parcel/Babel build supports JSX with only one additional package to install: `babel-preset-react`. 
+
+### Writing JSX
+
+The `c` helper function follows the React.createElement syntax and may be used int its place. Make user the proper JSX pragma is present at the top of every file, `/* @jsx c */`, and import the `c` and `render` functions: `import {c, render} from './nori/C';`. 
+
+Write JSX as you normally would with the following differences from React:
+
+- Fragments are not supported
+- Use `class` instead of `className`
+- The special props of `triggers`, `state`, and `tweens` follow the syntax above. All other will be applied to the resulting DOM element. 
+
+To render the component tree to the DOM, call `render` with the parent component and target DOM node.
+
+    /* @jsx c */
+    import {c, render} from './nori/C';
+    let world = <h1>Hello!</h1>;
+    render(world, document.querySelector('#app'));
 
 

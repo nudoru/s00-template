@@ -1,5 +1,5 @@
 import Mustache from 'mustache';
-import {equals, defaultTo} from 'ramda';
+import {equals} from 'ramda';
 import Is from './util/is';
 import {
   HTMLStrToNode,
@@ -16,8 +16,7 @@ import {getNextId} from './util/ElementIDCreator';
 Simple string based component to quickly get html on the screen
 
 TODO
-- treat 'class' prop like React does and rename it to 'className'?
-- FRAGMENT - empty node that just renders it's children
+- render children w/ RECUSION!
 - break out events into own key in the props
 - break out tweens into own key in the props - on over, out, click, move, enter, exit
 - styles
@@ -44,7 +43,7 @@ export const BEHAVIOR_DIDDELETE   = 'didDelete';
 
 const BEHAVIORS = [BEHAVIOR_WILLREMOVE, BEHAVIOR_RENDER, BEHAVIOR_STATECHANGE, BEHAVIOR_UPDATE];
 
-const SPECIAL_PROPS = ['tweens','state','triggers'];
+const SPECIAL_PROPS = ['tweens', 'state', 'triggers'];
 
 export default class Component {
 
@@ -60,10 +59,12 @@ export default class Component {
 
     this.renderedElement       = null;
     this.renderedElementParent = null;
+
+    this.isDirty = false;
   }
 
   $filterSpecialProps = (props) => Object.keys(props).reduce((acc, key) => {
-    if(!SPECIAL_PROPS.includes(key)) {
+    if (!SPECIAL_PROPS.includes(key)) {
       acc[key] = props[key];
     }
     return acc;
@@ -80,6 +81,8 @@ export default class Component {
     }
 
     this.internalState = Object.assign({}, this.internalState, nextState);
+
+    this.isDirty = true;
 
     this.$performBehavior(BEHAVIOR_STATECHANGE);
 
@@ -199,6 +202,7 @@ export default class Component {
     this.$renderChildren(element);
     fragment.appendChild(element);
     this.$applyTriggers(element, this.triggerMap);
+    this.isDirty = false;
     return element;
   }
 
@@ -231,12 +235,16 @@ export default class Component {
 
   $update() {
     if (this.renderedElement) {
-      this.remove();
-      this.renderedElement = replaceElementWith(this.renderedElement, this.$render());
-      this.$performBehavior(BEHAVIOR_UPDATE);
+      //if (this.isDirty) {
+        this.remove();
+        let updatedElement   = this.$render();
+        this.renderedElement = replaceElementWith(this.renderedElement, updatedElement);
+        this.$performBehavior(BEHAVIOR_UPDATE);
+      // } else {
+      //   console.log('Not dirty!', this.tag);
+      // }
     } else {
-      console.warn(`Component not rendered, can't update!`);
-      console.log(this.tag, this.props);
+      console.warn(`Component not rendered, can't update!`, this.tag, this.props);
     }
   }
 

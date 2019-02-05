@@ -19584,8 +19584,7 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
 Simple string based component to quickly get html on the screen
 
 TODO
-- treat 'class' prop like React does and rename it to 'className'?
-- FRAGMENT - empty node that just renders it's children
+- render children w/ RECUSION!
 - break out events into own key in the props
 - break out tweens into own key in the props - on over, out, click, move, enter, exit
 - styles
@@ -19635,6 +19634,7 @@ function () {
     this.triggerMap = this.$mapTriggers(props.hasOwnProperty('triggers') ? props.triggers : {});
     this.renderedElement = null;
     this.renderedElementParent = null;
+    this.isDirty = false;
   }
 
   _createClass(Component, [{
@@ -19648,6 +19648,7 @@ function () {
       this.$renderChildren(element);
       fragment.appendChild(element);
       this.$applyTriggers(element, this.triggerMap);
+      this.isDirty = false;
       return element;
     }
   }, {
@@ -19667,12 +19668,15 @@ function () {
     key: "$update",
     value: function $update() {
       if (this.renderedElement) {
+        //if (this.isDirty) {
         this.remove();
-        this.renderedElement = (0, _DOMToolbox.replaceElementWith)(this.renderedElement, this.$render());
-        this.$performBehavior(BEHAVIOR_UPDATE);
+        var updatedElement = this.$render();
+        this.renderedElement = (0, _DOMToolbox.replaceElementWith)(this.renderedElement, updatedElement);
+        this.$performBehavior(BEHAVIOR_UPDATE); // } else {
+        //   console.log('Not dirty!', this.tag);
+        // }
       } else {
-        console.warn("Component not rendered, can't update!");
-        console.log(this.tag, this.props);
+        console.warn("Component not rendered, can't update!", this.tag, this.props);
       }
     }
   }, {
@@ -19713,6 +19717,7 @@ function () {
       }
 
       this.internalState = Object.assign({}, this.internalState, nextState);
+      this.isDirty = true;
       this.$performBehavior(BEHAVIOR_STATECHANGE);
       this.$update();
     },
@@ -19880,7 +19885,90 @@ var _initialiseProps = function _initialiseProps() {
     });
   };
 };
-},{"mustache":"../node_modules/mustache/mustache.js","ramda":"../node_modules/ramda/es/index.js","./util/is":"js/nori/util/is.js","./browser/DOMToolbox":"js/nori/browser/DOMToolbox.js","./events/DomEvents":"js/nori/events/DomEvents.js","./util/ElementIDCreator":"js/nori/util/ElementIDCreator.js"}],"js/Greeter.js":[function(require,module,exports) {
+},{"mustache":"../node_modules/mustache/mustache.js","ramda":"../node_modules/ramda/es/index.js","./util/is":"js/nori/util/is.js","./browser/DOMToolbox":"js/nori/browser/DOMToolbox.js","./events/DomEvents":"js/nori/events/DomEvents.js","./util/ElementIDCreator":"js/nori/util/ElementIDCreator.js"}],"js/nori/C.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.useState = useState;
+exports.render = exports.c = void 0;
+
+var _Component = _interopRequireDefault(require("./Component"));
+
+var _is = _interopRequireDefault(require("./util/is"));
+
+var _DOMToolbox = require("./browser/DOMToolbox");
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+//https://jasonformat.com/wtf-is-jsx/
+//https://medium.com/@bluepnume/jsx-is-a-stellar-invention-even-with-react-out-of-the-picture-c597187134b7
+var c = function c(node, props) {
+  var _ref;
+
+  props = props || {}; //console.log('C:', node, props, args);
+
+  for (var _len = arguments.length, args = new Array(_len > 2 ? _len - 2 : 0), _key = 2; _key < _len; _key++) {
+    args[_key - 2] = arguments[_key];
+  }
+
+  var children = args.length ? (_ref = []).concat.apply(_ref, args) : null;
+
+  if (_is.default.string(node)) {
+    return new _Component.default(node, props, children);
+  }
+
+  return new node(props, children);
+};
+
+exports.c = c;
+
+var render = function render(component, domRoot) {
+  var removeExisting = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : true;
+
+  if (removeExisting) {
+    (0, _DOMToolbox.removeAllElements)(domRoot);
+  }
+
+  component.renderTo(domRoot);
+}; // Simple implementation of React's useState hook, similar API totes different impl
+// https://reactjs.org/docs/hooks-state.html
+
+/*
+Merge fn for updater
+prevState => ({...prevState, ...updatedValues});
+}
+ */
+
+
+exports.render = render;
+var __stateValueMap = [];
+
+function useState(initial) {
+  var stateIdx = __stateValueMap.length;
+
+  if (!__stateValueMap[stateIdx]) {
+    __stateValueMap[stateIdx] = initial;
+  } else {} // console.log('useState', __stateValueMap);
+
+
+  var setState = function setState(newState) {
+    var currentValue = __stateValueMap[stateIdx]; // console.log('updating the index at ', stateIdx, 'current value', currentValue);
+
+    if (typeof newState === "function") {
+      currentValue = newState(currentValue);
+    } else {
+      currentValue = newState;
+    }
+
+    __stateValueMap[stateIdx] = currentValue;
+    return currentValue;
+  };
+
+  return [initial, setState];
+}
+},{"./Component":"js/nori/Component.js","./util/is":"js/nori/util/is.js","./browser/DOMToolbox":"js/nori/browser/DOMToolbox.js"}],"js/Greeter.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -19889,6 +19977,10 @@ Object.defineProperty(exports, "__esModule", {
 exports.default = void 0;
 
 var _Component2 = _interopRequireDefault(require("./nori/Component"));
+
+var _C = require("./nori/C");
+
+var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -19906,6 +19998,29 @@ function _inherits(subClass, superClass) { if (typeof superClass !== "function" 
 
 function _setPrototypeOf(o, p) { _setPrototypeOf = Object.setPrototypeOf || function _setPrototypeOf(o, p) { o.__proto__ = p; return o; }; return _setPrototypeOf(o, p); }
 
+/*
+Testing stuff for Greeter ...
+
+const _onGreetClick = evt => {
+    //console.log('greet!',evt);
+    evt.component.state = {name:Lorem.firstLastName()};
+  };
+
+  const _onGreetRender = evt => {
+    //console.log('greet rendered!', evt);
+  };
+
+  const _onGreetUpdate = evt => {
+    //console.log('greet update!', evt.component.state);
+  };
+
+  // let test = <p class={blue}>Hi, <Greeter triggers={{
+  //   click: _onGreetClick,
+  //   render: _onGreetRender,
+  //   update: _onGreetUpdate,
+  // }}>There</Greeter></p>;
+
+ */
 var Greeter =
 /*#__PURE__*/
 function (_Component) {
@@ -19918,18 +20033,25 @@ function (_Component) {
     _classCallCheck(this, Greeter);
 
     // call super and pass what's needed
-    _this = _possibleConstructorReturn(this, _getPrototypeOf(Greeter).call(this, 'h1', props, ['Hello, <em>{{name}}!</em>']));
+    var _useState = (0, _C.useState)('Hello, <em>{{name}}!</em>'),
+        _useState2 = _slicedToArray(_useState, 2);
+
+    var greeting = _useState2[0],
+        setGreet = _useState2[1];
+    _this = _possibleConstructorReturn(this, _getPrototypeOf(Greeter).call(this, 'h1', props, [greeting]));
     _this.internalState = {
       name: 'Matt'
     };
     return _this;
-  }
+  } // Override fn's
+  // Default state
+
 
   return Greeter;
 }(_Component2.default);
 
 exports.default = Greeter;
-},{"./nori/Component":"js/nori/Component.js"}],"js/nori/util/NumberUtils.js":[function(require,module,exports) {
+},{"./nori/Component":"js/nori/Component.js","./nori/C":"js/nori/C.js"}],"js/nori/util/NumberUtils.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -20265,64 +20387,58 @@ module.exports = {
   date: date,
   guid: guid
 };
-},{"./NumberUtils":"js/nori/util/NumberUtils.js","./StringUtils":"js/nori/util/StringUtils.js","./Toolbox":"js/nori/util/Toolbox.js"}],"js/nori/C.js":[function(require,module,exports) {
+},{"./NumberUtils":"js/nori/util/NumberUtils.js","./StringUtils":"js/nori/util/StringUtils.js","./Toolbox":"js/nori/util/Toolbox.js"}],"js/components/Box.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.render = exports.c = void 0;
+exports.default = void 0;
 
-var _Component = _interopRequireDefault(require("./Component"));
-
-var _is = _interopRequireDefault(require("./util/is"));
-
-var _DOMToolbox = require("./browser/DOMToolbox");
+var _Component2 = _interopRequireDefault(require("../nori/Component"));
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-//https://jasonformat.com/wtf-is-jsx/
-//https://medium.com/@bluepnume/jsx-is-a-stellar-invention-even-with-react-out-of-the-picture-c597187134b7
-var c = function c(node, props) {
-  var _ref;
+function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
 
-  props = props || {};
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
-  for (var _len = arguments.length, args = new Array(_len > 2 ? _len - 2 : 0), _key = 2; _key < _len; _key++) {
-    args[_key - 2] = arguments[_key];
-  }
+function _possibleConstructorReturn(self, call) { if (call && (_typeof(call) === "object" || typeof call === "function")) { return call; } return _assertThisInitialized(self); }
 
-  console.log('C:', node, props, args);
-  var children = args.length ? (_ref = []).concat.apply(_ref, args) : null;
+function _assertThisInitialized(self) { if (self === void 0) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return self; }
 
-  if (_is.default.string(node)) {
-    return new _Component.default(node, props, children);
-  }
+function _getPrototypeOf(o) { _getPrototypeOf = Object.setPrototypeOf ? Object.getPrototypeOf : function _getPrototypeOf(o) { return o.__proto__ || Object.getPrototypeOf(o); }; return _getPrototypeOf(o); }
 
-  return new node(props, children);
-};
+function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function"); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, writable: true, configurable: true } }); if (superClass) _setPrototypeOf(subClass, superClass); }
 
-exports.c = c;
+function _setPrototypeOf(o, p) { _setPrototypeOf = Object.setPrototypeOf || function _setPrototypeOf(o, p) { o.__proto__ = p; return o; }; return _setPrototypeOf(o, p); }
 
-var render = function render(component, domRoot) {
-  var removeExisting = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : true;
+var Box =
+/*#__PURE__*/
+function (_Component) {
+  _inherits(Box, _Component);
 
-  if (removeExisting) {
-    (0, _DOMToolbox.removeAllElements)(domRoot);
-  }
+  // Subclasses should only take passed props and children
+  function Box(props, children) {
+    _classCallCheck(this, Box);
 
-  component.renderTo(domRoot);
-};
+    // call super and pass what's needed
+    console.log('box', props);
+    var baseElement = props.element || 'div';
+    return _possibleConstructorReturn(this, _getPrototypeOf(Box).call(this, baseElement, props, children));
+  } // Override fn's
 
-exports.render = render;
-},{"./Component":"js/nori/Component.js","./util/is":"js/nori/util/is.js","./browser/DOMToolbox":"js/nori/browser/DOMToolbox.js"}],"js/index.js":[function(require,module,exports) {
+
+  return Box;
+}(_Component2.default);
+
+exports.default = Box;
+},{"../nori/Component":"js/nori/Component.js"}],"js/index.js":[function(require,module,exports) {
 "use strict";
 
 var GlobalCSS = _interopRequireWildcard(require("./theme/Global"));
 
 var _emotion = require("emotion");
-
-var _Component = _interopRequireDefault(require("./nori/Component"));
 
 var _Greeter = _interopRequireDefault(require("./Greeter"));
 
@@ -20330,107 +20446,33 @@ var Lorem = _interopRequireWildcard(require("./nori/util/Lorem"));
 
 var _C = require("./nori/C");
 
+var _Box = _interopRequireDefault(require("./components/Box"));
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) { var desc = Object.defineProperty && Object.getOwnPropertyDescriptor ? Object.getOwnPropertyDescriptor(obj, key) : {}; if (desc.get || desc.set) { Object.defineProperty(newObj, key, desc); } else { newObj[key] = obj[key]; } } } } newObj.default = obj; return newObj; } }
 
-function _templateObject2() {
-  var data = _taggedTemplateLiteral(["color: blue"]);
-
-  _templateObject2 = function _templateObject2() {
-    return data;
-  };
-
-  return data;
-}
-
-function _templateObject() {
-  var data = _taggedTemplateLiteral(["color: red; cursor: pointer;"]);
-
-  _templateObject = function _templateObject() {
-    return data;
-  };
-
-  return data;
-}
-
-function _taggedTemplateLiteral(strings, raw) { if (!raw) { raw = strings.slice(0); } return Object.freeze(Object.defineProperties(strings, { raw: { value: Object.freeze(raw) } })); }
-
+/* @jsx c */
+// For global CSS reset + a few styles for html and body
 (function ($global) {
-  var red = (0, _emotion.css)(_templateObject());
-  var blue = (0, _emotion.css)(_templateObject2());
+  // const red = css`color: red; cursor: pointer;`;
+  // const blue = css`color: blue`;
   var applicationRoot = document.querySelector('#js-application');
-
-  var _onGreetClick = function _onGreetClick(evt) {
-    console.log('greet!', evt);
-    evt.component.state = {
-      name: Lorem.firstLastName()
-    };
-  };
-
-  var _onGreetRender = function _onGreetRender(evt) {
-    console.log('greet rendered!', evt);
-  };
-
-  var _onGreetUpdate = function _onGreetUpdate(evt) {
-    console.log('greet update!', evt.component.state);
-  }; // let test = <p>Hi, <strong>There!</strong></p>;
-
-
-  var test = (0, _C.c)("p", {
-    "class": blue
-  }, "Hi, ", (0, _C.c)(_Greeter.default, {
-    triggers: {
-      click: _onGreetClick,
-      render: _onGreetRender,
-      update: _onGreetUpdate
-    }
-  }, "There"));
-  (0, _C.render)(test, applicationRoot);
+  var testBox = (0, _C.c)(_Box.default, {
+    element: "span"
+  }, "Hi, I'm in a box");
+  (0, _C.render)(testBox, applicationRoot); //for(let i=0; i<5; i++) {
+  //   let [foo, setFoo] = useState('foo');
+  //   console.log('foo is',foo);
+  //   foo = setFoo(ps => ps + 'BAZ!');
+  //   console.log('foo is',foo);
+  //   foo = setFoo(ps => ps + 'BAZ!');
+  //   console.log('foo is',foo);
+  //   foo = setFoo(ps => ps + 'BAZ!');
+  //   console.log('foo is',foo);
+  //}
 })(window);
-/*
-
-
-
-
-  let text = new Component(`span`, {attrs: {mouseover: (e) => {console.log(e)}}}, 'Hi ');
-  let text2 = new Component(`span`, {attrs:{class: blue}}, [text, 'there ']);
-  let text3 = new Component(`span`, {}, [text, text2, 'Matt']);
-  let text4 = new Component(`h3`, {attrs:{class: blue}}, [text, 'there ']);
-
-
-
-  //{class: red, click: (e) => {greeting.remove();}},
-  let greeting = new Component(`p`,
-    {
-      attrs:{class: red},
-      triggers:{
-        click: _onGreetClick,
-        render: _onGreetRender,
-        update: _onGreetUpdate,
-
-      }
-    },
-    ['Hello <strong>{{foo}}</strong>', text, text2, text3, 'What\'s the {{bar}}' ]);
-
-  // text4.renderTo(applicationRoot);
-  // text4.renderTo(applicationRoot);
-  // greeting.renderTo(applicationRoot);
-  // text4.renderTo(applicationRoot);
-  // text4.renderTo(applicationRoot);
-  // let com = c(`p`,
-  //   {attrs:{class: red, click: (e) => {this.state = {foo:Lorem.firstLastName(), bar:Lorem.text(2,6)};}}},
-  //   ['Hello <strong>{{foo}}</strong>', text, text2, text3, 'What\'s the {{bar}}' ]);
-  //
-  // let com = c(Greeter, {},[]);
-  // render(com, applicationRoot);
-
-  // let greeting = new Greeter({}, []);
-  greeting.renderTo(applicationRoot);
-
-
- */
-},{"./theme/Global":"js/theme/Global.js","emotion":"../node_modules/emotion/dist/index.esm.js","./nori/Component":"js/nori/Component.js","./Greeter":"js/Greeter.js","./nori/util/Lorem":"js/nori/util/Lorem.js","./nori/C":"js/nori/C.js"}],"../node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
+},{"./theme/Global":"js/theme/Global.js","emotion":"../node_modules/emotion/dist/index.esm.js","./Greeter":"js/Greeter.js","./nori/util/Lorem":"js/nori/util/Lorem.js","./nori/C":"js/nori/C.js","./components/Box":"js/components/Box.js"}],"../node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
 var global = arguments[3];
 var OVERLAY_ID = '__parcel__error__overlay__';
 var OldModule = module.bundle.Module;

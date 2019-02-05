@@ -23,6 +23,7 @@
     "babel-preset-env": "^1.7.0",
     "babel-preset-react": "^6.24.1",
     "emotion": "^9.2.8",
+    "ftp-deploy": "^2.3.0",
     "gh-pages": "^1.2.0",
     "gsap": "^2.0.2",
     "lodash": "^4.17.10",
