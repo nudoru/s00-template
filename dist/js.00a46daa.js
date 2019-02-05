@@ -1582,7 +1582,7 @@ var _emotion = require("emotion");
 var _Theme = require("./Theme");
 
 function _templateObject() {
-  var data = _taggedTemplateLiteral(["\n  @import url('https://fonts.googleapis.com/css?family=Nanum+Gothic|Reenie+Beanie');\n\n  *, *::before, *::after {\n    box-sizing: border-box;\n  }\n  html {\n    -ms-text-size-adjust: 100%;\n    -moz-text-size-adjust: 100%;\n    -webkit-text-size-adjust: none;\n    min-height: 100vh;\n    line-height: ", ";\n    font-size: 100%;\n  }\n  body {\n    position: relative;\n    margin: 0;\n    padding: 0;\n    min-height: 100vh;\n    font-size: ", ";\n    font-family: 'Nanum Gothic';\n    background-image: ", ";\n    overflow: hidden;\n  }\n  h1 {\n    font-size: 2em;\n    margin: 0.67em 0;\n  }\n  hr {\n    box-sizing: content-box;\n    height: 0;\n    overflow: visible;\n  }\n  pre {\n    font-family: monospace, monospace;\n    font-size: 1em;\n  }\n  a {\n    background-color: transparent;\n  }\n  abbr[title] {\n    border-bottom: none; \n    text-decoration: underline; \n    text-decoration: underline dotted; \n  }\n  b,\n  strong {\n    font-weight: bolder;\n  }\n  code,\n  kbd,\n  samp {\n    font-family: monospace, monospace; \n    font-size: 1em; \n  }\n  small {\n    font-size: 80%;\n  }\n  sub,\n  sup {\n    font-size: 75%;\n    line-height: 0;\n    position: relative;\n    vertical-align: baseline;\n  }\n  sub {\n    bottom: -0.25em;\n  }\n  sup {\n    top: -0.5em;\n  }\n  img {\n    border-style: none;\n  }\n  button,\n  input,\n  optgroup,\n  select,\n  textarea {\n    font-family: inherit; \n    font-size: 100%; \n    line-height: 1.15; \n    margin: 0; \n  }\n  button,\n  input { \n    overflow: visible;\n  }\n  button,\n  select { \n    text-transform: none;\n  }\n  button,\n  [type=\"button\"],\n  [type=\"reset\"],\n  [type=\"submit\"] {\n    -webkit-appearance: button;\n  }\n  button::-moz-focus-inner,\n  [type=\"button\"]::-moz-focus-inner,\n  [type=\"reset\"]::-moz-focus-inner,\n  [type=\"submit\"]::-moz-focus-inner {\n    border-style: none;\n    padding: 0;\n  }\n  button:-moz-focusring,\n  [type=\"button\"]:-moz-focusring,\n  [type=\"reset\"]:-moz-focusring,\n  [type=\"submit\"]:-moz-focusring {\n    outline: 1px dotted ButtonText;\n  }\n  fieldset {\n    padding: 0.35em 0.75em 0.625em;\n  }\n  legend {\n    box-sizing: border-box; \n    color: inherit; \n    display: table; \n    max-width: 100%; \n    padding: 0; \n    white-space: normal; \n  }\n  progress {\n    vertical-align: baseline;\n  }\n  textarea {\n    overflow: auto;\n  }\n  [type=\"checkbox\"],\n  [type=\"radio\"] {\n    box-sizing: border-box; \n    padding: 0; \n  }\n  [type=\"number\"]::-webkit-inner-spin-button,\n  [type=\"number\"]::-webkit-outer-spin-button {\n    height: auto;\n  }\n  [type=\"search\"] {\n    -webkit-appearance: textfield; \n    outline-offset: -2px; \n  }\n  [type=\"search\"]::-webkit-search-decoration {\n    -webkit-appearance: none;\n  }\n  ::-webkit-file-upload-button {\n    -webkit-appearance: button; \n    font: inherit; \n  }\n  details {\n    display: block;\n  }\n  summary {\n    display: list-item;\n  }\n  template {\n    display: none;\n  }\n  [hidden] {\n    display: none;\n  }\n"]);
+  var data = _taggedTemplateLiteral(["\n  @import url('https://fonts.googleapis.com/css?family=Abel');\n\n  *, *::before, *::after {\n    box-sizing: border-box;\n  }\n  html {\n    -ms-text-size-adjust: 100%;\n    -moz-text-size-adjust: 100%;\n    -webkit-text-size-adjust: none;\n    min-height: 100vh;\n    line-height: ", ";\n    font-size: 100%;\n  }\n  body {\n    position: relative;\n    margin: 0;\n    padding: 0;\n    min-height: 100vh;\n    font-size: ", ";\n    font-family: 'Abel', 'Helvetica Neue', Helvetica, Arial, sans-serif;\n    background-image: ", ";\n    overflow: hidden;\n    border: 1rem solid rgb(255,255,255);\n  }\n  h1 {\n    font-size: 2em;\n    margin: 0.67em 0;\n  }\n  hr {\n    box-sizing: content-box;\n    height: 0;\n    overflow: visible;\n  }\n  pre {\n    font-family: monospace, monospace;\n    font-size: 1em;\n  }\n  a {\n    background-color: transparent;\n  }\n  abbr[title] {\n    border-bottom: none; \n    text-decoration: underline; \n    text-decoration: underline dotted; \n  }\n  b,\n  strong {\n    font-weight: bolder;\n  }\n  code,\n  kbd,\n  samp {\n    font-family: monospace, monospace; \n    font-size: 1em; \n  }\n  small {\n    font-size: 80%;\n  }\n  sub,\n  sup {\n    font-size: 75%;\n    line-height: 0;\n    position: relative;\n    vertical-align: baseline;\n  }\n  sub {\n    bottom: -0.25em;\n  }\n  sup {\n    top: -0.5em;\n  }\n  img {\n    border-style: none;\n  }\n  button,\n  input,\n  optgroup,\n  select,\n  textarea {\n    font-family: inherit; \n    font-size: 100%; \n    line-height: 1.15; \n    margin: 0; \n  }\n  button,\n  input { \n    overflow: visible;\n  }\n  button,\n  select { \n    text-transform: none;\n  }\n  button,\n  [type=\"button\"],\n  [type=\"reset\"],\n  [type=\"submit\"] {\n    -webkit-appearance: button;\n  }\n  button::-moz-focus-inner,\n  [type=\"button\"]::-moz-focus-inner,\n  [type=\"reset\"]::-moz-focus-inner,\n  [type=\"submit\"]::-moz-focus-inner {\n    border-style: none;\n    padding: 0;\n  }\n  button:-moz-focusring,\n  [type=\"button\"]:-moz-focusring,\n  [type=\"reset\"]:-moz-focusring,\n  [type=\"submit\"]:-moz-focusring {\n    outline: 1px dotted ButtonText;\n  }\n  fieldset {\n    padding: 0.35em 0.75em 0.625em;\n  }\n  legend {\n    box-sizing: border-box; \n    color: inherit; \n    display: table; \n    max-width: 100%; \n    padding: 0; \n    white-space: normal; \n  }\n  progress {\n    vertical-align: baseline;\n  }\n  textarea {\n    overflow: auto;\n  }\n  [type=\"checkbox\"],\n  [type=\"radio\"] {\n    box-sizing: border-box; \n    padding: 0; \n  }\n  [type=\"number\"]::-webkit-inner-spin-button,\n  [type=\"number\"]::-webkit-outer-spin-button {\n    height: auto;\n  }\n  [type=\"search\"] {\n    -webkit-appearance: textfield; \n    outline-offset: -2px; \n  }\n  [type=\"search\"]::-webkit-search-decoration {\n    -webkit-appearance: none;\n  }\n  ::-webkit-file-upload-button {\n    -webkit-appearance: button; \n    font: inherit; \n  }\n  details {\n    display: block;\n  }\n  summary {\n    display: list-item;\n  }\n  template {\n    display: none;\n  }\n  [hidden] {\n    display: none;\n  }\n  \n  #js-application {\n    position: absolute;\n    overflow: auto;\n    display: grid;\n    align-items: center;\n    justify-items: center;\n    width: 100%;\n    height: 100%;\n  }\n"]);
 
   _templateObject = function _templateObject() {
     return data;
@@ -1595,7 +1595,7 @@ function _taggedTemplateLiteral(strings, raw) { if (!raw) { raw = strings.slice(
 
 // normalize.css v8.0.0 | MIT License | github.com/necolas/normalize.css
 // + Customs
-(0, _emotion.injectGlobal)(_templateObject(), _Theme.modularScale.ms2, _Theme.theme.fontSizes[2], _Theme.theme.gradients['premium-white']);
+(0, _emotion.injectGlobal)(_templateObject(), _Theme.modularScale.ms2, _Theme.theme.fontSizes[3], _Theme.theme.gradients['premium-white']);
 },{"emotion":"../node_modules/emotion/dist/index.esm.js","./Theme":"js/theme/Theme.js"}],"../node_modules/mustache/mustache.js":[function(require,module,exports) {
 var define;
 var global = arguments[3];
@@ -19891,7 +19891,6 @@ var _initialiseProps = function _initialiseProps() {
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.useState = useState;
 exports.render = exports.c = void 0;
 
 var _Component = _interopRequireDefault(require("./Component"));
@@ -19939,36 +19938,55 @@ var render = function render(component, domRoot) {
 Merge fn for updater
 prevState => ({...prevState, ...updatedValues});
 }
+
+//for(let i=0; i<5; i++) {
+  //   let [foo, setFoo] = useState('foo');
+  //   console.log('foo is',foo);
+  //   foo = setFoo(ps => ps + 'BAZ!');
+  //   console.log('foo is',foo);
+  //   foo = setFoo(ps => ps + 'BAZ!');
+  //   console.log('foo is',foo);
+  //   foo = setFoo(ps => ps + 'BAZ!');
+  //   console.log('foo is',foo);
+  //}
+
  */
+// let __stateValueMap = [];
+//
+// export function useState(initial) {
+//
+//   let stateIdx = __stateValueMap.length;
+//
+//   if (!__stateValueMap[stateIdx]) {
+//     __stateValueMap[stateIdx] = initial;
+//   } else {
+//   }
+//
+//   // console.log('useState', __stateValueMap);
+//
+//   let setState = (newState) => {
+//
+//     let currentValue = __stateValueMap[stateIdx];
+//
+//     // console.log('updating the index at ', stateIdx, 'current value', currentValue);
+//
+//     if (typeof newState === "function") {
+//       currentValue = newState(currentValue);
+//     } else {
+//       currentValue = newState;
+//     }
+//
+//     __stateValueMap[stateIdx] = currentValue;
+//
+//     return currentValue;
+//   };
+//
+//   return [initial, setState];
+// }
 
 
 exports.render = render;
-var __stateValueMap = [];
-
-function useState(initial) {
-  var stateIdx = __stateValueMap.length;
-
-  if (!__stateValueMap[stateIdx]) {
-    __stateValueMap[stateIdx] = initial;
-  } else {} // console.log('useState', __stateValueMap);
-
-
-  var setState = function setState(newState) {
-    var currentValue = __stateValueMap[stateIdx]; // console.log('updating the index at ', stateIdx, 'current value', currentValue);
-
-    if (typeof newState === "function") {
-      currentValue = newState(currentValue);
-    } else {
-      currentValue = newState;
-    }
-
-    __stateValueMap[stateIdx] = currentValue;
-    return currentValue;
-  };
-
-  return [initial, setState];
-}
-},{"./Component":"js/nori/Component.js","./util/is":"js/nori/util/is.js","./browser/DOMToolbox":"js/nori/browser/DOMToolbox.js"}],"js/Greeter.js":[function(require,module,exports) {
+},{"./Component":"js/nori/Component.js","./util/is":"js/nori/util/is.js","./browser/DOMToolbox":"js/nori/browser/DOMToolbox.js"}],"js/components/Box.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -19976,11 +19994,7 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.default = void 0;
 
-var _Component2 = _interopRequireDefault(require("./nori/Component"));
-
-var _C = require("./nori/C");
-
-var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
+var _Component2 = _interopRequireDefault(require("../nori/Component"));
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -19998,60 +20012,23 @@ function _inherits(subClass, superClass) { if (typeof superClass !== "function" 
 
 function _setPrototypeOf(o, p) { _setPrototypeOf = Object.setPrototypeOf || function _setPrototypeOf(o, p) { o.__proto__ = p; return o; }; return _setPrototypeOf(o, p); }
 
-/*
-Testing stuff for Greeter ...
-
-const _onGreetClick = evt => {
-    //console.log('greet!',evt);
-    evt.component.state = {name:Lorem.firstLastName()};
-  };
-
-  const _onGreetRender = evt => {
-    //console.log('greet rendered!', evt);
-  };
-
-  const _onGreetUpdate = evt => {
-    //console.log('greet update!', evt.component.state);
-  };
-
-  // let test = <p class={blue}>Hi, <Greeter triggers={{
-  //   click: _onGreetClick,
-  //   render: _onGreetRender,
-  //   update: _onGreetUpdate,
-  // }}>There</Greeter></p>;
-
- */
-var Greeter =
+var Box =
 /*#__PURE__*/
 function (_Component) {
-  _inherits(Greeter, _Component);
+  _inherits(Box, _Component);
 
-  // Subclasses should only take passed props and children
-  function Greeter(props, children) {
-    var _this;
+  function Box(props, children) {
+    _classCallCheck(this, Box);
 
-    _classCallCheck(this, Greeter);
+    var baseElement = props.element || 'div';
+    return _possibleConstructorReturn(this, _getPrototypeOf(Box).call(this, baseElement, props, children));
+  }
 
-    // call super and pass what's needed
-    var _useState = (0, _C.useState)('Hello, <em>{{name}}!</em>'),
-        _useState2 = _slicedToArray(_useState, 2);
-
-    var greeting = _useState2[0],
-        setGreet = _useState2[1];
-    _this = _possibleConstructorReturn(this, _getPrototypeOf(Greeter).call(this, 'h1', props, [greeting]));
-    _this.internalState = {
-      name: 'Matt'
-    };
-    return _this;
-  } // Override fn's
-  // Default state
-
-
-  return Greeter;
+  return Box;
 }(_Component2.default);
 
-exports.default = Greeter;
-},{"./nori/Component":"js/nori/Component.js","./nori/C":"js/nori/C.js"}],"js/nori/util/NumberUtils.js":[function(require,module,exports) {
+exports.default = Box;
+},{"../nori/Component":"js/nori/Component.js"}],"js/nori/util/NumberUtils.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -20189,58 +20166,153 @@ var unslugify = function unslugify(str) {
 };
 
 exports.unslugify = unslugify;
-},{}],"js/nori/util/Toolbox.js":[function(require,module,exports) {
+},{}],"js/nori/util/ArrayUtils.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.sleep = exports.decodeParameterString = exports.getParameterString = void 0;
+exports.shuffleArray = exports.arryArryToArryObj = exports.getDifferences = exports.getRandomSetOfElements = exports.rndElement = exports.removeItem = exports.removeIndex = exports.unique = exports.mergeAll = exports.arrify = void 0;
 
-/*eslint no-undef: "error"*/
+var _NumberUtils = require("./NumberUtils");
 
-/*eslint-env node*/
+var _this = void 0;
 
-/*
- Collected utility functions
- */
+var arrify = function arrify(a) {
+  return Array.prototype.slice.call(a, 0);
+}; // Reference: http://jhusain.github.io/learnrx/index.html
 
-/**
- * Turn an object of {paramname:value[,...]} into paramname=value[&...] for a
- * URL rest query
- */
-var getParameterString = function getParameterString(objArry) {
-  return Object.keys(objArry).reduce(function (p, c, i) {
-    p += (i > 0 ? '&' : '') + c + '=' + encodeURIComponent(objArry[c]);
-    return p;
-  }, '');
-};
 
-exports.getParameterString = getParameterString;
+exports.arrify = arrify;
 
-var decodeParameterString = function decodeParameterString(str) {
-  return str.split('&').reduce(function (p, c) {
-    var pair = c.split('=');
-    p[pair[0]] = decodeURIComponent(pair[1]);
-    return p;
-  }, {});
-};
+var mergeAll = function mergeAll() {
+  var results = [];
 
-exports.decodeParameterString = decodeParameterString;
-
-var sleep = function sleep(time) {
-  return new Promise(function (resolve) {
-    window.setTimeout(resolve, time);
+  _this.forEach(function (subArr) {
+    subArr.forEach(function (elm) {
+      results.push(elm);
+    });
   });
+
+  return results;
+}; // http://www.shamasis.net/2009/09/fast-algorithm-to-find-unique-items-in-javascript-array/
+
+
+exports.mergeAll = mergeAll;
+
+var unique = function unique(arry) {
+  var o = {},
+      i,
+      l = arry.length,
+      r = [];
+
+  for (i = 0; i < l; i += 1) {
+    o[arry[i]] = arry[i];
+  }
+
+  for (i in o) {
+    r.push(o[i]);
+  }
+
+  return r;
 };
 
-exports.sleep = sleep;
-},{}],"js/nori/util/Lorem.js":[function(require,module,exports) {
+exports.unique = unique;
+
+var removeIndex = function removeIndex(arr, idx) {
+  return arr.splice(idx, 1);
+};
+
+exports.removeIndex = removeIndex;
+
+var removeItem = function removeItem(arr, item) {
+  var idx = arr.indexOf(item);
+
+  if (idx > -1) {
+    arr.splice(idx, 1);
+  }
+};
+
+exports.removeItem = removeItem;
+
+var rndElement = function rndElement(arry) {
+  return arry[(0, _NumberUtils.rndNumber)(0, arry.length - 1)];
+};
+
+exports.rndElement = rndElement;
+
+var getRandomSetOfElements = function getRandomSetOfElements(srcarry, max) {
+  var arry = [],
+      i = 0,
+      len = (0, _NumberUtils.rndNumber)(1, max);
+
+  for (; i < len; i++) {
+    arry.push(_this.rndElement(srcarry));
+  }
+
+  return arry;
+};
+
+exports.getRandomSetOfElements = getRandomSetOfElements;
+
+var getDifferences = function getDifferences(arr1, arr2) {
+  var dif = [];
+  arr1.forEach(function (value) {
+    var present = false,
+        i = 0,
+        len = arr2.length;
+
+    for (; i < len; i++) {
+      if (value === arr2[i]) {
+        present = true;
+        break;
+      }
+    }
+
+    if (!present) {
+      dif.push(value);
+    }
+  });
+  return dif;
+};
+
+exports.getDifferences = getDifferences;
+
+var arryArryToArryObj = function arryArryToArryObj(src, keys) {
+  return src.reduce(function (p, c) {
+    var row = {};
+    keys.forEach(function (col, i) {
+      row[col] = c[i];
+    });
+    p.push(row);
+    return p;
+  }, []);
+}; //https://stackoverflow.com/questions/2450954/how-to-randomize-shuffle-a-javascript-array
+
+
+exports.arryArryToArryObj = arryArryToArryObj;
+
+var shuffleArray = function shuffleArray(array) {
+  for (var i = array.length - 1; i > 0; i--) {
+    var j = Math.floor(Math.random() * (i + 1));
+    // eslint-disable-line no-param-reassign
+    var _ref = [array[j], array[i]];
+    array[i] = _ref[0];
+    array[j] = _ref[1];
+  }
+
+  return array;
+};
+
+exports.shuffleArray = shuffleArray;
+},{"./NumberUtils":"js/nori/util/NumberUtils.js"}],"js/nori/util/Lorem.js":[function(require,module,exports) {
 "use strict";
 
 var _NumberUtils = require("./NumberUtils");
 
 var _StringUtils = require("./StringUtils");
+
+var _ArrayUtils = require("./ArrayUtils");
 
 var _currentText = [],
     _defaultTextSet,
@@ -20249,8 +20321,7 @@ var _currentText = [],
     _lastNames = [],
     _punctuation = [],
     _months,
-    _days,
-    _toolbox = require('./Toolbox');
+    _days;
 
 _defaultTextSet = 'Perhaps a re-engineering of your current world view will re-energize your online nomenclature to enable a new holistic interactive enterprise internet communication solution Upscaling the resurgent networking exchange solutions achieving a breakaway systemic electronic data interchange system synchronization thereby exploiting technical environments for mission critical broad based capacity constrained systems Fundamentally transforming well designed actionable information whose semantic content is virtually null To more fully clarify the current exchange a few aggregate issues will require addressing to facilitate this distributed communication venue In integrating non-aligned structures into existing legacy systems a holistic gateway blueprint is a backward compatible packaging tangible';
 _lastNames = 'Smith Johnson Williams Jones Brown Davis Miller Wilson Moore Taylor Anderson Thomas Jackson White Harris Martin Thompson Garcia Martinez Robinson Clark Rodriguez Lewis Lee Walker Hall Allen Young Hernandez King Wright Lopez Hill Scott Green Adams Baker Gonzalez Nelson Carter Mitchell Perez Roberts Turner Phillips Campbell Parker Evans Edwards Collins Stewart Sanchez Morris Rogers Reed Cook Morgan Bell Murphy'.split(' ');
@@ -20284,11 +20355,11 @@ function severalOf(num, arry) {
 }
 
 function sentence(min, max) {
-  return capitalizeFirstLetterStr(text(min, max)) + oneOf(_punctuation);
+  return (0, _StringUtils.capitalizeFirstLetter)(text(min, max)) + oneOf(_punctuation);
 }
 
 function title(min, max) {
-  return toTitleCaseStr(text(min, max));
+  return (0, _StringUtils.toTitleCase)(text(min, max));
 }
 
 function paragraph(min, max) {
@@ -20355,7 +20426,7 @@ function date() {
     monthDay: rNumber(1, 28),
     weekDayNumber: wkday + 1,
     weekDay: _days[wkday],
-    year: _toolbox.rndElement(['2018'])
+    year: oneOf(['2018', '2019', '2020'])
   };
   date.string = date.monthName + ' ' + date.monthDay + ', ' + date.year;
   return date;
@@ -20387,7 +20458,7 @@ module.exports = {
   date: date,
   guid: guid
 };
-},{"./NumberUtils":"js/nori/util/NumberUtils.js","./StringUtils":"js/nori/util/StringUtils.js","./Toolbox":"js/nori/util/Toolbox.js"}],"js/components/Box.js":[function(require,module,exports) {
+},{"./NumberUtils":"js/nori/util/NumberUtils.js","./StringUtils":"js/nori/util/StringUtils.js","./ArrayUtils":"js/nori/util/ArrayUtils.js"}],"js/components/Lorem.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -20395,9 +20466,13 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.default = void 0;
 
+var L = _interopRequireWildcard(require("../nori/util/Lorem"));
+
 var _Component2 = _interopRequireDefault(require("../nori/Component"));
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) { var desc = Object.defineProperty && Object.getOwnPropertyDescriptor ? Object.getOwnPropertyDescriptor(obj, key) : {}; if (desc.get || desc.set) { Object.defineProperty(newObj, key, desc); } else { newObj[key] = obj[key]; } } } } newObj.default = obj; return newObj; } }
 
 function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
 
@@ -20413,66 +20488,116 @@ function _inherits(subClass, superClass) { if (typeof superClass !== "function" 
 
 function _setPrototypeOf(o, p) { _setPrototypeOf = Object.setPrototypeOf || function _setPrototypeOf(o, p) { o.__proto__ = p; return o; }; return _setPrototypeOf(o, p); }
 
-var Box =
+/*
+TODO
+  - children - where would this be useful?
+ */
+
+/*
+Props
+  min / max
+  mode - paragraph || text || title || sentence ||  date || fullNameFL
+ */
+var Lorem =
 /*#__PURE__*/
 function (_Component) {
-  _inherits(Box, _Component);
+  _inherits(Lorem, _Component);
 
-  // Subclasses should only take passed props and children
-  function Box(props, children) {
-    _classCallCheck(this, Box);
+  function Lorem(props) {
+    var _this;
 
-    // call super and pass what's needed
-    console.log('box', props);
-    var baseElement = props.element || 'div';
-    return _possibleConstructorReturn(this, _getPrototypeOf(Box).call(this, baseElement, props, children));
-  } // Override fn's
+    var children = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : [];
 
+    _classCallCheck(this, Lorem);
 
-  return Box;
+    var baseElement = props.element || 'span';
+    var min = props.min || 1;
+    var max = props.max || 2;
+    var mode = props.mode || 'text';
+    var lorem = L.text(min, max);
+
+    switch (mode) {
+      case 'paragraph':
+        lorem = L.paragraph(min, max);
+        break;
+
+      case 'title':
+        lorem = L.title(min, max);
+        break;
+
+      case 'sentence':
+        lorem = L.sentence(min, max);
+        break;
+
+      case 'date':
+        lorem = L.date().string;
+        break;
+
+      case 'fullNameFL':
+        lorem = L.firstLastName();
+        break;
+    }
+
+    _this = _possibleConstructorReturn(this, _getPrototypeOf(Lorem).call(this, baseElement, props, lorem));
+    _this.TEXT = 'text';
+    return _this;
+  }
+
+  return Lorem;
 }(_Component2.default);
 
-exports.default = Box;
-},{"../nori/Component":"js/nori/Component.js"}],"js/index.js":[function(require,module,exports) {
+exports.default = Lorem;
+Lorem.TEXT = 'text';
+Lorem.PARAGRAPH = 'paragraph';
+Lorem.TITLE = 'title';
+Lorem.SENTENCE = 'sentence';
+Lorem.DATE = 'date';
+Lorem.FULLNAMEFL = 'fullNameFL';
+},{"../nori/util/Lorem":"js/nori/util/Lorem.js","../nori/Component":"js/nori/Component.js"}],"js/index.js":[function(require,module,exports) {
 "use strict";
 
 var GlobalCSS = _interopRequireWildcard(require("./theme/Global"));
 
+var _Theme = require("./theme/Theme");
+
 var _emotion = require("emotion");
-
-var _Greeter = _interopRequireDefault(require("./Greeter"));
-
-var Lorem = _interopRequireWildcard(require("./nori/util/Lorem"));
 
 var _C = require("./nori/C");
 
 var _Box = _interopRequireDefault(require("./components/Box"));
 
+var _Lorem = _interopRequireDefault(require("./components/Lorem"));
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) { var desc = Object.defineProperty && Object.getOwnPropertyDescriptor ? Object.getOwnPropertyDescriptor(obj, key) : {}; if (desc.get || desc.set) { Object.defineProperty(newObj, key, desc); } else { newObj[key] = obj[key]; } } } } newObj.default = obj; return newObj; } }
 
-/* @jsx c */
-// For global CSS reset + a few styles for html and body
-(function ($global) {
-  // const red = css`color: red; cursor: pointer;`;
-  // const blue = css`color: blue`;
-  var applicationRoot = document.querySelector('#js-application');
-  var testBox = (0, _C.c)(_Box.default, {
-    element: "span"
-  }, "Hi, I'm in a box");
-  (0, _C.render)(testBox, applicationRoot); //for(let i=0; i<5; i++) {
-  //   let [foo, setFoo] = useState('foo');
-  //   console.log('foo is',foo);
-  //   foo = setFoo(ps => ps + 'BAZ!');
-  //   console.log('foo is',foo);
-  //   foo = setFoo(ps => ps + 'BAZ!');
-  //   console.log('foo is',foo);
-  //   foo = setFoo(ps => ps + 'BAZ!');
-  //   console.log('foo is',foo);
-  //}
-})(window);
-},{"./theme/Global":"js/theme/Global.js","emotion":"../node_modules/emotion/dist/index.esm.js","./Greeter":"js/Greeter.js","./nori/util/Lorem":"js/nori/util/Lorem.js","./nori/C":"js/nori/C.js","./components/Box":"js/components/Box.js"}],"../node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
+function _templateObject() {
+  var data = _taggedTemplateLiteral(["\n    display: inline-block;\n    position: relative;\n    width: 25%;\n    height: 25%;\n    padding: 1rem;\n    color: #fff;\n    background-image: ", ";\n    box-shadow: ", ";\n"]);
+
+  _templateObject = function _templateObject() {
+    return data;
+  };
+
+  return data;
+}
+
+function _taggedTemplateLiteral(strings, raw) { if (!raw) { raw = strings.slice(0); } return Object.freeze(Object.defineProperties(strings, { raw: { value: Object.freeze(raw) } })); }
+
+// const red = css`color: red; cursor: pointer;`;
+// const blue = css`color: blue`;
+var blackBox = (0, _emotion.css)(_templateObject(), _Theme.theme.gradients['premium-dark'], _Theme.theme.shadows.dropShadow.bigsoft);
+var applicationRoot = document.querySelector('#js-application');
+var testBox = (0, _C.c)(_Box.default, {
+  "class": blackBox
+}, (0, _C.c)(_Lorem.default, {
+  min: 5,
+  max: 5,
+  mode: _Lorem.default.DATE
+}));
+console.log(_Lorem.default.TEXT);
+(0, _C.render)(testBox, applicationRoot);
+},{"./theme/Global":"js/theme/Global.js","./theme/Theme":"js/theme/Theme.js","emotion":"../node_modules/emotion/dist/index.esm.js","./nori/C":"js/nori/C.js","./components/Box":"js/components/Box.js","./components/Lorem":"js/components/Lorem.js"}],"../node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
 var global = arguments[3];
 var OVERLAY_ID = '__parcel__error__overlay__';
 var OldModule = module.bundle.Module;

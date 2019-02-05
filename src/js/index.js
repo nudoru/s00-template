@@ -1,35 +1,35 @@
 /* @jsx c */
 
 import * as GlobalCSS from './theme/Global'; // For global CSS reset + a few styles for html and body
+import {theme} from './theme/Theme';
 import {css} from 'emotion';
-import Greeter from './Greeter';
-import * as Lorem from './nori/util/Lorem';
+
 import {c, render} from './nori/C';
+
 import Box from './components/Box';
-
-import {useState} from "./nori/C";
-
-(($global)=> {
-
-  // const red = css`color: red; cursor: pointer;`;
-  // const blue = css`color: blue`;
-
-  const applicationRoot = document.querySelector('#js-application');
-
-  let testBox = <Box element='span'>Hi, I'm in a box</Box>
+import Lorem from './components/Lorem';
 
 
-  render(testBox, applicationRoot);
+// const red = css`color: red; cursor: pointer;`;
+// const blue = css`color: blue`;
 
-  //for(let i=0; i<5; i++) {
-  //   let [foo, setFoo] = useState('foo');
-  //   console.log('foo is',foo);
-  //   foo = setFoo(ps => ps + 'BAZ!');
-  //   console.log('foo is',foo);
-  //   foo = setFoo(ps => ps + 'BAZ!');
-  //   console.log('foo is',foo);
-  //   foo = setFoo(ps => ps + 'BAZ!');
-  //   console.log('foo is',foo);
-  //}
+const blackBox = css`
+    display: inline-block;
+    position: relative;
+    width: 25%;
+    height: 25%;
+    padding: 1rem;
+    color: #fff;
+    background-image: ${theme.gradients['premium-dark']};
+    box-shadow: ${theme.shadows.dropShadow.bigsoft};
+`;
 
-})(window);
+const applicationRoot = document.querySelector('#js-application');
+
+let testBox = <Box class={blackBox}>
+  <Lorem min={5} max={5} mode={Lorem.DATE}/>
+  </Box>;
+
+console.log(Lorem.TEXT)
+
+render(testBox, applicationRoot);

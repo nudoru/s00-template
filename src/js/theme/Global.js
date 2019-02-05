@@ -4,7 +4,7 @@ import {modularScale, theme} from './Theme';
 // normalize.css v8.0.0 | MIT License | github.com/necolas/normalize.css
 // + Customs
 injectGlobal`
-  @import url('https://fonts.googleapis.com/css?family=Nanum+Gothic|Reenie+Beanie');
+  @import url('https://fonts.googleapis.com/css?family=Abel');
 
   *, *::before, *::after {
     box-sizing: border-box;
@@ -22,10 +22,11 @@ injectGlobal`
     margin: 0;
     padding: 0;
     min-height: 100vh;
-    font-size: ${theme.fontSizes[2]};
-    font-family: 'Nanum Gothic';
+    font-size: ${theme.fontSizes[3]};
+    font-family: 'Abel', 'Helvetica Neue', Helvetica, Arial, sans-serif;
     background-image: ${theme.gradients['premium-white']};
     overflow: hidden;
+    border: 1rem solid rgb(255,255,255);
   }
   h1 {
     font-size: 2em;
@@ -162,5 +163,15 @@ injectGlobal`
   }
   [hidden] {
     display: none;
+  }
+  
+  #js-application {
+    position: absolute;
+    overflow: auto;
+    display: grid;
+    align-items: center;
+    justify-items: center;
+    width: 100%;
+    height: 100%;
   }
 `;

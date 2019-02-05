@@ -35,37 +35,49 @@ export const render = (component, domRoot, removeExisting = true) => {
 Merge fn for updater
 prevState => ({...prevState, ...updatedValues});
 }
+
+//for(let i=0; i<5; i++) {
+  //   let [foo, setFoo] = useState('foo');
+  //   console.log('foo is',foo);
+  //   foo = setFoo(ps => ps + 'BAZ!');
+  //   console.log('foo is',foo);
+  //   foo = setFoo(ps => ps + 'BAZ!');
+  //   console.log('foo is',foo);
+  //   foo = setFoo(ps => ps + 'BAZ!');
+  //   console.log('foo is',foo);
+  //}
+
  */
 
-let __stateValueMap = [];
-
-export function useState(initial) {
-
-  let stateIdx = __stateValueMap.length;
-
-  if (!__stateValueMap[stateIdx]) {
-    __stateValueMap[stateIdx] = initial;
-  } else {
-  }
-
-  // console.log('useState', __stateValueMap);
-
-  let setState = (newState) => {
-
-    let currentValue = __stateValueMap[stateIdx];
-
-    // console.log('updating the index at ', stateIdx, 'current value', currentValue);
-
-    if (typeof newState === "function") {
-      currentValue = newState(currentValue);
-    } else {
-      currentValue = newState;
-    }
-
-    __stateValueMap[stateIdx] = currentValue;
-
-    return currentValue;
-  };
-
-  return [initial, setState];
-}
+// let __stateValueMap = [];
+//
+// export function useState(initial) {
+//
+//   let stateIdx = __stateValueMap.length;
+//
+//   if (!__stateValueMap[stateIdx]) {
+//     __stateValueMap[stateIdx] = initial;
+//   } else {
+//   }
+//
+//   // console.log('useState', __stateValueMap);
+//
+//   let setState = (newState) => {
+//
+//     let currentValue = __stateValueMap[stateIdx];
+//
+//     // console.log('updating the index at ', stateIdx, 'current value', currentValue);
+//
+//     if (typeof newState === "function") {
+//       currentValue = newState(currentValue);
+//     } else {
+//       currentValue = newState;
+//     }
+//
+//     __stateValueMap[stateIdx] = currentValue;
+//
+//     return currentValue;
+//   };
+//
+//   return [initial, setState];
+// }

@@ -1,5 +1,6 @@
 import {rndNumber} from './NumberUtils';
-import {capitalizeFirstLetter, toTitleCase} from './StringUtils';
+import {toTitleCase, capitalizeFirstLetter} from "./StringUtils";
+import {rndElement} from "./ArrayUtils";
 
 let _currentText      = [],
     _defaultTextSet,
@@ -8,8 +9,7 @@ let _currentText      = [],
     _lastNames        = [],
     _punctuation      = [],
     _months,
-    _days,
-    _toolbox          = require('./Toolbox');
+    _days;
 
 _defaultTextSet = 'Perhaps a re-engineering of your current world view will re-energize your online nomenclature to enable a new holistic interactive enterprise internet communication solution Upscaling the resurgent networking exchange solutions achieving a breakaway systemic electronic data interchange system synchronization thereby exploiting technical environments for mission critical broad based capacity constrained systems Fundamentally transforming well designed actionable information whose semantic content is virtually null To more fully clarify the current exchange a few aggregate issues will require addressing to facilitate this distributed communication venue In integrating non-aligned structures into existing legacy systems a holistic gateway blueprint is a backward compatible packaging tangible';
 
@@ -47,11 +47,11 @@ function severalOf(num, arry) {
 }
 
 function sentence(min, max) {
-  return capitalizeFirstLetterStr(text(min, max)) + oneOf(_punctuation);
+  return capitalizeFirstLetter(text(min, max)) + oneOf(_punctuation);
 }
 
 function title(min, max) {
-  return toTitleCaseStr(text(min, max));
+  return toTitleCase(text(min, max));
 }
 
 function paragraph(min, max) {
@@ -115,7 +115,7 @@ function date() {
         monthDay     : rNumber(1, 28),
         weekDayNumber: wkday + 1,
         weekDay      : _days[wkday],
-        year         : _toolbox.rndElement(['2018'])
+        year         : oneOf(['2018','2019','2020'])
       };
 
   date.string = date.monthName + ' ' + date.monthDay + ', ' + date.year;
