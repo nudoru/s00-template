@@ -160,8 +160,10 @@ injectGlobal`
   [hidden] {
     display: none;
   }
-  
-  #js-application {
-    
+  p, li {
+    margin-top: 0;
+  }
+  p:last-of-type, li:last-of-type  {
+    margin-bottom: 0;
   }
 `;

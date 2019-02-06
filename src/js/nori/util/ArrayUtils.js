@@ -102,3 +102,5 @@ export const shuffleArray = (array) => {
   }
   return array;
 };
+
+export const range = len => ([...Array(len).keys()]);

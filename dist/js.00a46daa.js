@@ -1582,7 +1582,7 @@ var _emotion = require("emotion");
 var _Theme = require("./Theme");
 
 function _templateObject() {
-  var data = _taggedTemplateLiteral(["\n  @import url('https://fonts.googleapis.com/css?family=Abel');\n\n  *, *::before, *::after {\n    box-sizing: border-box;\n  }\n  html {\n    -ms-text-size-adjust: 100%;\n    -moz-text-size-adjust: 100%;\n    -webkit-text-size-adjust: none;\n    min-height: 100vh;\n    line-height: ", ";\n    font-size: 100%;\n  }\n  body {\n    margin: 0;\n    padding: 0;\n    min-height: 100vh;\n    font-size: ", ";\n    font-family: 'Abel', 'Helvetica Neue', Helvetica, Arial, sans-serif;\n  }\n  h1 {\n    font-size: 2em;\n    margin: 0.67em 0;\n  }\n  hr {\n    box-sizing: content-box;\n    height: 0;\n    overflow: visible;\n  }\n  pre {\n    font-family: monospace, monospace;\n    font-size: 1em;\n  }\n  a {\n    background-color: transparent;\n  }\n  abbr[title] {\n    border-bottom: none; \n    text-decoration: underline; \n    text-decoration: underline dotted; \n  }\n  b,\n  strong {\n    font-weight: bolder;\n  }\n  code,\n  kbd,\n  samp {\n    font-family: monospace, monospace; \n    font-size: 1em; \n  }\n  small {\n    font-size: 80%;\n  }\n  sub,\n  sup {\n    font-size: 75%;\n    line-height: 0;\n    position: relative;\n    vertical-align: baseline;\n  }\n  sub {\n    bottom: -0.25em;\n  }\n  sup {\n    top: -0.5em;\n  }\n  img {\n    border-style: none;\n  }\n  button,\n  input,\n  optgroup,\n  select,\n  textarea {\n    font-family: inherit; \n    font-size: 100%; \n    line-height: 1.15; \n    margin: 0; \n  }\n  button,\n  input { \n    overflow: visible;\n  }\n  button,\n  select { \n    text-transform: none;\n  }\n  button,\n  [type=\"button\"],\n  [type=\"reset\"],\n  [type=\"submit\"] {\n    -webkit-appearance: button;\n  }\n  button::-moz-focus-inner,\n  [type=\"button\"]::-moz-focus-inner,\n  [type=\"reset\"]::-moz-focus-inner,\n  [type=\"submit\"]::-moz-focus-inner {\n    border-style: none;\n    padding: 0;\n  }\n  button:-moz-focusring,\n  [type=\"button\"]:-moz-focusring,\n  [type=\"reset\"]:-moz-focusring,\n  [type=\"submit\"]:-moz-focusring {\n    outline: 1px dotted ButtonText;\n  }\n  fieldset {\n    padding: 0.35em 0.75em 0.625em;\n  }\n  legend {\n    box-sizing: border-box; \n    color: inherit; \n    display: table; \n    max-width: 100%; \n    padding: 0; \n    white-space: normal; \n  }\n  progress {\n    vertical-align: baseline;\n  }\n  textarea {\n    overflow: auto;\n  }\n  [type=\"checkbox\"],\n  [type=\"radio\"] {\n    box-sizing: border-box; \n    padding: 0; \n  }\n  [type=\"number\"]::-webkit-inner-spin-button,\n  [type=\"number\"]::-webkit-outer-spin-button {\n    height: auto;\n  }\n  [type=\"search\"] {\n    -webkit-appearance: textfield; \n    outline-offset: -2px; \n  }\n  [type=\"search\"]::-webkit-search-decoration {\n    -webkit-appearance: none;\n  }\n  ::-webkit-file-upload-button {\n    -webkit-appearance: button; \n    font: inherit; \n  }\n  details {\n    display: block;\n  }\n  summary {\n    display: list-item;\n  }\n  template {\n    display: none;\n  }\n  [hidden] {\n    display: none;\n  }\n  \n  #js-application {\n    \n  }\n"]);
+  var data = _taggedTemplateLiteral(["\n  @import url('https://fonts.googleapis.com/css?family=Abel');\n\n  *, *::before, *::after {\n    box-sizing: border-box;\n  }\n  html {\n    -ms-text-size-adjust: 100%;\n    -moz-text-size-adjust: 100%;\n    -webkit-text-size-adjust: none;\n    min-height: 100vh;\n    line-height: ", ";\n    font-size: 100%;\n  }\n  body {\n    margin: 0;\n    padding: 0;\n    min-height: 100vh;\n    font-size: ", ";\n    font-family: 'Abel', 'Helvetica Neue', Helvetica, Arial, sans-serif;\n  }\n  h1 {\n    font-size: 2em;\n    margin: 0.67em 0;\n  }\n  hr {\n    box-sizing: content-box;\n    height: 0;\n    overflow: visible;\n  }\n  pre {\n    font-family: monospace, monospace;\n    font-size: 1em;\n  }\n  a {\n    background-color: transparent;\n  }\n  abbr[title] {\n    border-bottom: none; \n    text-decoration: underline; \n    text-decoration: underline dotted; \n  }\n  b,\n  strong {\n    font-weight: bolder;\n  }\n  code,\n  kbd,\n  samp {\n    font-family: monospace, monospace; \n    font-size: 1em; \n  }\n  small {\n    font-size: 80%;\n  }\n  sub,\n  sup {\n    font-size: 75%;\n    line-height: 0;\n    position: relative;\n    vertical-align: baseline;\n  }\n  sub {\n    bottom: -0.25em;\n  }\n  sup {\n    top: -0.5em;\n  }\n  img {\n    border-style: none;\n  }\n  button,\n  input,\n  optgroup,\n  select,\n  textarea {\n    font-family: inherit; \n    font-size: 100%; \n    line-height: 1.15; \n    margin: 0; \n  }\n  button,\n  input { \n    overflow: visible;\n  }\n  button,\n  select { \n    text-transform: none;\n  }\n  button,\n  [type=\"button\"],\n  [type=\"reset\"],\n  [type=\"submit\"] {\n    -webkit-appearance: button;\n  }\n  button::-moz-focus-inner,\n  [type=\"button\"]::-moz-focus-inner,\n  [type=\"reset\"]::-moz-focus-inner,\n  [type=\"submit\"]::-moz-focus-inner {\n    border-style: none;\n    padding: 0;\n  }\n  button:-moz-focusring,\n  [type=\"button\"]:-moz-focusring,\n  [type=\"reset\"]:-moz-focusring,\n  [type=\"submit\"]:-moz-focusring {\n    outline: 1px dotted ButtonText;\n  }\n  fieldset {\n    padding: 0.35em 0.75em 0.625em;\n  }\n  legend {\n    box-sizing: border-box; \n    color: inherit; \n    display: table; \n    max-width: 100%; \n    padding: 0; \n    white-space: normal; \n  }\n  progress {\n    vertical-align: baseline;\n  }\n  textarea {\n    overflow: auto;\n  }\n  [type=\"checkbox\"],\n  [type=\"radio\"] {\n    box-sizing: border-box; \n    padding: 0; \n  }\n  [type=\"number\"]::-webkit-inner-spin-button,\n  [type=\"number\"]::-webkit-outer-spin-button {\n    height: auto;\n  }\n  [type=\"search\"] {\n    -webkit-appearance: textfield; \n    outline-offset: -2px; \n  }\n  [type=\"search\"]::-webkit-search-decoration {\n    -webkit-appearance: none;\n  }\n  ::-webkit-file-upload-button {\n    -webkit-appearance: button; \n    font: inherit; \n  }\n  details {\n    display: block;\n  }\n  summary {\n    display: list-item;\n  }\n  template {\n    display: none;\n  }\n  [hidden] {\n    display: none;\n  }\n  p, li {\n    margin-top: 0;\n  }\n  p:last-of-type, li:last-of-type  {\n    margin-bottom: 0;\n  }\n"]);
 
   _templateObject = function _templateObject() {
     return data;
@@ -19582,9 +19582,11 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
 
 /*
 Simple string based component to quickly get html on the screen
+NOTHING like React, Preact or any of that. Quick and dirty
 
 TODO
-- render children w/ RECUSION!
+- render children w/ RECURSION!
+- string non-html attrs from nodes
 - break out events into own key in the props
 - break out tweens into own key in the props - on over, out, click, move, enter, exit
 - styles
@@ -19625,8 +19627,8 @@ function () {
     _initialiseProps.call(this);
 
     this.tag = tag;
-    this.children = _is.default.array(children) ? children : [children];
     this.props = props || {};
+    this.children = _is.default.array(children) ? children : [children];
     this.attrs = this.$filterSpecialProps(this.props); //props.hasOwnProperty('attrs') ? props.attrs : {};
 
     this.tweens = props.hasOwnProperty('tweens') ? props.tweens : {};
@@ -19639,16 +19641,19 @@ function () {
 
   _createClass(Component, [{
     key: "$render",
+    //----------------------------------------------------------------------------
+    //----------------------------------------------------------------------------
+    //----------------------------------------------------------------------------
+    // COMBINE RENDER AND RENDERCHILDREN IN A RECURSIVE WAY ----------------------
+    // Called on renderTo and update
+    // Why did I have fragment? ¯\_(シ)_/¯
     value: function $render() {
-      var fragment = document.createDocumentFragment();
+      // let fragment = document.createDocumentFragment();
       var element = document.createElement(this.tag);
-      this.attrs['data-nid'] = (0, _ElementIDCreator.getNextId)(); // create a unique ID for every render
-
       this.$setTagAttrs(element, this.attrs);
-      this.$renderChildren(element);
-      fragment.appendChild(element);
       this.$applyTriggers(element, this.triggerMap);
-      this.isDirty = false;
+      this.children.forEach(this.$createElement(element)); //fragment.appendChild(element);
+
       return element;
     }
   }, {
@@ -19658,27 +19663,33 @@ function () {
         console.error("Component: Can't render component to null root");
       }
 
+      this.attrs['data-nid'] = (0, _ElementIDCreator.getNextId)(); // create a unique ID for every render
+
+      this.isDirty = false;
       var element = this.$render();
       root.appendChild(element);
       this.renderedElementParent = root;
       this.renderedElement = root.lastChild;
       this.$performBehavior(BEHAVIOR_RENDER);
-    }
+    } // TODO only, rerender element if it's changed (isDirty) or it's children have
+
   }, {
     key: "$update",
     value: function $update() {
       if (this.renderedElement) {
-        //if (this.isDirty) {
         this.remove();
         var updatedElement = this.$render();
         this.renderedElement = (0, _DOMToolbox.replaceElementWith)(this.renderedElement, updatedElement);
-        this.$performBehavior(BEHAVIOR_UPDATE); // } else {
-        //   console.log('Not dirty!', this.tag);
-        // }
+        this.$performBehavior(BEHAVIOR_UPDATE);
       } else {
         console.warn("Component not rendered, can't update!", this.tag, this.props);
       }
-    }
+    } //----------------------------------------------------------------------------
+    //----------------------------------------------------------------------------
+    //----------------------------------------------------------------------------
+    // TODO filter out non-HTML attributes
+    // https://developer.mozilla.org/en-US/docs/Web/HTML/Attributes
+
   }, {
     key: "remove",
     value: function remove() {
@@ -19747,13 +19758,13 @@ function () {
     key: "isInViewport",
     get: function get() {
       return (0, _DOMToolbox.isElementInViewport)(this.current);
-    } // // also touch
+    } // also touch
     // getDistanceFromCursor(mevt) {
     //
     //   const offset = this.offset;
     // }
     //
-    // // also touch
+    // also touch
     // getCursorPositionOnElement(mevt) {
     //
     // }
@@ -19764,9 +19775,6 @@ function () {
     //
     // $onMouseMove = e => {
     //   // test for proximity
-    // };
-    // $handleBehaviorTrigger = behavior => e => {
-    //   console.log(`${behavior}:`, e)
     // };
 
   }]);
@@ -19821,13 +19829,12 @@ var _initialiseProps = function _initialiseProps() {
 
   this.$applyTriggers = function (element, triggerMap) {
     return triggerMap.forEach(function (evt) {
+      // TRIGGER_BEHAVIOR are broadcast directly from the function where they occur
       if (evt.type === TRIGGER_EVENT) {
         evt.internalHandler = _this.$handleEventTrigger(evt); // TODO implement options and useCapture? https://developer.mozilla.org/en-US/docs/Web/API/EventTarget/addEventListener
 
         element.addEventListener(evt.event, evt.internalHandler);
-      } else if (evt.type === TRIGGER_BEHAVIOR) {// Triggers are broadcast directly from the function where they occur
-      } else {//
-        }
+      }
     });
   };
 
@@ -19867,21 +19874,21 @@ var _initialiseProps = function _initialiseProps() {
     });
   };
 
+  this.$createElement = function (parent) {
+    return function (child) {
+      if (_is.default.string(child)) {
+        var text = (0, _DOMToolbox.HTMLStrToNode)(_mustache.default.render(child, _this.internalState));
+        parent.appendChild(text);
+      } else if (_is.default.object(child) && typeof child.renderTo === 'function') {
+        child.renderTo(parent);
+      }
+    };
+  };
+
   this.$setTagAttrs = function (element, attributes) {
     return Object.keys(attributes).forEach(function (key) {
       var value = attributes[key];
       element.setAttribute(key, value);
-    });
-  };
-
-  this.$renderChildren = function (root) {
-    return _this.children.forEach(function (child) {
-      if (_is.default.string(child)) {
-        var text = (0, _DOMToolbox.HTMLStrToNode)(_mustache.default.render(child, _this.internalState));
-        root.appendChild(text);
-      } else if (_is.default.object(child) && typeof child.renderTo === 'function') {
-        child.renderTo(root);
-      }
     });
   };
 };
@@ -19903,10 +19910,15 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 
 //https://jasonformat.com/wtf-is-jsx/
 //https://medium.com/@bluepnume/jsx-is-a-stellar-invention-even-with-react-out-of-the-picture-c597187134b7
+
+/*
+Convenience method to create new components. Used by the Babel/JSX transpiler
+and matches React's JSX syntax
+ */
 var c = function c(node, props) {
   var _ref;
 
-  props = props || {}; //console.log('C:', node, props, args);
+  props = props || {};
 
   for (var _len = arguments.length, args = new Array(_len > 2 ? _len - 2 : 0), _key = 2; _key < _len; _key++) {
     args[_key - 2] = arguments[_key];
@@ -19920,17 +19932,21 @@ var c = function c(node, props) {
 
   return new node(props, children);
 };
+/*
+Render a component to a dom node
+ */
+
 
 exports.c = c;
 
-var render = function render(component, domRoot) {
+var render = function render(component, targetEl) {
   var removeExisting = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : true;
 
   if (removeExisting) {
-    (0, _DOMToolbox.removeAllElements)(domRoot);
+    (0, _DOMToolbox.removeAllElements)(targetEl);
   }
 
-  component.renderTo(domRoot);
+  component.renderTo(targetEl);
 }; // Simple implementation of React's useState hook, similar API totes different impl
 // https://reactjs.org/docs/hooks-state.html
 
@@ -20172,11 +20188,19 @@ exports.unslugify = unslugify;
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.shuffleArray = exports.arryArryToArryObj = exports.getDifferences = exports.getRandomSetOfElements = exports.rndElement = exports.removeItem = exports.removeIndex = exports.unique = exports.mergeAll = exports.arrify = void 0;
+exports.range = exports.shuffleArray = exports.arryArryToArryObj = exports.getDifferences = exports.getRandomSetOfElements = exports.rndElement = exports.removeItem = exports.removeIndex = exports.unique = exports.mergeAll = exports.arrify = void 0;
 
 var _NumberUtils = require("./NumberUtils");
 
 var _this = void 0;
+
+function _toConsumableArray(arr) { return _arrayWithoutHoles(arr) || _iterableToArray(arr) || _nonIterableSpread(); }
+
+function _nonIterableSpread() { throw new TypeError("Invalid attempt to spread non-iterable instance"); }
+
+function _iterableToArray(iter) { if (Symbol.iterator in Object(iter) || Object.prototype.toString.call(iter) === "[object Arguments]") return Array.from(iter); }
+
+function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = new Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } }
 
 var arrify = function arrify(a) {
   return Array.prototype.slice.call(a, 0);
@@ -20305,6 +20329,12 @@ var shuffleArray = function shuffleArray(array) {
 };
 
 exports.shuffleArray = shuffleArray;
+
+var range = function range(len) {
+  return _toConsumableArray(Array(len).keys());
+};
+
+exports.range = range;
 },{"./NumberUtils":"js/nori/util/NumberUtils.js"}],"js/nori/util/Lorem.js":[function(require,module,exports) {
 "use strict";
 
@@ -20553,10 +20583,8 @@ Lorem.TITLE = 'title';
 Lorem.SENTENCE = 'sentence';
 Lorem.DATE = 'date';
 Lorem.FULLNAMEFL = 'fullNameFL';
-},{"../nori/util/Lorem":"js/nori/util/Lorem.js","../nori/Component":"js/nori/Component.js"}],"img/pattern/debut_light.png":[function(require,module,exports) {
-module.exports = "/debut_light.bba27a88.png";
-},{}],"img/pattern/wood_1.png":[function(require,module,exports) {
-module.exports = "/wood_1.2640c935.png";
+},{"../nori/util/Lorem":"js/nori/util/Lorem.js","../nori/Component":"js/nori/Component.js"}],"img/pattern/shattered.png":[function(require,module,exports) {
+module.exports = "/shattered.a446e091.png";
 },{}],"js/index.js":[function(require,module,exports) {
 "use strict";
 
@@ -20576,8 +20604,18 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 
 function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) { var desc = Object.defineProperty && Object.getOwnPropertyDescriptor ? Object.getOwnPropertyDescriptor(obj, key) : {}; if (desc.get || desc.set) { Object.defineProperty(newObj, key, desc); } else { newObj[key] = obj[key]; } } } } newObj.default = obj; return newObj; } }
 
+function _templateObject3() {
+  var data = _taggedTemplateLiteral(["\n  display: block;\n  padding: 1rem;\n  color: #fff;\n  overflow: hidden;\n  background-image: ", ";\n  box-shadow: ", ";\n"]);
+
+  _templateObject3 = function _templateObject3() {
+    return data;
+  };
+
+  return data;
+}
+
 function _templateObject2() {
-  var data = _taggedTemplateLiteral(["\n  display: block;\n  padding: 1rem;\n  color: #fff;\n  width: 25%;\n  height: 25%;\n  overflow: hidden;\n  background-image: ", ";\n  box-shadow: ", ";\n"]);
+  var data = _taggedTemplateLiteral(["\n  display: block;\n  padding: 1rem;\n  color: #000;\n  overflow: hidden;\n  background-image: ", ";\n  box-shadow: ", ";\n"]);
 
   _templateObject2 = function _templateObject2() {
     return data;
@@ -20599,25 +20637,59 @@ function _templateObject() {
 function _taggedTemplateLiteral(strings, raw) { if (!raw) { raw = strings.slice(0); } return Object.freeze(Object.defineProperties(strings, { raw: { value: Object.freeze(raw) } })); }
 
 // ${tme.gradients['premium-white']};
-var appContainerBG = require('../img/pattern/debut_light.png');
+var appContainerBG = require('../img/pattern/shattered.png');
 
 var appContainer = (0, _emotion.css)(_templateObject(), appContainerBG);
-
-var blackBoxBg = require('../img/pattern/wood_1.png');
-
-var blackBox = (0, _emotion.css)(_templateObject2(), _Theme.theme.gradients['premium-dark'], _Theme.theme.shadows.dropShadow.bigsoft);
+var whiteBox = (0, _emotion.css)(_templateObject2(), _Theme.theme.gradients['premium-white'], _Theme.theme.shadows.dropShadow.bigsoft);
+var blackBox = (0, _emotion.css)(_templateObject3(), _Theme.theme.gradients['premium-dark'], _Theme.theme.shadows.dropShadow.bigsoft);
 var applicationRoot = document.querySelector('#js-application');
+
+var _onGreetClick = function _onGreetClick(evt) {
+  console.log('greet!', evt);
+};
+
+var _onGreetRender = function _onGreetRender(evt) {
+  console.log('greet rendered!', evt);
+};
+
+var _onGreetUpdate = function _onGreetUpdate(evt) {
+  console.log('greet update!', evt.component.state);
+};
+
 var testBox = (0, _C.c)(_Box.default, {
   "class": appContainer
 }, (0, _C.c)(_Box.default, {
   "class": blackBox
 }, (0, _C.c)(_Lorem.default, {
+  element: "p",
   min: 5,
   max: 5,
   mode: _Lorem.default.TITLE
-})));
+}), (0, _C.c)(_Box.default, {
+  "class": whiteBox
+}, (0, _C.c)(_Lorem.default, {
+  element: "p",
+  min: 5,
+  max: 5,
+  mode: _Lorem.default.TITLE
+}), (0, _C.c)(_Box.default, {
+  "class": blackBox
+}, (0, _C.c)(_Lorem.default, {
+  element: "p",
+  min: 5,
+  max: 5,
+  mode: _Lorem.default.TITLE
+}), (0, _C.c)(_Box.default, {
+  "class": whiteBox
+}, (0, _C.c)("p", {
+  triggers: {
+    click: _onGreetClick,
+    render: _onGreetRender,
+    update: _onGreetUpdate
+  }
+}, "Click me!"))))));
 (0, _C.render)(testBox, applicationRoot);
-},{"./theme/Global":"js/theme/Global.js","./theme/Theme":"js/theme/Theme.js","emotion":"../node_modules/emotion/dist/index.esm.js","./nori/C":"js/nori/C.js","./components/Box":"js/components/Box.js","./components/Lorem":"js/components/Lorem.js","../img/pattern/debut_light.png":"img/pattern/debut_light.png","../img/pattern/wood_1.png":"img/pattern/wood_1.png"}],"../node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
+},{"./theme/Global":"js/theme/Global.js","./theme/Theme":"js/theme/Theme.js","emotion":"../node_modules/emotion/dist/index.esm.js","./nori/C":"js/nori/C.js","./components/Box":"js/components/Box.js","./components/Lorem":"js/components/Lorem.js","../img/pattern/shattered.png":"img/pattern/shattered.png"}],"../node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
 var global = arguments[3];
 var OVERLAY_ID = '__parcel__error__overlay__';
 var OldModule = module.bundle.Module;

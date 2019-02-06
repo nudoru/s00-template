@@ -10,7 +10,7 @@ import Box from './components/Box';
 import Lorem from './components/Lorem';
 
 // ${tme.gradients['premium-white']};
-const appContainerBG = require('../img/pattern/debut_light.png');
+const appContainerBG = require('../img/pattern/shattered.png');
 const appContainer = css`
   position: absolute;
   overflow: auto;
@@ -25,13 +25,19 @@ const appContainer = css`
   box-shadow: 0 0 50px inset rgba(0,0,0,.1);
 `;
 
-const blackBoxBg = require('../img/pattern/wood_1.png');
+const whiteBox = css`
+  display: block;
+  padding: 1rem;
+  color: #000;
+  overflow: hidden;
+  background-image: ${theme.gradients['premium-white']};
+  box-shadow: ${theme.shadows.dropShadow.bigsoft};
+`;
+
 const blackBox = css`
   display: block;
   padding: 1rem;
   color: #fff;
-  width: 25%;
-  height: 25%;
   overflow: hidden;
   background-image: ${theme.gradients['premium-dark']};
   box-shadow: ${theme.shadows.dropShadow.bigsoft};
@@ -39,9 +45,36 @@ const blackBox = css`
 
 const applicationRoot = document.querySelector('#js-application');
 
+const _onGreetClick = evt => {
+  console.log('greet!',evt);
+};
+
+const _onGreetRender = evt => {
+  console.log('greet rendered!', evt);
+};
+
+const _onGreetUpdate = evt => {
+  console.log('greet update!', evt.component.state);
+};
+
 let testBox = <Box class={appContainer}>
     <Box class={blackBox}>
-      <Lorem min={5} max={5} mode={Lorem.TITLE}/>
+      <Lorem element='p' min={5} max={5} mode={Lorem.TITLE}/>
+      <Box class={whiteBox}>
+        <Lorem element='p' min={5} max={5} mode={Lorem.TITLE}/>
+        <Box class={blackBox}>
+          <Lorem element='p' min={5} max={5} mode={Lorem.TITLE}/>
+          <Box class={whiteBox}>
+            <p
+              triggers={{
+                  click: _onGreetClick,
+                  render: _onGreetRender,
+                  update: _onGreetUpdate,
+                }}
+            >Click me!</p>
+          </Box>
+        </Box>
+      </Box>
     </Box>
   </Box>;
 

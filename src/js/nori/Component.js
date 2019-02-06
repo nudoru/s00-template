@@ -14,9 +14,11 @@ import {getNextId} from './util/ElementIDCreator';
 
 /*
 Simple string based component to quickly get html on the screen
+NOTHING like React, Preact or any of that. Quick and dirty
 
 TODO
-- render children w/ RECUSION!
+- render children w/ RECURSION!
+- string non-html attrs from nodes
 - break out events into own key in the props
 - break out tweens into own key in the props - on over, out, click, move, enter, exit
 - styles
@@ -49,8 +51,8 @@ export default class Component {
 
   constructor(tag, props, children) {
     this.tag      = tag;
-    this.children = Is.array(children) ? children : [children];
     this.props    = props || {};
+    this.children = Is.array(children) ? children : [children];
 
     this.attrs         = this.$filterSpecialProps(this.props); //props.hasOwnProperty('attrs') ? props.attrs : {};
     this.tweens        = props.hasOwnProperty('tweens') ? props.tweens : {};
@@ -81,11 +83,8 @@ export default class Component {
     }
 
     this.internalState = Object.assign({}, this.internalState, nextState);
-
     this.isDirty = true;
-
     this.$performBehavior(BEHAVIOR_STATECHANGE);
-
     this.$update();
   }
 
@@ -112,13 +111,13 @@ export default class Component {
     return isElementInViewport(this.current);
   }
 
-  // // also touch
+  // also touch
   // getDistanceFromCursor(mevt) {
   //
   //   const offset = this.offset;
   // }
   //
-  // // also touch
+  // also touch
   // getCursorPositionOnElement(mevt) {
   //
   // }
@@ -155,14 +154,11 @@ export default class Component {
   }, []);
 
   $applyTriggers = (element, triggerMap) => triggerMap.forEach(evt => {
+    // TRIGGER_BEHAVIOR are broadcast directly from the function where they occur
     if (evt.type === TRIGGER_EVENT) {
       evt.internalHandler = this.$handleEventTrigger(evt);
       // TODO implement options and useCapture? https://developer.mozilla.org/en-US/docs/Web/API/EventTarget/addEventListener
       element.addEventListener(evt.event, evt.internalHandler);
-    } else if (evt.type === TRIGGER_BEHAVIOR) {
-      // Triggers are broadcast directly from the function where they occur
-    } else {
-      //
     }
   });
 
@@ -173,10 +169,6 @@ export default class Component {
   });
 
   $handleEventTrigger = evt => e => evt.externalHandler(this.$createEventPacket(e));
-
-  // $handleBehaviorTrigger = behavior => e => {
-  //   console.log(`${behavior}:`, e)
-  // };
 
   $performBehavior = (behavior, e) => this.triggerMap.forEach(evt => {
     if (evt.type === TRIGGER_BEHAVIOR && evt.event === behavior) {
@@ -194,36 +186,40 @@ export default class Component {
     }
   });
 
+  //----------------------------------------------------------------------------
+  //----------------------------------------------------------------------------
+  //----------------------------------------------------------------------------
+  // COMBINE RENDER AND RENDERCHILDREN IN A RECURSIVE WAY ----------------------
+
+  // Called on renderTo and update
+  // Why did I have fragment? ¯\_(シ)_/¯
   $render() {
-    let fragment           = document.createDocumentFragment();
-    let element            = document.createElement(this.tag);
-    this.attrs['data-nid'] = getNextId(); // create a unique ID for every render
+    // let fragment = document.createDocumentFragment();
+    let element = document.createElement(this.tag);
     this.$setTagAttrs(element, this.attrs);
-    this.$renderChildren(element);
-    fragment.appendChild(element);
     this.$applyTriggers(element, this.triggerMap);
-    this.isDirty = false;
+    this.children.forEach(this.$createElement(element));
+    //fragment.appendChild(element);
     return element;
   }
 
-  $setTagAttrs = (element, attributes) => Object.keys(attributes).forEach(key => {
-    let value = attributes[key];
-    element.setAttribute(key, value);
-  });
-
-  $renderChildren = root => this.children.forEach(child => {
+  $createElement = parent => child => {
     if (Is.string(child)) {
       let text = HTMLStrToNode(Mustache.render(child, this.internalState));
-      root.appendChild(text);
+      parent.appendChild(text);
     } else if (Is.object(child) && typeof child.renderTo === 'function') {
-      child.renderTo(root);
+      child.renderTo(parent);
     }
-  });
+  };
 
   renderTo(root) {
     if (!root) {
       console.error(`Component: Can't render component to null root`);
     }
+
+    this.attrs['data-nid'] = getNextId(); // create a unique ID for every render
+    this.isDirty           = false;
+
     const element = this.$render();
     root.appendChild(element);
 
@@ -233,20 +229,28 @@ export default class Component {
     this.$performBehavior(BEHAVIOR_RENDER);
   }
 
+  // TODO only, rerender element if it's changed (isDirty) or it's children have
   $update() {
     if (this.renderedElement) {
-      //if (this.isDirty) {
-        this.remove();
-        let updatedElement   = this.$render();
-        this.renderedElement = replaceElementWith(this.renderedElement, updatedElement);
-        this.$performBehavior(BEHAVIOR_UPDATE);
-      // } else {
-      //   console.log('Not dirty!', this.tag);
-      // }
+      this.remove();
+      let updatedElement   = this.$render();
+      this.renderedElement = replaceElementWith(this.renderedElement, updatedElement);
+      this.$performBehavior(BEHAVIOR_UPDATE);
     } else {
       console.warn(`Component not rendered, can't update!`, this.tag, this.props);
     }
   }
+
+  //----------------------------------------------------------------------------
+  //----------------------------------------------------------------------------
+  //----------------------------------------------------------------------------
+
+  // TODO filter out non-HTML attributes
+  // https://developer.mozilla.org/en-US/docs/Web/HTML/Attributes
+  $setTagAttrs = (element, attributes) => Object.keys(attributes).forEach(key => {
+    let value = attributes[key];
+    element.setAttribute(key, value);
+  });
 
   remove() {
     this.$performBehavior(BEHAVIOR_WILLREMOVE);

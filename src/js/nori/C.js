@@ -5,11 +5,13 @@ import {removeAllElements} from "./browser/DOMToolbox";
 //https://jasonformat.com/wtf-is-jsx/
 //https://medium.com/@bluepnume/jsx-is-a-stellar-invention-even-with-react-out-of-the-picture-c597187134b7
 
+/*
+Convenience method to create new components. Used by the Babel/JSX transpiler
+and matches React's JSX syntax
+ */
 export const c = (node, props, ...args) => {
 
   props = props || {};
-
-  //console.log('C:', node, props, args);
 
   let children = args.length ? [].concat(...args) : null;
 
@@ -20,11 +22,14 @@ export const c = (node, props, ...args) => {
   return new node(props, children);
 };
 
-export const render = (component, domRoot, removeExisting = true) => {
+/*
+Render a component to a dom node
+ */
+export const render = (component, targetEl, removeExisting = true) => {
   if (removeExisting) {
-    removeAllElements(domRoot);
+    removeAllElements(targetEl);
   }
-  component.renderTo(domRoot);
+  component.renderTo(targetEl);
 };
 
 
