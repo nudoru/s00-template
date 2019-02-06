@@ -18,15 +18,11 @@ injectGlobal`
     font-size: 100%;
   }
   body {
-    position: relative;
     margin: 0;
     padding: 0;
     min-height: 100vh;
     font-size: ${theme.fontSizes[3]};
     font-family: 'Abel', 'Helvetica Neue', Helvetica, Arial, sans-serif;
-    background-image: ${theme.gradients['premium-white']};
-    overflow: hidden;
-    border: 1rem solid rgb(255,255,255);
   }
   h1 {
     font-size: 2em;
@@ -166,12 +162,6 @@ injectGlobal`
   }
   
   #js-application {
-    position: absolute;
-    overflow: auto;
-    display: grid;
-    align-items: center;
-    justify-items: center;
-    width: 100%;
-    height: 100%;
+    
   }
 `;

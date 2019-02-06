@@ -40,7 +40,6 @@ export default class Lorem extends Component {
       case 'fullNameFL':
         lorem = L.firstLastName();
         break;
-
     }
     super(baseElement, props, lorem);
   }
