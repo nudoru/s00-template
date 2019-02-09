@@ -106,8 +106,8 @@ export const replaceElement = (root, el) => {
   return el;
 };
 
-export const replaceElementWith = (oldEl, newEl) => {
-  let parent = oldEl.parentElement;
+export const replaceElementWith = (oldEl, newEl, parentEl) => {
+  let parent = parentEl || oldEl.parentElement;
   if (parent) {
     let nextSibling = oldEl.nextSibling;
     parent.removeChild(oldEl);

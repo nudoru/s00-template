@@ -1,6 +1,8 @@
-import Component from './nori/Component';
+/* @jsx h */
 
-import {useState} from "./nori/C";
+import Component from '../nori/Component';
+import {h} from "../nori/C";
+import {useState} from "../nori/C";
 
 /*
 Testing stuff for Greeter ...
@@ -34,9 +36,12 @@ export default class Greeter extends Component {
   // Subclasses should only take passed props and children
   constructor(props, children) {
     // call super and pass what's needed
-    let [greeting, setGreet] = useState('Hello, <em>{{name}}!</em>');
-    super('h1', props, [greeting]);
+
+    super('h1', props, []);
   }
 
-  // Override fn's
+  render() {
+    let [greeting, setGreet] = useState('Hello, <em>{{name}}!</em>');
+    return <h1>Hello, <em>{this.internalState.name}</em></h1>;
+  }
 }

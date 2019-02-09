@@ -104,3 +104,5 @@ export const shuffleArray = (array) => {
 };
 
 export const range = len => ([...Array(len).keys()]);
+
+export const flatten = arry => [].concat.apply([], arry);

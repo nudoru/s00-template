@@ -1,26 +1,19 @@
 import * as L from '../nori/util/Lorem';
 import Component from '../nori/Component';
 
-/*
-TODO
-  - children - where would this be useful?
- */
-
-/*
-Props
-  min / max
-  mode - paragraph || text || title || sentence ||  date || fullNameFL
- */
-
 export default class Lorem extends Component {
 
   TEXT = 'text';
 
   constructor(props, children = []) {
     const baseElement = props.element || 'span';
-    const min = props.min || 1;
-    const max = props.max || 2;
-    const mode = props.mode || 'text';
+    super(baseElement, props, []);
+  }
+
+  render() {
+    const min = this.props.min || 1;
+    const max = this.props.max || 2;
+    const mode = this.props.mode || 'text';
 
     let lorem = L.text(min, max);
 
@@ -41,8 +34,10 @@ export default class Lorem extends Component {
         lorem = L.firstLastName();
         break;
     }
-    super(baseElement, props, lorem);
+
+    return lorem;
   }
+
 }
 
 Lorem.TEXT = 'text';

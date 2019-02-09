@@ -1,13 +1,14 @@
-/* @jsx c */
+/* @jsx h */
 
 import * as GlobalCSS from './theme/Global'; // For global CSS reset + a few styles for html and body
 import {theme} from './theme/Theme';
 import {css} from 'emotion';
-
-import {c, render} from './nori/C';
+import * as L from './nori/util/Lorem'
+import {h, render, useState} from './nori/C';
 
 import Box from './components/Box';
 import Lorem from './components/Lorem';
+import Greeter from './components/Greeter';
 
 // ${tme.gradients['premium-white']};
 const appContainerBG = require('../img/pattern/shattered.png');
@@ -47,6 +48,7 @@ const applicationRoot = document.querySelector('#js-application');
 
 const _onGreetClick = evt => {
   console.log('greet!',evt);
+  evt.component.state = {name:L.firstLastName()};
 };
 
 const _onGreetRender = evt => {
@@ -65,13 +67,11 @@ let testBox = <Box class={appContainer}>
         <Box class={blackBox}>
           <Lorem element='p' min={5} max={5} mode={Lorem.TITLE}/>
           <Box class={whiteBox}>
-            <p
-              triggers={{
-                  click: _onGreetClick,
-                  render: _onGreetRender,
-                  update: _onGreetUpdate,
-                }}
-            >Click me!</p>
+            <Greeter triggers={{
+                click: _onGreetClick,
+                render: _onGreetRender,
+                update: _onGreetUpdate,
+              }}>There</Greeter>
           </Box>
         </Box>
       </Box>

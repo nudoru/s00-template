@@ -1596,7 +1596,457 @@ function _taggedTemplateLiteral(strings, raw) { if (!raw) { raw = strings.slice(
 // normalize.css v8.0.0 | MIT License | github.com/necolas/normalize.css
 // + Customs
 (0, _emotion.injectGlobal)(_templateObject(), _Theme.modularScale.ms2, _Theme.theme.fontSizes[3]);
-},{"emotion":"../node_modules/emotion/dist/index.esm.js","./Theme":"js/theme/Theme.js"}],"../node_modules/mustache/mustache.js":[function(require,module,exports) {
+},{"emotion":"../node_modules/emotion/dist/index.esm.js","./Theme":"js/theme/Theme.js"}],"js/nori/util/NumberUtils.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.distanceTL = exports.isBetween = exports.clamp = exports.rndNumber = exports.isInteger = void 0;
+
+var isInteger = function isInteger(str) {
+  return /^-?\d+$/.test(str);
+};
+
+exports.isInteger = isInteger;
+
+var rndNumber = function rndNumber(min, max) {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+};
+
+exports.rndNumber = rndNumber;
+
+var clamp = function clamp(val, min, max) {
+  return Math.max(min, Math.min(max, val));
+};
+
+exports.clamp = clamp;
+
+var isBetween = function isBetween(val, min, max) {
+  return val > min && val < max;
+};
+
+exports.isBetween = isBetween;
+
+var distanceTL = function distanceTL(point1, point2) {
+  var xd = point2.left - point1.left,
+      yd = point2.top - point1.top;
+  return Math.sqrt(xd * xd + yd * yd);
+};
+
+exports.distanceTL = distanceTL;
+},{}],"js/nori/util/StringUtils.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.unslugify = exports.slugify = exports.removeWhiteSpace = exports.DOMtoCSSStyle = exports.dasherize = exports.underscore = exports.capitalize = exports.unescapeHTML = exports.removeEntities = exports.removeTags = exports.ellipses = exports.toTitleCase = exports.capitalizeFirstLetter = void 0;
+
+var _this = void 0;
+
+var capitalizeFirstLetter = function capitalizeFirstLetter(str) {
+  return str.charAt(0).toUpperCase() + str.substring(1);
+};
+
+exports.capitalizeFirstLetter = capitalizeFirstLetter;
+
+var toTitleCase = function toTitleCase(str) {
+  return str.replace(/\w\S*/g, function (txt) {
+    return txt.charAt(0).toUpperCase() + txt.substr(1);
+  });
+};
+
+exports.toTitleCase = toTitleCase;
+
+var ellipses = function ellipses(len) {
+  return _this.length > len ? _this.substr(0, len) + "..." : _this;
+}; // From https://github.com/sstephenson/prototype/blob/d9411e5/src/prototype/lang/string.js#L426
+// export const removeTags2 = (str) => {
+//   return str.replace(/<\w+(\s+("[^"]*"|'[^']*'|[^>])+)?>|<\/\w+>/gi, '');
+// };
+
+
+exports.ellipses = ellipses;
+
+var removeTags = function removeTags(str) {
+  return str.replace(/(<([^>]+)>)/ig, '');
+};
+
+exports.removeTags = removeTags;
+
+var removeEntities = function removeEntities(str) {
+  return str.replace(/(&(#?)(?:[a-z\d]+|#\d+|#x[a-f\d]+);)/ig, '');
+}; // From https://github.com/sstephenson/prototype/blob/d9411e5/src/prototype/lang/string.js#L426
+
+
+exports.removeEntities = removeEntities;
+
+var unescapeHTML = function unescapeHTML(str) {
+  // Warning: In 1.7 String#unescapeHTML will no longer call String#stripTags.
+  return removeTags(str).replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&');
+};
+
+exports.unescapeHTML = unescapeHTML;
+
+var capitalize = function capitalize(str) {
+  return str.charAt(0).toUpperCase() + _this.substring(1).toLowerCase();
+};
+
+exports.capitalize = capitalize;
+
+var underscore = function underscore(str) {
+  return str.replace(/::/g, '/').replace(/([A-Z]+)([A-Z][a-z])/g, '$1_$2').replace(/([a-z\d])([A-Z])/g, '$1_$2').replace(/-/g, '_').toLowerCase();
+};
+
+exports.underscore = underscore;
+
+var dasherize = function dasherize(str) {
+  return str.replace(/_/g, '-');
+};
+
+exports.dasherize = dasherize;
+
+var DOMtoCSSStyle = function DOMtoCSSStyle(str) {
+  return dasherize(underscore(str));
+};
+
+exports.DOMtoCSSStyle = DOMtoCSSStyle;
+
+var removeWhiteSpace = function removeWhiteSpace(str) {
+  return str.replace(/(\r\n|\n|\r|\t|\s)/gm, '').replace(/>\s+</g, '><');
+};
+
+exports.removeWhiteSpace = removeWhiteSpace;
+
+var slugify = function slugify(str) {
+  return str.split(' ').map(function (s) {
+    return s.toLowerCase();
+  }).join('_');
+};
+
+exports.slugify = slugify;
+
+var unslugify = function unslugify(str) {
+  return str.split('_').map(function (s) {
+    return s.charAt(0).toUpperCase() + s.substring(1);
+  }).join(' ');
+};
+
+exports.unslugify = unslugify;
+},{}],"js/nori/util/ArrayUtils.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.flatten = exports.range = exports.shuffleArray = exports.arryArryToArryObj = exports.getDifferences = exports.getRandomSetOfElements = exports.rndElement = exports.removeItem = exports.removeIndex = exports.unique = exports.mergeAll = exports.arrify = void 0;
+
+var _NumberUtils = require("./NumberUtils");
+
+var _this = void 0;
+
+function _toConsumableArray(arr) { return _arrayWithoutHoles(arr) || _iterableToArray(arr) || _nonIterableSpread(); }
+
+function _nonIterableSpread() { throw new TypeError("Invalid attempt to spread non-iterable instance"); }
+
+function _iterableToArray(iter) { if (Symbol.iterator in Object(iter) || Object.prototype.toString.call(iter) === "[object Arguments]") return Array.from(iter); }
+
+function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = new Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } }
+
+var arrify = function arrify(a) {
+  return Array.prototype.slice.call(a, 0);
+}; // Reference: http://jhusain.github.io/learnrx/index.html
+
+
+exports.arrify = arrify;
+
+var mergeAll = function mergeAll() {
+  var results = [];
+
+  _this.forEach(function (subArr) {
+    subArr.forEach(function (elm) {
+      results.push(elm);
+    });
+  });
+
+  return results;
+}; // http://www.shamasis.net/2009/09/fast-algorithm-to-find-unique-items-in-javascript-array/
+
+
+exports.mergeAll = mergeAll;
+
+var unique = function unique(arry) {
+  var o = {},
+      i,
+      l = arry.length,
+      r = [];
+
+  for (i = 0; i < l; i += 1) {
+    o[arry[i]] = arry[i];
+  }
+
+  for (i in o) {
+    r.push(o[i]);
+  }
+
+  return r;
+};
+
+exports.unique = unique;
+
+var removeIndex = function removeIndex(arr, idx) {
+  return arr.splice(idx, 1);
+};
+
+exports.removeIndex = removeIndex;
+
+var removeItem = function removeItem(arr, item) {
+  var idx = arr.indexOf(item);
+
+  if (idx > -1) {
+    arr.splice(idx, 1);
+  }
+};
+
+exports.removeItem = removeItem;
+
+var rndElement = function rndElement(arry) {
+  return arry[(0, _NumberUtils.rndNumber)(0, arry.length - 1)];
+};
+
+exports.rndElement = rndElement;
+
+var getRandomSetOfElements = function getRandomSetOfElements(srcarry, max) {
+  var arry = [],
+      i = 0,
+      len = (0, _NumberUtils.rndNumber)(1, max);
+
+  for (; i < len; i++) {
+    arry.push(_this.rndElement(srcarry));
+  }
+
+  return arry;
+};
+
+exports.getRandomSetOfElements = getRandomSetOfElements;
+
+var getDifferences = function getDifferences(arr1, arr2) {
+  var dif = [];
+  arr1.forEach(function (value) {
+    var present = false,
+        i = 0,
+        len = arr2.length;
+
+    for (; i < len; i++) {
+      if (value === arr2[i]) {
+        present = true;
+        break;
+      }
+    }
+
+    if (!present) {
+      dif.push(value);
+    }
+  });
+  return dif;
+};
+
+exports.getDifferences = getDifferences;
+
+var arryArryToArryObj = function arryArryToArryObj(src, keys) {
+  return src.reduce(function (p, c) {
+    var row = {};
+    keys.forEach(function (col, i) {
+      row[col] = c[i];
+    });
+    p.push(row);
+    return p;
+  }, []);
+}; //https://stackoverflow.com/questions/2450954/how-to-randomize-shuffle-a-javascript-array
+
+
+exports.arryArryToArryObj = arryArryToArryObj;
+
+var shuffleArray = function shuffleArray(array) {
+  for (var i = array.length - 1; i > 0; i--) {
+    var j = Math.floor(Math.random() * (i + 1));
+    // eslint-disable-line no-param-reassign
+    var _ref = [array[j], array[i]];
+    array[i] = _ref[0];
+    array[j] = _ref[1];
+  }
+
+  return array;
+};
+
+exports.shuffleArray = shuffleArray;
+
+var range = function range(len) {
+  return _toConsumableArray(Array(len).keys());
+};
+
+exports.range = range;
+
+var flatten = function flatten(arry) {
+  return [].concat.apply([], arry);
+};
+
+exports.flatten = flatten;
+},{"./NumberUtils":"js/nori/util/NumberUtils.js"}],"js/nori/util/Lorem.js":[function(require,module,exports) {
+"use strict";
+
+var _NumberUtils = require("./NumberUtils");
+
+var _StringUtils = require("./StringUtils");
+
+var _ArrayUtils = require("./ArrayUtils");
+
+var _currentText = [],
+    _defaultTextSet,
+    _maleFirstNames = [],
+    _femaleFirstNames = [],
+    _lastNames = [],
+    _punctuation = [],
+    _months,
+    _days;
+
+_defaultTextSet = 'Perhaps a re-engineering of your current world view will re-energize your online nomenclature to enable a new holistic interactive enterprise internet communication solution Upscaling the resurgent networking exchange solutions achieving a breakaway systemic electronic data interchange system synchronization thereby exploiting technical environments for mission critical broad based capacity constrained systems Fundamentally transforming well designed actionable information whose semantic content is virtually null To more fully clarify the current exchange a few aggregate issues will require addressing to facilitate this distributed communication venue In integrating non-aligned structures into existing legacy systems a holistic gateway blueprint is a backward compatible packaging tangible';
+_lastNames = 'Smith Johnson Williams Jones Brown Davis Miller Wilson Moore Taylor Anderson Thomas Jackson White Harris Martin Thompson Garcia Martinez Robinson Clark Rodriguez Lewis Lee Walker Hall Allen Young Hernandez King Wright Lopez Hill Scott Green Adams Baker Gonzalez Nelson Carter Mitchell Perez Roberts Turner Phillips Campbell Parker Evans Edwards Collins Stewart Sanchez Morris Rogers Reed Cook Morgan Bell Murphy'.split(' ');
+_maleFirstNames = 'Thomas Arthur Lewis Clarence Leonard Albert Paul Carl Ralph Roy Earl Samuel Howard Richard Francis Laurence Herbert Elmer Ernest Theodore David Alfred Donald Russell Eugene Andrew Kenneth Herman Jesse Lester Floyd Michael Edwin Clifford Benjamin Clyde Glen Oscar Daniel'.split(' ');
+_femaleFirstNames = 'Elizabeth Ann Helen Margaret Ellen Catherine Lily Florence Ada Lou Ethel Emily Ruth Rose Frances Alice Bertha Clara Mabel Minnie Grace Jane Evelyn Gertrude Edna Pearl Laura Hazel Edith Esther Harriet Sarah May Matilda Martha Myrtle Josephine Maud Agnes Keri Julia Irene Mildred Cora'.split(' ');
+_punctuation = ['.', '.', '.', '.', '?', '!'];
+_months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+_days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
+_currentText = _defaultTextSet.toLowerCase().split(' ');
+
+function rNumber(min, max) {
+  return (0, _NumberUtils.rndNumber)(min, max);
+}
+
+function oneOf(arry) {
+  return arry[rNumber(0, arry.length - 1)];
+}
+
+function severalOf(num, arry) {
+  if (num >= arry.length) {
+    return arry;
+  }
+
+  var res = [];
+
+  for (var i = 0; i < num; i++) {
+    res.push(oneOf(arry));
+  }
+
+  return res;
+}
+
+function sentence(min, max) {
+  return (0, _StringUtils.capitalizeFirstLetter)(text(min, max)) + oneOf(_punctuation);
+}
+
+function title(min, max) {
+  return (0, _StringUtils.toTitleCase)(text(min, max));
+}
+
+function paragraph(min, max) {
+  var str = '',
+      delim = ' ',
+      len = rNumber(min, max),
+      i = 0;
+
+  for (; i < len; i++) {
+    if (i === len - 1) {
+      delim = '';
+    }
+
+    str += sentence(1, 10) + delim;
+  }
+
+  return str;
+}
+
+function text(min, max) {
+  var str = '',
+      delim = ' ',
+      len = rNumber(min, max),
+      i = 0;
+
+  for (; i < len; i++) {
+    if (i === len - 1) {
+      delim = '';
+    }
+
+    str += oneOf(_currentText) + delim;
+  }
+
+  return str;
+}
+
+function getFirstName() {
+  return rNumber(0, 1) ? oneOf(_maleFirstNames) : oneOf(_femaleFirstNames);
+}
+
+function getLastName() {
+  return oneOf(_lastNames);
+}
+
+function firstLastName() {
+  return getFirstName() + ' ' + getLastName();
+}
+
+function lastFirstName() {
+  return getLastName() + ', ' + getFirstName();
+}
+/**
+ * Better implementation http://stackoverflow.com/questions/9035627/elegant-method-to-generate-array-of-random-dates-within-two-dates
+ * @returns {{monthNumber: *, monthName: *, monthDay, weekDayNumber: *, weekDay: *, year}}
+ */
+
+
+function date() {
+  var month = rNumber(0, 11),
+      wkday = rNumber(0, 4),
+      date = {
+    monthNumber: month + 1,
+    monthName: _months[month],
+    monthDay: rNumber(1, 28),
+    weekDayNumber: wkday + 1,
+    weekDay: _days[wkday],
+    year: oneOf(['2018', '2019', '2020'])
+  };
+  date.string = date.monthName + ' ' + date.monthDay + ', ' + date.year;
+  return date;
+}
+/**
+ * http://stackoverflow.com/questions/105034/create-guid-uuid-in-javascript
+ * @returns {string}
+ */
+
+
+function guid() {
+  function s4() {
+    return Math.floor((1 + Math.random()) * 0x10000).toString(16).substring(1);
+  }
+
+  return s4() + s4() + '-' + s4() + '-' + s4() + '-' + s4() + '-' + s4() + s4() + s4();
+}
+
+module.exports = {
+  rNumber: rNumber,
+  oneOf: oneOf,
+  severalOf: severalOf,
+  text: text,
+  sentence: sentence,
+  title: title,
+  paragraph: paragraph,
+  firstLastName: firstLastName,
+  lastFirstName: lastFirstName,
+  date: date,
+  guid: guid
+};
+},{"./NumberUtils":"js/nori/util/NumberUtils.js","./StringUtils":"js/nori/util/StringUtils.js","./ArrayUtils":"js/nori/util/ArrayUtils.js"}],"../node_modules/mustache/mustache.js":[function(require,module,exports) {
 var define;
 var global = arguments[3];
 /*!
@@ -19367,8 +19817,8 @@ var replaceElement = function replaceElement(root, el) {
 
 exports.replaceElement = replaceElement;
 
-var replaceElementWith = function replaceElementWith(oldEl, newEl) {
-  var parent = oldEl.parentElement;
+var replaceElementWith = function replaceElementWith(oldEl, newEl, parentEl) {
+  var parent = parentEl || oldEl.parentElement;
 
   if (parent) {
     var nextSibling = oldEl.nextSibling;
@@ -19566,6 +20016,8 @@ var _ramda = require("ramda");
 
 var _is = _interopRequireDefault(require("./util/is"));
 
+var _ArrayUtils = require("./util/ArrayUtils");
+
 var _DOMToolbox = require("./browser/DOMToolbox");
 
 var _DomEvents = require("./events/DomEvents");
@@ -19582,11 +20034,9 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
 
 /*
 Simple string based component to quickly get html on the screen
-NOTHING like React, Preact or any of that. Quick and dirty
 
 TODO
-- render children w/ RECURSION!
-- string non-html attrs from nodes
+- strip non-html attrs from nodes
 - break out events into own key in the props
 - break out tweens into own key in the props - on over, out, click, move, enter, exit
 - styles
@@ -19595,14 +20045,9 @@ TODO
   withShadow(alignRight(rootComp))
   are these styles or functionality?
 - support gsap tweens
-- extract DOM code to another module? Keep this "virtual"
  */
 var TRIGGER_EVENT = 'event';
-var TRIGGER_BEHAVIOR = 'behavior'; // These will require listeners
-// export const BEHAVIOR_SCOLLIN     = 'scrollIn';
-// export const BEHAVIOR_SCROLLOUT   = 'scrollOut';
-// export const BEHAVIOR_MOUSENEAR   = 'mouseNear';
-
+var TRIGGER_BEHAVIOR = 'behavior';
 var BEHAVIOR_RENDER = 'render'; // on initial render only
 
 exports.BEHAVIOR_RENDER = BEHAVIOR_RENDER;
@@ -19628,65 +20073,67 @@ function () {
 
     this.tag = tag;
     this.props = props || {};
-    this.children = _is.default.array(children) ? children : [children];
+    this.props.children = _is.default.array(children) ? children : [children];
     this.attrs = this.$filterSpecialProps(this.props); //props.hasOwnProperty('attrs') ? props.attrs : {};
 
+    this.attrs['data-nid'] = (0, _ElementIDCreator.getNextId)();
     this.tweens = props.hasOwnProperty('tweens') ? props.tweens : {};
     this.internalState = props.hasOwnProperty('state') ? props.state : {};
     this.triggerMap = this.$mapTriggers(props.hasOwnProperty('triggers') ? props.triggers : {});
     this.renderedElement = null;
-    this.renderedElementParent = null;
-    this.isDirty = false;
   }
 
   _createClass(Component, [{
-    key: "$render",
+    key: "render",
     //----------------------------------------------------------------------------
-    //----------------------------------------------------------------------------
-    //----------------------------------------------------------------------------
-    // COMBINE RENDER AND RENDERCHILDREN IN A RECURSIVE WAY ----------------------
-    // Called on renderTo and update
-    // Why did I have fragment? ¯\_(シ)_/¯
-    value: function $render() {
-      // let fragment = document.createDocumentFragment();
-      var element = document.createElement(this.tag);
-      this.$setTagAttrs(element, this.attrs);
-      this.$applyTriggers(element, this.triggerMap);
-      this.children.forEach(this.$createElement(element)); //fragment.appendChild(element);
+    // Returns the view. Override in subclass
+    value: function render() {
+      return this.props.children;
+    } // If render returns  a component, don't use the tag for the element, just use all of what render returns
 
-      return element;
+  }, {
+    key: "$render",
+    value: function $render() {
+      var fragment = document.createDocumentFragment(),
+          element,
+          rendered = this.render();
+
+      if (_is.default.object(rendered)) {
+        // Was custom render, returned a component
+        // TODO allow for an array to be returned rather than only one
+        element = rendered.$render().firstChild;
+        fragment.appendChild(element);
+      } else {
+        // Non-custom component, just returned an array of children
+        element = document.createElement(this.tag);
+        fragment.appendChild(element);
+        this.$setTagAttrs(element, this.attrs);
+        (0, _ArrayUtils.arrify)(rendered).map(this.$createElement).forEach(function (child) {
+          return element.appendChild(child);
+        });
+      }
+
+      this.$applyTriggers(element, this.triggerMap);
+      this.$performBehavior(BEHAVIOR_RENDER); // move this out somewhere?
+
+      this.renderedElement = fragment.firstChild;
+      return fragment;
     }
   }, {
-    key: "renderTo",
-    value: function renderTo(root) {
-      if (!root) {
-        console.error("Component: Can't render component to null root");
-      }
-
-      this.attrs['data-nid'] = (0, _ElementIDCreator.getNextId)(); // create a unique ID for every render
-
-      this.isDirty = false;
-      var element = this.$render();
-      root.appendChild(element);
-      this.renderedElementParent = root;
-      this.renderedElement = root.lastChild;
-      this.$performBehavior(BEHAVIOR_RENDER);
-    } // TODO only, rerender element if it's changed (isDirty) or it's children have
-
-  }, {
     key: "$update",
+    // TODO: diff and patch rather than just replace
     value: function $update() {
-      if (this.renderedElement) {
-        this.remove();
-        var updatedElement = this.$render();
-        this.renderedElement = (0, _DOMToolbox.replaceElementWith)(this.renderedElement, updatedElement);
-        this.$performBehavior(BEHAVIOR_UPDATE);
-      } else {
+      if (!this.renderedElement) {
         console.warn("Component not rendered, can't update!", this.tag, this.props);
+        return;
       }
+
+      var prevEl = this.renderedElement;
+      this.remove();
+      var newEl = this.$render();
+      (0, _DOMToolbox.replaceElementWith)(prevEl, newEl);
+      this.$performBehavior(BEHAVIOR_UPDATE);
     } //----------------------------------------------------------------------------
-    //----------------------------------------------------------------------------
-    //----------------------------------------------------------------------------
     // TODO filter out non-HTML attributes
     // https://developer.mozilla.org/en-US/docs/Web/HTML/Attributes
 
@@ -19695,7 +20142,7 @@ function () {
     value: function remove() {
       this.$performBehavior(BEHAVIOR_WILLREMOVE);
       this.$removeTriggers(this.renderedElement, this.triggerMap);
-      this.children.forEach(function (child) {
+      this.props.children.forEach(function (child) {
         if (_is.default.object(child) && typeof child.remove === 'function') {
           child.remove();
         }
@@ -19705,14 +20152,13 @@ function () {
     key: "delete",
     value: function _delete() {
       this.remove();
-      this.children.forEach(function (child) {
+      this.props.children.forEach(function (child) {
         if (_is.default.object(child) && typeof child.delete === 'function') {
           child.delete();
         }
       });
       (0, _DOMToolbox.removeElement)(this.renderedElement);
       this.renderedElement = null;
-      this.renderedElementParent = null;
       this.$performBehavior(BEHAVIOR_DIDDELETE);
     }
   }, {
@@ -19728,7 +20174,6 @@ function () {
       }
 
       this.internalState = Object.assign({}, this.internalState, nextState);
-      this.isDirty = true;
       this.$performBehavior(BEHAVIOR_STATECHANGE);
       this.$update();
     },
@@ -19758,29 +20203,37 @@ function () {
     key: "isInViewport",
     get: function get() {
       return (0, _DOMToolbox.isElementInViewport)(this.current);
-    } // also touch
-    // getDistanceFromCursor(mevt) {
-    //
-    //   const offset = this.offset;
-    // }
-    //
-    // also touch
-    // getCursorPositionOnElement(mevt) {
-    //
-    // }
-    //
-    // $onScroll = e => {
-    //   // TEST for in to view?
-    // };
-    //
-    // $onMouseMove = e => {
-    //   // test for proximity
-    // };
-
+    }
   }]);
 
   return Component;
 }();
+/*
+// These will require listeners
+// export const BEHAVIOR_SCOLLIN     = 'scrollIn';
+// export const BEHAVIOR_SCROLLOUT   = 'scrollOut';
+// export const BEHAVIOR_MOUSENEAR   = 'mouseNear';
+
+// also touch
+  // getDistanceFromCursor(mevt) {
+  //
+  //   const offset = this.offset;
+  // }
+  //
+  // also touch
+  // getCursorPositionOnElement(mevt) {
+  //
+  // }
+  //
+  // $onScroll = e => {
+  //   // TEST for in to view?
+  // };
+  //
+  // $onMouseMove = e => {
+  //   // test for proximity
+  // };
+ */
+
 
 exports.default = Component;
 
@@ -19841,8 +20294,8 @@ var _initialiseProps = function _initialiseProps() {
   this.$createEventPacket = function (e) {
     return {
       event: e,
-      component: _this,
-      element: _this.current
+      component: _this // element  : this.current
+
     };
   };
 
@@ -19858,8 +20311,9 @@ var _initialiseProps = function _initialiseProps() {
         // fake an event object
         var event = e || {
           type: behavior,
-          target: _this.current
-        };
+          target: _this
+        }; //.current
+
         evt.externalHandler(_this.$createEventPacket(event));
       }
     });
@@ -19874,15 +20328,15 @@ var _initialiseProps = function _initialiseProps() {
     });
   };
 
-  this.$createElement = function (parent) {
-    return function (child) {
-      if (_is.default.string(child)) {
-        var text = (0, _DOMToolbox.HTMLStrToNode)(_mustache.default.render(child, _this.internalState));
-        parent.appendChild(text);
-      } else if (_is.default.object(child) && typeof child.renderTo === 'function') {
-        child.renderTo(parent);
-      }
-    };
+  this.$createElement = function (child) {
+    if (_is.default.string(child)) {
+      return (0, _DOMToolbox.HTMLStrToNode)(_mustache.default.render(child, _this.internalState));
+    } else if (_is.default.object(child) && typeof child.$render === 'function') {
+      return child.$render();
+    } else {
+      console.warn("createElement, unexpected type ".concat(child));
+      return (0, _DOMToolbox.HTMLStrToNode)('Error');
+    }
   };
 
   this.$setTagAttrs = function (element, attributes) {
@@ -19892,19 +20346,22 @@ var _initialiseProps = function _initialiseProps() {
     });
   };
 };
-},{"mustache":"../node_modules/mustache/mustache.js","ramda":"../node_modules/ramda/es/index.js","./util/is":"js/nori/util/is.js","./browser/DOMToolbox":"js/nori/browser/DOMToolbox.js","./events/DomEvents":"js/nori/events/DomEvents.js","./util/ElementIDCreator":"js/nori/util/ElementIDCreator.js"}],"js/nori/C.js":[function(require,module,exports) {
+},{"mustache":"../node_modules/mustache/mustache.js","ramda":"../node_modules/ramda/es/index.js","./util/is":"js/nori/util/is.js","./util/ArrayUtils":"js/nori/util/ArrayUtils.js","./browser/DOMToolbox":"js/nori/browser/DOMToolbox.js","./events/DomEvents":"js/nori/events/DomEvents.js","./util/ElementIDCreator":"js/nori/util/ElementIDCreator.js"}],"js/nori/C.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.render = exports.c = void 0;
+exports.useState = useState;
+exports.render = exports.h = void 0;
 
 var _Component = _interopRequireDefault(require("./Component"));
 
 var _is = _interopRequireDefault(require("./util/is"));
 
 var _DOMToolbox = require("./browser/DOMToolbox");
+
+var _ArrayUtils = require("./util/ArrayUtils");
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -19915,29 +20372,29 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 Convenience method to create new components. Used by the Babel/JSX transpiler
 and matches React's JSX syntax
  */
-var c = function c(node, props) {
-  var _ref;
-
+var h = function h(node, props) {
   props = props || {};
 
   for (var _len = arguments.length, args = new Array(_len > 2 ? _len - 2 : 0), _key = 2; _key < _len; _key++) {
     args[_key - 2] = arguments[_key];
   }
 
-  var children = args.length ? (_ref = []).concat.apply(_ref, args) : null;
+  var children = args.length ? (0, _ArrayUtils.flatten)(args) : null;
 
   if (_is.default.string(node)) {
+    // "regular" html tag
     return new _Component.default(node, props, children);
+  } else {
+    // another component
+    return new node(props, children);
   }
-
-  return new node(props, children);
 };
 /*
 Render a component to a dom node
  */
 
 
-exports.c = c;
+exports.h = h;
 
 var render = function render(component, targetEl) {
   var removeExisting = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : true;
@@ -19946,7 +20403,8 @@ var render = function render(component, targetEl) {
     (0, _DOMToolbox.removeAllElements)(targetEl);
   }
 
-  component.renderTo(targetEl);
+  var element = component.$render();
+  targetEl.appendChild(element);
 }; // Simple implementation of React's useState hook, similar API totes different impl
 // https://reactjs.org/docs/hooks-state.html
 
@@ -19967,42 +20425,35 @@ prevState => ({...prevState, ...updatedValues});
   //}
 
  */
-// let __stateValueMap = [];
-//
-// export function useState(initial) {
-//
-//   let stateIdx = __stateValueMap.length;
-//
-//   if (!__stateValueMap[stateIdx]) {
-//     __stateValueMap[stateIdx] = initial;
-//   } else {
-//   }
-//
-//   // console.log('useState', __stateValueMap);
-//
-//   let setState = (newState) => {
-//
-//     let currentValue = __stateValueMap[stateIdx];
-//
-//     // console.log('updating the index at ', stateIdx, 'current value', currentValue);
-//
-//     if (typeof newState === "function") {
-//       currentValue = newState(currentValue);
-//     } else {
-//       currentValue = newState;
-//     }
-//
-//     __stateValueMap[stateIdx] = currentValue;
-//
-//     return currentValue;
-//   };
-//
-//   return [initial, setState];
-// }
 
 
 exports.render = render;
-},{"./Component":"js/nori/Component.js","./util/is":"js/nori/util/is.js","./browser/DOMToolbox":"js/nori/browser/DOMToolbox.js"}],"js/components/Box.js":[function(require,module,exports) {
+var __stateValueMap = [];
+
+function useState(initial) {
+  var stateIdx = __stateValueMap.length;
+
+  if (!__stateValueMap[stateIdx]) {
+    __stateValueMap[stateIdx] = initial;
+  } else {} // console.log('useState', __stateValueMap);
+
+
+  var setState = function setState(newState) {
+    var currentValue = __stateValueMap[stateIdx]; // console.log('updating the index at ', stateIdx, 'current value', currentValue);
+
+    if (typeof newState === "function") {
+      currentValue = newState(currentValue);
+    } else {
+      currentValue = newState;
+    }
+
+    __stateValueMap[stateIdx] = currentValue;
+    return currentValue;
+  };
+
+  return [initial, setState];
+}
+},{"./Component":"js/nori/Component.js","./util/is":"js/nori/util/is.js","./browser/DOMToolbox":"js/nori/browser/DOMToolbox.js","./util/ArrayUtils":"js/nori/util/ArrayUtils.js"}],"js/components/Box.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -20044,451 +20495,7 @@ function (_Component) {
 }(_Component2.default);
 
 exports.default = Box;
-},{"../nori/Component":"js/nori/Component.js"}],"js/nori/util/NumberUtils.js":[function(require,module,exports) {
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.distanceTL = exports.isBetween = exports.clamp = exports.rndNumber = exports.isInteger = void 0;
-
-var isInteger = function isInteger(str) {
-  return /^-?\d+$/.test(str);
-};
-
-exports.isInteger = isInteger;
-
-var rndNumber = function rndNumber(min, max) {
-  return Math.floor(Math.random() * (max - min + 1)) + min;
-};
-
-exports.rndNumber = rndNumber;
-
-var clamp = function clamp(val, min, max) {
-  return Math.max(min, Math.min(max, val));
-};
-
-exports.clamp = clamp;
-
-var isBetween = function isBetween(val, min, max) {
-  return val > min && val < max;
-};
-
-exports.isBetween = isBetween;
-
-var distanceTL = function distanceTL(point1, point2) {
-  var xd = point2.left - point1.left,
-      yd = point2.top - point1.top;
-  return Math.sqrt(xd * xd + yd * yd);
-};
-
-exports.distanceTL = distanceTL;
-},{}],"js/nori/util/StringUtils.js":[function(require,module,exports) {
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.unslugify = exports.slugify = exports.removeWhiteSpace = exports.DOMtoCSSStyle = exports.dasherize = exports.underscore = exports.capitalize = exports.unescapeHTML = exports.removeEntities = exports.removeTags = exports.ellipses = exports.toTitleCase = exports.capitalizeFirstLetter = void 0;
-
-var _this = void 0;
-
-var capitalizeFirstLetter = function capitalizeFirstLetter(str) {
-  return str.charAt(0).toUpperCase() + str.substring(1);
-};
-
-exports.capitalizeFirstLetter = capitalizeFirstLetter;
-
-var toTitleCase = function toTitleCase(str) {
-  return str.replace(/\w\S*/g, function (txt) {
-    return txt.charAt(0).toUpperCase() + txt.substr(1);
-  });
-};
-
-exports.toTitleCase = toTitleCase;
-
-var ellipses = function ellipses(len) {
-  return _this.length > len ? _this.substr(0, len) + "..." : _this;
-}; // From https://github.com/sstephenson/prototype/blob/d9411e5/src/prototype/lang/string.js#L426
-// export const removeTags2 = (str) => {
-//   return str.replace(/<\w+(\s+("[^"]*"|'[^']*'|[^>])+)?>|<\/\w+>/gi, '');
-// };
-
-
-exports.ellipses = ellipses;
-
-var removeTags = function removeTags(str) {
-  return str.replace(/(<([^>]+)>)/ig, '');
-};
-
-exports.removeTags = removeTags;
-
-var removeEntities = function removeEntities(str) {
-  return str.replace(/(&(#?)(?:[a-z\d]+|#\d+|#x[a-f\d]+);)/ig, '');
-}; // From https://github.com/sstephenson/prototype/blob/d9411e5/src/prototype/lang/string.js#L426
-
-
-exports.removeEntities = removeEntities;
-
-var unescapeHTML = function unescapeHTML(str) {
-  // Warning: In 1.7 String#unescapeHTML will no longer call String#stripTags.
-  return removeTags(str).replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&');
-};
-
-exports.unescapeHTML = unescapeHTML;
-
-var capitalize = function capitalize(str) {
-  return str.charAt(0).toUpperCase() + _this.substring(1).toLowerCase();
-};
-
-exports.capitalize = capitalize;
-
-var underscore = function underscore(str) {
-  return str.replace(/::/g, '/').replace(/([A-Z]+)([A-Z][a-z])/g, '$1_$2').replace(/([a-z\d])([A-Z])/g, '$1_$2').replace(/-/g, '_').toLowerCase();
-};
-
-exports.underscore = underscore;
-
-var dasherize = function dasherize(str) {
-  return str.replace(/_/g, '-');
-};
-
-exports.dasherize = dasherize;
-
-var DOMtoCSSStyle = function DOMtoCSSStyle(str) {
-  return dasherize(underscore(str));
-};
-
-exports.DOMtoCSSStyle = DOMtoCSSStyle;
-
-var removeWhiteSpace = function removeWhiteSpace(str) {
-  return str.replace(/(\r\n|\n|\r|\t|\s)/gm, '').replace(/>\s+</g, '><');
-};
-
-exports.removeWhiteSpace = removeWhiteSpace;
-
-var slugify = function slugify(str) {
-  return str.split(' ').map(function (s) {
-    return s.toLowerCase();
-  }).join('_');
-};
-
-exports.slugify = slugify;
-
-var unslugify = function unslugify(str) {
-  return str.split('_').map(function (s) {
-    return s.charAt(0).toUpperCase() + s.substring(1);
-  }).join(' ');
-};
-
-exports.unslugify = unslugify;
-},{}],"js/nori/util/ArrayUtils.js":[function(require,module,exports) {
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.range = exports.shuffleArray = exports.arryArryToArryObj = exports.getDifferences = exports.getRandomSetOfElements = exports.rndElement = exports.removeItem = exports.removeIndex = exports.unique = exports.mergeAll = exports.arrify = void 0;
-
-var _NumberUtils = require("./NumberUtils");
-
-var _this = void 0;
-
-function _toConsumableArray(arr) { return _arrayWithoutHoles(arr) || _iterableToArray(arr) || _nonIterableSpread(); }
-
-function _nonIterableSpread() { throw new TypeError("Invalid attempt to spread non-iterable instance"); }
-
-function _iterableToArray(iter) { if (Symbol.iterator in Object(iter) || Object.prototype.toString.call(iter) === "[object Arguments]") return Array.from(iter); }
-
-function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = new Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } }
-
-var arrify = function arrify(a) {
-  return Array.prototype.slice.call(a, 0);
-}; // Reference: http://jhusain.github.io/learnrx/index.html
-
-
-exports.arrify = arrify;
-
-var mergeAll = function mergeAll() {
-  var results = [];
-
-  _this.forEach(function (subArr) {
-    subArr.forEach(function (elm) {
-      results.push(elm);
-    });
-  });
-
-  return results;
-}; // http://www.shamasis.net/2009/09/fast-algorithm-to-find-unique-items-in-javascript-array/
-
-
-exports.mergeAll = mergeAll;
-
-var unique = function unique(arry) {
-  var o = {},
-      i,
-      l = arry.length,
-      r = [];
-
-  for (i = 0; i < l; i += 1) {
-    o[arry[i]] = arry[i];
-  }
-
-  for (i in o) {
-    r.push(o[i]);
-  }
-
-  return r;
-};
-
-exports.unique = unique;
-
-var removeIndex = function removeIndex(arr, idx) {
-  return arr.splice(idx, 1);
-};
-
-exports.removeIndex = removeIndex;
-
-var removeItem = function removeItem(arr, item) {
-  var idx = arr.indexOf(item);
-
-  if (idx > -1) {
-    arr.splice(idx, 1);
-  }
-};
-
-exports.removeItem = removeItem;
-
-var rndElement = function rndElement(arry) {
-  return arry[(0, _NumberUtils.rndNumber)(0, arry.length - 1)];
-};
-
-exports.rndElement = rndElement;
-
-var getRandomSetOfElements = function getRandomSetOfElements(srcarry, max) {
-  var arry = [],
-      i = 0,
-      len = (0, _NumberUtils.rndNumber)(1, max);
-
-  for (; i < len; i++) {
-    arry.push(_this.rndElement(srcarry));
-  }
-
-  return arry;
-};
-
-exports.getRandomSetOfElements = getRandomSetOfElements;
-
-var getDifferences = function getDifferences(arr1, arr2) {
-  var dif = [];
-  arr1.forEach(function (value) {
-    var present = false,
-        i = 0,
-        len = arr2.length;
-
-    for (; i < len; i++) {
-      if (value === arr2[i]) {
-        present = true;
-        break;
-      }
-    }
-
-    if (!present) {
-      dif.push(value);
-    }
-  });
-  return dif;
-};
-
-exports.getDifferences = getDifferences;
-
-var arryArryToArryObj = function arryArryToArryObj(src, keys) {
-  return src.reduce(function (p, c) {
-    var row = {};
-    keys.forEach(function (col, i) {
-      row[col] = c[i];
-    });
-    p.push(row);
-    return p;
-  }, []);
-}; //https://stackoverflow.com/questions/2450954/how-to-randomize-shuffle-a-javascript-array
-
-
-exports.arryArryToArryObj = arryArryToArryObj;
-
-var shuffleArray = function shuffleArray(array) {
-  for (var i = array.length - 1; i > 0; i--) {
-    var j = Math.floor(Math.random() * (i + 1));
-    // eslint-disable-line no-param-reassign
-    var _ref = [array[j], array[i]];
-    array[i] = _ref[0];
-    array[j] = _ref[1];
-  }
-
-  return array;
-};
-
-exports.shuffleArray = shuffleArray;
-
-var range = function range(len) {
-  return _toConsumableArray(Array(len).keys());
-};
-
-exports.range = range;
-},{"./NumberUtils":"js/nori/util/NumberUtils.js"}],"js/nori/util/Lorem.js":[function(require,module,exports) {
-"use strict";
-
-var _NumberUtils = require("./NumberUtils");
-
-var _StringUtils = require("./StringUtils");
-
-var _ArrayUtils = require("./ArrayUtils");
-
-var _currentText = [],
-    _defaultTextSet,
-    _maleFirstNames = [],
-    _femaleFirstNames = [],
-    _lastNames = [],
-    _punctuation = [],
-    _months,
-    _days;
-
-_defaultTextSet = 'Perhaps a re-engineering of your current world view will re-energize your online nomenclature to enable a new holistic interactive enterprise internet communication solution Upscaling the resurgent networking exchange solutions achieving a breakaway systemic electronic data interchange system synchronization thereby exploiting technical environments for mission critical broad based capacity constrained systems Fundamentally transforming well designed actionable information whose semantic content is virtually null To more fully clarify the current exchange a few aggregate issues will require addressing to facilitate this distributed communication venue In integrating non-aligned structures into existing legacy systems a holistic gateway blueprint is a backward compatible packaging tangible';
-_lastNames = 'Smith Johnson Williams Jones Brown Davis Miller Wilson Moore Taylor Anderson Thomas Jackson White Harris Martin Thompson Garcia Martinez Robinson Clark Rodriguez Lewis Lee Walker Hall Allen Young Hernandez King Wright Lopez Hill Scott Green Adams Baker Gonzalez Nelson Carter Mitchell Perez Roberts Turner Phillips Campbell Parker Evans Edwards Collins Stewart Sanchez Morris Rogers Reed Cook Morgan Bell Murphy'.split(' ');
-_maleFirstNames = 'Thomas Arthur Lewis Clarence Leonard Albert Paul Carl Ralph Roy Earl Samuel Howard Richard Francis Laurence Herbert Elmer Ernest Theodore David Alfred Donald Russell Eugene Andrew Kenneth Herman Jesse Lester Floyd Michael Edwin Clifford Benjamin Clyde Glen Oscar Daniel'.split(' ');
-_femaleFirstNames = 'Elizabeth Ann Helen Margaret Ellen Catherine Lily Florence Ada Lou Ethel Emily Ruth Rose Frances Alice Bertha Clara Mabel Minnie Grace Jane Evelyn Gertrude Edna Pearl Laura Hazel Edith Esther Harriet Sarah May Matilda Martha Myrtle Josephine Maud Agnes Keri Julia Irene Mildred Cora'.split(' ');
-_punctuation = ['.', '.', '.', '.', '?', '!'];
-_months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-_days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
-_currentText = _defaultTextSet.toLowerCase().split(' ');
-
-function rNumber(min, max) {
-  return (0, _NumberUtils.rndNumber)(min, max);
-}
-
-function oneOf(arry) {
-  return arry[rNumber(0, arry.length - 1)];
-}
-
-function severalOf(num, arry) {
-  if (num >= arry.length) {
-    return arry;
-  }
-
-  var res = [];
-
-  for (var i = 0; i < num; i++) {
-    res.push(oneOf(arry));
-  }
-
-  return res;
-}
-
-function sentence(min, max) {
-  return (0, _StringUtils.capitalizeFirstLetter)(text(min, max)) + oneOf(_punctuation);
-}
-
-function title(min, max) {
-  return (0, _StringUtils.toTitleCase)(text(min, max));
-}
-
-function paragraph(min, max) {
-  var str = '',
-      delim = ' ',
-      len = rNumber(min, max),
-      i = 0;
-
-  for (; i < len; i++) {
-    if (i === len - 1) {
-      delim = '';
-    }
-
-    str += sentence(1, 10) + delim;
-  }
-
-  return str;
-}
-
-function text(min, max) {
-  var str = '',
-      delim = ' ',
-      len = rNumber(min, max),
-      i = 0;
-
-  for (; i < len; i++) {
-    if (i === len - 1) {
-      delim = '';
-    }
-
-    str += oneOf(_currentText) + delim;
-  }
-
-  return str;
-}
-
-function getFirstName() {
-  return rNumber(0, 1) ? oneOf(_maleFirstNames) : oneOf(_femaleFirstNames);
-}
-
-function getLastName() {
-  return oneOf(_lastNames);
-}
-
-function firstLastName() {
-  return getFirstName() + ' ' + getLastName();
-}
-
-function lastFirstName() {
-  return getLastName() + ', ' + getFirstName();
-}
-/**
- * Better implementation http://stackoverflow.com/questions/9035627/elegant-method-to-generate-array-of-random-dates-within-two-dates
- * @returns {{monthNumber: *, monthName: *, monthDay, weekDayNumber: *, weekDay: *, year}}
- */
-
-
-function date() {
-  var month = rNumber(0, 11),
-      wkday = rNumber(0, 4),
-      date = {
-    monthNumber: month + 1,
-    monthName: _months[month],
-    monthDay: rNumber(1, 28),
-    weekDayNumber: wkday + 1,
-    weekDay: _days[wkday],
-    year: oneOf(['2018', '2019', '2020'])
-  };
-  date.string = date.monthName + ' ' + date.monthDay + ', ' + date.year;
-  return date;
-}
-/**
- * http://stackoverflow.com/questions/105034/create-guid-uuid-in-javascript
- * @returns {string}
- */
-
-
-function guid() {
-  function s4() {
-    return Math.floor((1 + Math.random()) * 0x10000).toString(16).substring(1);
-  }
-
-  return s4() + s4() + '-' + s4() + '-' + s4() + '-' + s4() + '-' + s4() + s4() + s4();
-}
-
-module.exports = {
-  rNumber: rNumber,
-  oneOf: oneOf,
-  severalOf: severalOf,
-  text: text,
-  sentence: sentence,
-  title: title,
-  paragraph: paragraph,
-  firstLastName: firstLastName,
-  lastFirstName: lastFirstName,
-  date: date,
-  guid: guid
-};
-},{"./NumberUtils":"js/nori/util/NumberUtils.js","./StringUtils":"js/nori/util/StringUtils.js","./ArrayUtils":"js/nori/util/ArrayUtils.js"}],"js/components/Lorem.js":[function(require,module,exports) {
+},{"../nori/Component":"js/nori/Component.js"}],"js/components/Lorem.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -20508,6 +20515,10 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
+function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
+
+function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
+
 function _possibleConstructorReturn(self, call) { if (call && (_typeof(call) === "object" || typeof call === "function")) { return call; } return _assertThisInitialized(self); }
 
 function _assertThisInitialized(self) { if (self === void 0) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return self; }
@@ -20518,16 +20529,6 @@ function _inherits(subClass, superClass) { if (typeof superClass !== "function" 
 
 function _setPrototypeOf(o, p) { _setPrototypeOf = Object.setPrototypeOf || function _setPrototypeOf(o, p) { o.__proto__ = p; return o; }; return _setPrototypeOf(o, p); }
 
-/*
-TODO
-  - children - where would this be useful?
- */
-
-/*
-Props
-  min / max
-  mode - paragraph || text || title || sentence ||  date || fullNameFL
- */
 var Lorem =
 /*#__PURE__*/
 function (_Component) {
@@ -20541,37 +20542,44 @@ function (_Component) {
     _classCallCheck(this, Lorem);
 
     var baseElement = props.element || 'span';
-    var min = props.min || 1;
-    var max = props.max || 2;
-    var mode = props.mode || 'text';
-    var lorem = L.text(min, max);
-
-    switch (mode) {
-      case 'paragraph':
-        lorem = L.paragraph(min, max);
-        break;
-
-      case 'title':
-        lorem = L.title(min, max);
-        break;
-
-      case 'sentence':
-        lorem = L.sentence(min, max);
-        break;
-
-      case 'date':
-        lorem = L.date().string;
-        break;
-
-      case 'fullNameFL':
-        lorem = L.firstLastName();
-        break;
-    }
-
-    _this = _possibleConstructorReturn(this, _getPrototypeOf(Lorem).call(this, baseElement, props, lorem));
+    _this = _possibleConstructorReturn(this, _getPrototypeOf(Lorem).call(this, baseElement, props, []));
     _this.TEXT = 'text';
     return _this;
   }
+
+  _createClass(Lorem, [{
+    key: "render",
+    value: function render() {
+      var min = this.props.min || 1;
+      var max = this.props.max || 2;
+      var mode = this.props.mode || 'text';
+      var lorem = L.text(min, max);
+
+      switch (mode) {
+        case 'paragraph':
+          lorem = L.paragraph(min, max);
+          break;
+
+        case 'title':
+          lorem = L.title(min, max);
+          break;
+
+        case 'sentence':
+          lorem = L.sentence(min, max);
+          break;
+
+        case 'date':
+          lorem = L.date().string;
+          break;
+
+        case 'fullNameFL':
+          lorem = L.firstLastName();
+          break;
+      }
+
+      return lorem;
+    }
+  }]);
 
   return Lorem;
 }(_Component2.default);
@@ -20583,7 +20591,100 @@ Lorem.TITLE = 'title';
 Lorem.SENTENCE = 'sentence';
 Lorem.DATE = 'date';
 Lorem.FULLNAMEFL = 'fullNameFL';
-},{"../nori/util/Lorem":"js/nori/util/Lorem.js","../nori/Component":"js/nori/Component.js"}],"img/pattern/shattered.png":[function(require,module,exports) {
+},{"../nori/util/Lorem":"js/nori/util/Lorem.js","../nori/Component":"js/nori/Component.js"}],"js/components/Greeter.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = void 0;
+
+var _Component2 = _interopRequireDefault(require("../nori/Component"));
+
+var _C = require("../nori/C");
+
+var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
+
+function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
+
+function _possibleConstructorReturn(self, call) { if (call && (_typeof(call) === "object" || typeof call === "function")) { return call; } return _assertThisInitialized(self); }
+
+function _assertThisInitialized(self) { if (self === void 0) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return self; }
+
+function _getPrototypeOf(o) { _getPrototypeOf = Object.setPrototypeOf ? Object.getPrototypeOf : function _getPrototypeOf(o) { return o.__proto__ || Object.getPrototypeOf(o); }; return _getPrototypeOf(o); }
+
+function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function"); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, writable: true, configurable: true } }); if (superClass) _setPrototypeOf(subClass, superClass); }
+
+function _setPrototypeOf(o, p) { _setPrototypeOf = Object.setPrototypeOf || function _setPrototypeOf(o, p) { o.__proto__ = p; return o; }; return _setPrototypeOf(o, p); }
+
+/*
+Testing stuff for Greeter ...
+
+const _onGreetClick = evt => {
+    //console.log('greet!',evt);
+    evt.component.state = {name:Lorem.firstLastName()};
+  };
+
+  const _onGreetRender = evt => {
+    //console.log('greet rendered!', evt);
+  };
+
+  const _onGreetUpdate = evt => {
+    //console.log('greet update!', evt.component.state);
+  };
+
+  // let test = <p class={blue}>Hi, <Greeter triggers={{
+  //   click: _onGreetClick,
+  //   render: _onGreetRender,
+  //   update: _onGreetUpdate,
+  // }}>There</Greeter></p>;
+
+ */
+var Greeter =
+/*#__PURE__*/
+function (_Component) {
+  _inherits(Greeter, _Component);
+
+  // Subclasses should only take passed props and children
+  function Greeter(props, children) {
+    var _this;
+
+    _classCallCheck(this, Greeter);
+
+    // call super and pass what's needed
+    _this = _possibleConstructorReturn(this, _getPrototypeOf(Greeter).call(this, 'h1', props, []));
+    _this.internalState = {
+      name: 'Matt'
+    };
+    return _this;
+  } // Default state
+
+
+  _createClass(Greeter, [{
+    key: "render",
+    value: function render() {
+      var _useState = (0, _C.useState)('Hello, <em>{{name}}!</em>'),
+          _useState2 = _slicedToArray(_useState, 2);
+
+      var greeting = _useState2[0],
+          setGreet = _useState2[1];
+      return (0, _C.h)("h1", null, "Hello, ", (0, _C.h)("em", null, this.internalState.name));
+    }
+  }]);
+
+  return Greeter;
+}(_Component2.default);
+
+exports.default = Greeter;
+},{"../nori/Component":"js/nori/Component.js","../nori/C":"js/nori/C.js"}],"img/pattern/shattered.png":[function(require,module,exports) {
 module.exports = "/shattered.a446e091.png";
 },{}],"js/index.js":[function(require,module,exports) {
 "use strict";
@@ -20594,11 +20695,15 @@ var _Theme = require("./theme/Theme");
 
 var _emotion = require("emotion");
 
+var L = _interopRequireWildcard(require("./nori/util/Lorem"));
+
 var _C = require("./nori/C");
 
 var _Box = _interopRequireDefault(require("./components/Box"));
 
-var _Lorem = _interopRequireDefault(require("./components/Lorem"));
+var _Lorem2 = _interopRequireDefault(require("./components/Lorem"));
+
+var _Greeter = _interopRequireDefault(require("./components/Greeter"));
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -20646,6 +20751,9 @@ var applicationRoot = document.querySelector('#js-application');
 
 var _onGreetClick = function _onGreetClick(evt) {
   console.log('greet!', evt);
+  evt.component.state = {
+    name: L.firstLastName()
+  };
 };
 
 var _onGreetRender = function _onGreetRender(evt) {
@@ -20656,40 +20764,40 @@ var _onGreetUpdate = function _onGreetUpdate(evt) {
   console.log('greet update!', evt.component.state);
 };
 
-var testBox = (0, _C.c)(_Box.default, {
+var testBox = (0, _C.h)(_Box.default, {
   "class": appContainer
-}, (0, _C.c)(_Box.default, {
+}, (0, _C.h)(_Box.default, {
   "class": blackBox
-}, (0, _C.c)(_Lorem.default, {
+}, (0, _C.h)(_Lorem2.default, {
   element: "p",
   min: 5,
   max: 5,
-  mode: _Lorem.default.TITLE
-}), (0, _C.c)(_Box.default, {
+  mode: _Lorem2.default.TITLE
+}), (0, _C.h)(_Box.default, {
   "class": whiteBox
-}, (0, _C.c)(_Lorem.default, {
+}, (0, _C.h)(_Lorem2.default, {
   element: "p",
   min: 5,
   max: 5,
-  mode: _Lorem.default.TITLE
-}), (0, _C.c)(_Box.default, {
+  mode: _Lorem2.default.TITLE
+}), (0, _C.h)(_Box.default, {
   "class": blackBox
-}, (0, _C.c)(_Lorem.default, {
+}, (0, _C.h)(_Lorem2.default, {
   element: "p",
   min: 5,
   max: 5,
-  mode: _Lorem.default.TITLE
-}), (0, _C.c)(_Box.default, {
+  mode: _Lorem2.default.TITLE
+}), (0, _C.h)(_Box.default, {
   "class": whiteBox
-}, (0, _C.c)("p", {
+}, (0, _C.h)(_Greeter.default, {
   triggers: {
     click: _onGreetClick,
     render: _onGreetRender,
     update: _onGreetUpdate
   }
-}, "Click me!"))))));
+}, "There"))))));
 (0, _C.render)(testBox, applicationRoot);
-},{"./theme/Global":"js/theme/Global.js","./theme/Theme":"js/theme/Theme.js","emotion":"../node_modules/emotion/dist/index.esm.js","./nori/C":"js/nori/C.js","./components/Box":"js/components/Box.js","./components/Lorem":"js/components/Lorem.js","../img/pattern/shattered.png":"img/pattern/shattered.png"}],"../node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
+},{"./theme/Global":"js/theme/Global.js","./theme/Theme":"js/theme/Theme.js","emotion":"../node_modules/emotion/dist/index.esm.js","./nori/util/Lorem":"js/nori/util/Lorem.js","./nori/C":"js/nori/C.js","./components/Box":"js/components/Box.js","./components/Lorem":"js/components/Lorem.js","./components/Greeter":"js/components/Greeter.js","../img/pattern/shattered.png":"img/pattern/shattered.png"}],"../node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
 var global = arguments[3];
 var OVERLAY_ID = '__parcel__error__overlay__';
 var OldModule = module.bundle.Module;

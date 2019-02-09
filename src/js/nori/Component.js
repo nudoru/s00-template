@@ -1,6 +1,7 @@
 import Mustache from 'mustache';
 import {equals} from 'ramda';
 import Is from './util/is';
+import {arrify} from "./util/ArrayUtils";
 import {
   HTMLStrToNode,
   isElementInViewport,
@@ -14,11 +15,9 @@ import {getNextId} from './util/ElementIDCreator';
 
 /*
 Simple string based component to quickly get html on the screen
-NOTHING like React, Preact or any of that. Quick and dirty
 
 TODO
-- render children w/ RECURSION!
-- string non-html attrs from nodes
+- strip non-html attrs from nodes
 - break out events into own key in the props
 - break out tweens into own key in the props - on over, out, click, move, enter, exit
 - styles
@@ -27,16 +26,11 @@ TODO
   withShadow(alignRight(rootComp))
   are these styles or functionality?
 - support gsap tweens
-- extract DOM code to another module? Keep this "virtual"
  */
 
 const TRIGGER_EVENT    = 'event';
 const TRIGGER_BEHAVIOR = 'behavior';
 
-// These will require listeners
-// export const BEHAVIOR_SCOLLIN     = 'scrollIn';
-// export const BEHAVIOR_SCROLLOUT   = 'scrollOut';
-// export const BEHAVIOR_MOUSENEAR   = 'mouseNear';
 export const BEHAVIOR_RENDER      = 'render';       // on initial render only
 export const BEHAVIOR_STATECHANGE = 'stateChange';
 export const BEHAVIOR_UPDATE      = 'update';       // rerender
@@ -50,19 +44,17 @@ const SPECIAL_PROPS = ['tweens', 'state', 'triggers'];
 export default class Component {
 
   constructor(tag, props, children) {
-    this.tag      = tag;
-    this.props    = props || {};
-    this.children = Is.array(children) ? children : [children];
+    this.tag            = tag;
+    this.props          = props || {};
+    this.props.children = Is.array(children) ? children : [children];
 
-    this.attrs         = this.$filterSpecialProps(this.props); //props.hasOwnProperty('attrs') ? props.attrs : {};
-    this.tweens        = props.hasOwnProperty('tweens') ? props.tweens : {};
-    this.internalState = props.hasOwnProperty('state') ? props.state : {};
-    this.triggerMap    = this.$mapTriggers(props.hasOwnProperty('triggers') ? props.triggers : {});
+    this.attrs             = this.$filterSpecialProps(this.props); //props.hasOwnProperty('attrs') ? props.attrs : {};
+    this.attrs['data-nid'] = getNextId();
+    this.tweens            = props.hasOwnProperty('tweens') ? props.tweens : {};
+    this.internalState     = props.hasOwnProperty('state') ? props.state : {};
+    this.triggerMap        = this.$mapTriggers(props.hasOwnProperty('triggers') ? props.triggers : {});
 
-    this.renderedElement       = null;
-    this.renderedElementParent = null;
-
-    this.isDirty = false;
+    this.renderedElement = null;
   }
 
   $filterSpecialProps = (props) => Object.keys(props).reduce((acc, key) => {
@@ -83,7 +75,6 @@ export default class Component {
     }
 
     this.internalState = Object.assign({}, this.internalState, nextState);
-    this.isDirty = true;
     this.$performBehavior(BEHAVIOR_STATECHANGE);
     this.$update();
   }
@@ -110,25 +101,6 @@ export default class Component {
   get isInViewport() {
     return isElementInViewport(this.current);
   }
-
-  // also touch
-  // getDistanceFromCursor(mevt) {
-  //
-  //   const offset = this.offset;
-  // }
-  //
-  // also touch
-  // getCursorPositionOnElement(mevt) {
-  //
-  // }
-  //
-  // $onScroll = e => {
-  //   // TEST for in to view?
-  // };
-  //
-  // $onMouseMove = e => {
-  //   // test for proximity
-  // };
 
   $mapTriggers = (props) => Object.keys(props).reduce((acc, key) => {
     let value = props[key];
@@ -164,8 +136,8 @@ export default class Component {
 
   $createEventPacket = e => ({
     event    : e,
-    component: this,
-    element  : this.current
+    component: this
+    // element  : this.current
   });
 
   $handleEventTrigger = evt => e => evt.externalHandler(this.$createEventPacket(e));
@@ -173,7 +145,7 @@ export default class Component {
   $performBehavior = (behavior, e) => this.triggerMap.forEach(evt => {
     if (evt.type === TRIGGER_BEHAVIOR && evt.event === behavior) {
       // fake an event object
-      let event = e || {type: behavior, target: this.current};
+      let event = e || {type: behavior, target: this}; //.current
       evt.externalHandler(this.$createEventPacket(event));
     }
   });
@@ -187,62 +159,64 @@ export default class Component {
   });
 
   //----------------------------------------------------------------------------
-  //----------------------------------------------------------------------------
-  //----------------------------------------------------------------------------
-  // COMBINE RENDER AND RENDERCHILDREN IN A RECURSIVE WAY ----------------------
 
-  // Called on renderTo and update
-  // Why did I have fragment? ¯\_(シ)_/¯
-  $render() {
-    // let fragment = document.createDocumentFragment();
-    let element = document.createElement(this.tag);
-    this.$setTagAttrs(element, this.attrs);
-    this.$applyTriggers(element, this.triggerMap);
-    this.children.forEach(this.$createElement(element));
-    //fragment.appendChild(element);
-    return element;
+
+  // Returns the view. Override in subclass
+  render() {
+    return this.props.children;
   }
 
-  $createElement = parent => child => {
+  // If render returns  a component, don't use the tag for the element, just use all of what render returns
+  $render() {
+    let fragment = document.createDocumentFragment(),
+        element,
+        rendered = this.render();
+
+    if (Is.object(rendered)) {
+      // Was custom render, returned a component
+      // TODO allow for an array to be returned rather than only one
+      element = rendered.$render().firstChild;
+      fragment.appendChild(element)
+    } else {
+      // Non-custom component, just returned an array of children
+      element = document.createElement(this.tag);
+      fragment.appendChild(element);
+      this.$setTagAttrs(element, this.attrs);
+      arrify(rendered).map(this.$createElement).forEach(child => element.appendChild(child));
+    }
+
+    this.$applyTriggers(element, this.triggerMap);
+    this.$performBehavior(BEHAVIOR_RENDER);
+
+    // move this out somewhere?
+    this.renderedElement = fragment.firstChild;
+    return fragment;
+  }
+
+  $createElement = child => {
     if (Is.string(child)) {
-      let text = HTMLStrToNode(Mustache.render(child, this.internalState));
-      parent.appendChild(text);
-    } else if (Is.object(child) && typeof child.renderTo === 'function') {
-      child.renderTo(parent);
+      return HTMLStrToNode(Mustache.render(child, this.internalState));
+    } else if (Is.object(child) && typeof child.$render === 'function') {
+      return child.$render();
+    } else {
+      console.warn(`createElement, unexpected type ${child}`);
+      return HTMLStrToNode('Error');
     }
   };
 
-  renderTo(root) {
-    if (!root) {
-      console.error(`Component: Can't render component to null root`);
-    }
-
-    this.attrs['data-nid'] = getNextId(); // create a unique ID for every render
-    this.isDirty           = false;
-
-    const element = this.$render();
-    root.appendChild(element);
-
-    this.renderedElementParent = root;
-    this.renderedElement       = root.lastChild;
-
-    this.$performBehavior(BEHAVIOR_RENDER);
-  }
-
-  // TODO only, rerender element if it's changed (isDirty) or it's children have
+  // TODO: diff and patch rather than just replace
   $update() {
-    if (this.renderedElement) {
-      this.remove();
-      let updatedElement   = this.$render();
-      this.renderedElement = replaceElementWith(this.renderedElement, updatedElement);
-      this.$performBehavior(BEHAVIOR_UPDATE);
-    } else {
+    if (!this.renderedElement) {
       console.warn(`Component not rendered, can't update!`, this.tag, this.props);
+      return;
     }
+    const prevEl = this.renderedElement;
+    this.remove();
+    const newEl = this.$render();
+    replaceElementWith(prevEl, newEl);
+    this.$performBehavior(BEHAVIOR_UPDATE);
   }
 
-  //----------------------------------------------------------------------------
-  //----------------------------------------------------------------------------
   //----------------------------------------------------------------------------
 
   // TODO filter out non-HTML attributes
@@ -256,7 +230,7 @@ export default class Component {
     this.$performBehavior(BEHAVIOR_WILLREMOVE);
 
     this.$removeTriggers(this.renderedElement, this.triggerMap);
-    this.children.forEach(child => {
+    this.props.children.forEach(child => {
       if (Is.object(child) && typeof child.remove === 'function') {
         child.remove();
       }
@@ -265,16 +239,42 @@ export default class Component {
 
   delete() {
     this.remove();
-    this.children.forEach(child => {
+    this.props.children.forEach(child => {
       if (Is.object(child) && typeof child.delete === 'function') {
         child.delete();
       }
     });
     removeElement(this.renderedElement);
-    this.renderedElement       = null;
-    this.renderedElementParent = null;
+    this.renderedElement = null;
 
     this.$performBehavior(BEHAVIOR_DIDDELETE);
   }
 
 }
+
+
+/*
+// These will require listeners
+// export const BEHAVIOR_SCOLLIN     = 'scrollIn';
+// export const BEHAVIOR_SCROLLOUT   = 'scrollOut';
+// export const BEHAVIOR_MOUSENEAR   = 'mouseNear';
+
+// also touch
+  // getDistanceFromCursor(mevt) {
+  //
+  //   const offset = this.offset;
+  // }
+  //
+  // also touch
+  // getCursorPositionOnElement(mevt) {
+  //
+  // }
+  //
+  // $onScroll = e => {
+  //   // TEST for in to view?
+  // };
+  //
+  // $onMouseMove = e => {
+  //   // test for proximity
+  // };
+ */
