@@ -2,6 +2,13 @@
 
 Taking a break from React and playing around with the new Vanilla JS framework for experimentation and fun.
 
+## GOALS!
+
+- Experimentation!
+- "React-like" JSX syntax
+- more easily support animations than React
+- more stuff
+
 ## Component
 
 The component class abstracts the creation and basic management of a DOM node in a "Reactish" kinda-sorta way. Because the goal is to get DOM elements on the screen, no virtual DOM is used - just plain old appendChild. Snabbdom may be implemented in the future.
@@ -63,6 +70,8 @@ Behaviors roughly translate to React Life-Cycle hooks:
 
 #### Lifecycle
 
+**Lifecycle hooks below**
+
 [Calling component.renderTo()] -> render
 
 [State update] -> stateChange -> willRemove -> update
@@ -96,10 +105,15 @@ Create custom components by subclassing. Reference the template below:
       // Subclasses should only take passed props and children
       constructor(props, children) {
         // call super and pass what's needed
+        // Define children in an array here or return in the render()
         super('h1', props, ['Hello, <em>{{name}}!</em>']);
       }
     
       // Override fn's
+      render() {
+        // Put plain text in an [array] or return more components
+        return <h1>Hi mom!</h1>
+      }
     }
 
 ## JSX Support
@@ -108,7 +122,7 @@ The Parcel/Babel build supports JSX with only one additional package to install:
 
 ### Writing JSX
 
-The `c` helper function follows the React.createElement syntax and may be used int its place. Make user the proper JSX pragma is present at the top of every file, `/* @jsx c */`, and import the `c` and `render` functions: `import {c, render} from './nori/C';`. 
+The `h` helper function follows the React.createElement syntax and may be used int its place. Make user the proper JSX pragma is present at the top of every file, `/* @jsx h */`, and import the `c` and `render` functions: `import {h, render} from './nori/C';`. 
 
 Write JSX as you normally would with the following differences from React:
 
@@ -118,9 +132,14 @@ Write JSX as you normally would with the following differences from React:
 
 To render the component tree to the DOM, call `render` with the parent component and target DOM node.
 
-    /* @jsx c */
-    import {c, render} from './nori/C';
+    /* @jsx h */
+    import {h, render} from './nori/C';
     let world = <h1>Hello!</h1>;
     render(world, document.querySelector('#app'));
 
+Use the `render()` method to return a more detailed view w/ interactivity, etc. Otherwise what ever you put in between the tags (children) will be returned.
+
+### Lifecycle hooks
+
+The triggers for removing and updating will not fire if you place them on the parent component returned from the `render()` method. To work around this, you may use the `willUpdate`, `didUpdate`, `willRemove` and `didDelete` hooks.   
 
