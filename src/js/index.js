@@ -46,25 +46,6 @@ const blackBox = css`
 
 const applicationRoot = document.querySelector('#js-application');
 
-// const _onGreetClick = evt => {
-//   console.log('greet!',evt);
-//   evt.component.state = {name:L.firstLastName()};
-// };
-//
-// const _onGreetRender = evt => {
-//   console.log('greet rendered!', evt);
-// };
-//
-// const _onGreetUpdate = evt => {
-//   console.log('greet update!', evt.component.state);
-// };
-//
-// <Greeter triggers={{
-//   click: _onGreetClick,
-//   render: _onGreetRender,
-//   update: _onGreetUpdate,
-// }}>There</Greeter>
-
 let testBox = <Box class={appContainer}>
     <Box class={blackBox}>
       <Lorem element='p' min={5} max={5} mode={Lorem.TITLE}/>
