@@ -44,7 +44,7 @@ const SPECIAL_PROPS = ['tweens', 'state', 'triggers'];
 export default class Component {
 
   constructor(type, props, children) {
-    this.type            = type;
+    this.type           = type;
     this.props          = props || {};
     this.props.children = Is.array(children) ? children : [children];
 
@@ -186,7 +186,8 @@ export default class Component {
       element = document.createElement(this.type);
       fragment.appendChild(element);
       this.$setTagAttrs(element, this.attrs);
-      // Ugh, if rendered isn't an array each child will be created individually
+      // If rendered isn't an array each child will be created individually
+      // Ensure rendered is an array
       arrify(rendered).map(el => {
         // console.log('creating element:',el);
         return this.$createElement(el)
@@ -212,13 +213,14 @@ export default class Component {
     } else if (Is.object(child) && typeof child.$createVDOM === 'function') {
       return child.$createVDOM();
     } else {
-      console.warn(`createElement, unexpected type ${child}`);
-      return HTMLStrToNode('Error');
+      console.error(`createElement, unexpected type ${child}`);
     }
   };
 
   // TODO: diff and patch rather than just replace
   // Simple example here: https://github.com/heiskr/prezzy-vdom-example
+  // https://blog.javascripting.com/2016/10/05/building-your-own-react-clone-in-five-easy-steps/
+  // https://medium.com/@deathmood/how-to-write-your-own-virtual-dom-ee74acc13060
   $update() {
     if (!this.renderedElement) {
       console.warn(`Component not rendered, can't update!`, this.type, this.props);
@@ -238,8 +240,10 @@ export default class Component {
   $setTagAttrs = (element, attributes) => Object.keys(attributes).forEach(key => {
     const excludeAttrs = ['element','children', 'min','max', 'mode'];
     if(!excludeAttrs.includes(key)) {
-      // So, maybe I should use "className" == "class" ? Haven't had an issue yet ¯\_(シ)_/¯
       let value = attributes[key];
+      if(key === 'className') {
+        key = 'class';
+      }
       element.setAttribute(key, value);
     }
   });

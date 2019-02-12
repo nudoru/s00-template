@@ -46,14 +46,14 @@ const blackBox = css`
 
 const applicationRoot = document.querySelector('#js-application');
 
-let testBox = <Box class={appContainer}>
-    <Box class={blackBox}>
+let testBox = <Box className={appContainer}>
+    <Box className={blackBox}>
       <Lorem element='p' min={5} max={5} mode={Lorem.TITLE}/>
-      <Box class={whiteBox}>
+      <Box className={whiteBox}>
         <Lorem element='p' min={5} max={5} mode={Lorem.TITLE}/>
-        <Box class={blackBox}>
+        <Box className={blackBox}>
           <Lorem element='p' min={5} max={5} mode={Lorem.TITLE}/>
-          <Box class={whiteBox}>
+          <Box className={whiteBox}>
             <p>Click the name below to change ...</p>
             <Greeter />
           </Box>

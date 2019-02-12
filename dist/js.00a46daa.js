@@ -19421,7 +19421,8 @@ function () {
         // Non-custom component, just returned an array of children
         element = document.createElement(this.type);
         fragment.appendChild(element);
-        this.$setTagAttrs(element, this.attrs); // Ugh, if rendered isn't an array each child will be created individually
+        this.$setTagAttrs(element, this.attrs); // If rendered isn't an array each child will be created individually
+        // Ensure rendered is an array
 
         (0, _ArrayUtils.arrify)(rendered).map(function (el) {
           // console.log('creating element:',el);
@@ -19443,6 +19444,8 @@ function () {
     key: "$update",
     // TODO: diff and patch rather than just replace
     // Simple example here: https://github.com/heiskr/prezzy-vdom-example
+    // https://blog.javascripting.com/2016/10/05/building-your-own-react-clone-in-five-easy-steps/
+    // https://medium.com/@deathmood/how-to-write-your-own-virtual-dom-ee74acc13060
     value: function $update() {
       if (!this.renderedElement) {
         console.warn("Component not rendered, can't update!", this.type, this.props);
@@ -19668,8 +19671,7 @@ var _initialiseProps = function _initialiseProps() {
     } else if (_is.default.object(child) && typeof child.$createVDOM === 'function') {
       return child.$createVDOM();
     } else {
-      console.warn("createElement, unexpected type ".concat(child));
-      return (0, _DOMToolbox.HTMLStrToNode)('Error');
+      console.error("createElement, unexpected type ".concat(child));
     }
   };
 
@@ -19678,8 +19680,12 @@ var _initialiseProps = function _initialiseProps() {
       var excludeAttrs = ['element', 'children', 'min', 'max', 'mode'];
 
       if (!excludeAttrs.includes(key)) {
-        // So, maybe I should use "className" == "class" ? Haven't had an issue yet ¯\_(シ)_/¯
         var value = attributes[key];
+
+        if (key === 'className') {
+          key = 'class';
+        }
+
         element.setAttribute(key, value);
       }
     });
@@ -20095,30 +20101,30 @@ var whiteBox = (0, _emotion.css)(_templateObject2(), _Theme.theme.gradients['pre
 var blackBox = (0, _emotion.css)(_templateObject3(), _Theme.theme.gradients['premium-dark'], _Theme.theme.shadows.dropShadow.bigsoft);
 var applicationRoot = document.querySelector('#js-application');
 var testBox = (0, _Nori.h)(_Box.default, {
-  "class": appContainer
+  className: appContainer
 }, (0, _Nori.h)(_Box.default, {
-  "class": blackBox
+  className: blackBox
 }, (0, _Nori.h)(_Lorem2.default, {
   element: "p",
   min: 5,
   max: 5,
   mode: _Lorem2.default.TITLE
 }), (0, _Nori.h)(_Box.default, {
-  "class": whiteBox
+  className: whiteBox
 }, (0, _Nori.h)(_Lorem2.default, {
   element: "p",
   min: 5,
   max: 5,
   mode: _Lorem2.default.TITLE
 }), (0, _Nori.h)(_Box.default, {
-  "class": blackBox
+  className: blackBox
 }, (0, _Nori.h)(_Lorem2.default, {
   element: "p",
   min: 5,
   max: 5,
   mode: _Lorem2.default.TITLE
 }), (0, _Nori.h)(_Box.default, {
-  "class": whiteBox
+  className: whiteBox
 }, (0, _Nori.h)("p", null, "Click the name below to change ..."), (0, _Nori.h)(_Greeter.default, null))))));
 (0, _Nori.render)(testBox, applicationRoot);
 },{"./theme/Global":"js/theme/Global.js","./theme/Theme":"js/theme/Theme.js","emotion":"../node_modules/emotion/dist/index.esm.js","./nori/util/Lorem":"js/nori/util/Lorem.js","./nori/Nori":"js/nori/Nori.js","./components/Box":"js/components/Box.js","./components/Lorem":"js/components/Lorem.js","./components/Greeter":"js/components/Greeter.js","../img/pattern/shattered.png":"img/pattern/shattered.png"}],"../node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
