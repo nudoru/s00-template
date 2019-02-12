@@ -19404,8 +19404,8 @@ function () {
     // TODO get rid of the fragment?
 
   }, {
-    key: "$render",
-    value: function $render() {
+    key: "$createVDOM",
+    value: function $createVDOM() {
       var _this = this;
 
       var fragment = document.createDocumentFragment(),
@@ -19415,7 +19415,7 @@ function () {
       if (_is.default.object(rendered)) {
         // Was custom render, returned a component
         // TODO allow for an array to be returned rather than only one child
-        element = rendered.$render().firstChild;
+        element = rendered.$createVDOM().firstChild;
         fragment.appendChild(element);
       } else {
         // Non-custom component, just returned an array of children
@@ -19436,6 +19436,7 @@ function () {
       this.$performBehavior(BEHAVIOR_RENDER); // move this out somewhere?
 
       this.renderedElement = fragment.firstChild;
+      console.log(this.renderedElement);
       return fragment;
     }
   }, {
@@ -19451,7 +19452,7 @@ function () {
       this.willUpdate();
       var prevEl = this.renderedElement;
       this.remove();
-      var newEl = this.$render();
+      var newEl = this.$createVDOM();
       (0, _DOMToolbox.replaceElementWith)(prevEl, newEl);
       this.$performBehavior(BEHAVIOR_UPDATE);
       this.didUpdate();
@@ -19664,8 +19665,8 @@ var _initialiseProps = function _initialiseProps() {
     if (_is.default.string(child)) {
       // return HTMLStrToNode(Mustache.render(child, this.internalState));
       return (0, _DOMToolbox.HTMLStrToNode)(child);
-    } else if (_is.default.object(child) && typeof child.$render === 'function') {
-      return child.$render();
+    } else if (_is.default.object(child) && typeof child.$createVDOM === 'function') {
+      return child.$createVDOM();
     } else {
       console.warn("createElement, unexpected type ".concat(child));
       return (0, _DOMToolbox.HTMLStrToNode)('Error');
@@ -19741,7 +19742,7 @@ var render = function render(component, targetEl) {
     (0, _DOMToolbox.removeAllElements)(targetEl);
   }
 
-  var element = component.$render();
+  var element = component.$createVDOM();
   targetEl.appendChild(element);
 }; // Simple implementation of React's useState hook, similar API totes different impl
 // https://reactjs.org/docs/hooks-state.html

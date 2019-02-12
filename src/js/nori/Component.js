@@ -171,7 +171,7 @@ export default class Component {
 
   // If render returns  a component, don't use the tag for the element, just use all of what render returns
   // TODO get rid of the fragment?
-  $render() {
+  $createVDOM() {
     let fragment = document.createDocumentFragment(),
         element,
         rendered = this.render();
@@ -179,7 +179,7 @@ export default class Component {
     if (Is.object(rendered)) {
       // Was custom render, returned a component
       // TODO allow for an array to be returned rather than only one child
-      element = rendered.$render().firstChild;
+      element = rendered.$createVDOM().firstChild;
       fragment.appendChild(element)
     } else {
       // Non-custom component, just returned an array of children
@@ -201,6 +201,7 @@ export default class Component {
 
     // move this out somewhere?
     this.renderedElement = fragment.firstChild;
+    console.log(this.renderedElement);
     return fragment;
   }
 
@@ -208,8 +209,8 @@ export default class Component {
     if (Is.string(child)) {
       // return HTMLStrToNode(Mustache.render(child, this.internalState));
       return HTMLStrToNode(child);
-    } else if (Is.object(child) && typeof child.$render === 'function') {
-      return child.$render();
+    } else if (Is.object(child) && typeof child.$createVDOM === 'function') {
+      return child.$createVDOM();
     } else {
       console.warn(`createElement, unexpected type ${child}`);
       return HTMLStrToNode('Error');
@@ -226,7 +227,7 @@ export default class Component {
     this.willUpdate();
     const prevEl = this.renderedElement;
     this.remove();
-    const newEl = this.$render();
+    const newEl = this.$createVDOM();
     replaceElementWith(prevEl, newEl);
     this.$performBehavior(BEHAVIOR_UPDATE);
     this.didUpdate();

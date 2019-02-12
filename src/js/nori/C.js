@@ -32,7 +32,7 @@ export const render = (component, targetEl, removeExisting = true) => {
   if (removeExisting) {
     removeAllElements(targetEl);
   }
-  const element = component.$render();
+  const element = component.$createVDOM();
   targetEl.appendChild(element);
 };
 
