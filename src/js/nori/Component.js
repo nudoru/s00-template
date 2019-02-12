@@ -1,4 +1,4 @@
-import Mustache from 'mustache';
+//import Mustache from 'mustache';
 import {equals} from 'ramda';
 import Is from './util/is';
 import {arrify} from "./util/ArrayUtils";
@@ -75,6 +75,7 @@ export default class Component {
 
     this.internalState = Object.assign({}, this.internalState, nextState);
     this.$performBehavior(BEHAVIOR_STATECHANGE);
+    // TODO call willupdate hook here?
     this.$update();
   }
 
@@ -205,7 +206,8 @@ export default class Component {
 
   $createElement = child => {
     if (Is.string(child)) {
-      return HTMLStrToNode(Mustache.render(child, this.internalState));
+      // return HTMLStrToNode(Mustache.render(child, this.internalState));
+      return HTMLStrToNode(child);
     } else if (Is.object(child) && typeof child.$render === 'function') {
       return child.$render();
     } else {

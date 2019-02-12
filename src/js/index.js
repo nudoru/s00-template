@@ -54,6 +54,7 @@ let testBox = <Box class={appContainer}>
         <Box class={blackBox}>
           <Lorem element='p' min={5} max={5} mode={Lorem.TITLE}/>
           <Box class={whiteBox}>
+            <p>Click the name below to change ...</p>
             <Greeter />
           </Box>
         </Box>
