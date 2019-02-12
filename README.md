@@ -4,7 +4,7 @@ Taking a break from React and playing around with the new Vanilla JS framework f
 
 ## GOALS!
 
-- Experimentation!
+- Experimentation! This is not for performance, this is not for large apps. This is just for fun.
 - "React-like" JSX syntax
 - more easily support animations than React
 - more stuff
