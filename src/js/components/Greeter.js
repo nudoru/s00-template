@@ -1,5 +1,9 @@
 /* @jsx h */
 
+/**
+ * Example component that supports action triggers, lifecycle hooks and state updating
+ */
+
 import Component from '../nori/Component';
 import {h} from "../nori/C";
 import * as L from '../nori/util/Lorem';

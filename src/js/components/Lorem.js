@@ -1,3 +1,7 @@
+/**
+ * Example component that returns some dummy text for mockups and testing
+ */
+
 import * as L from '../nori/util/Lorem';
 import Component from '../nori/Component';
 
