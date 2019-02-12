@@ -35,7 +35,8 @@ export default class Lorem extends Component {
         break;
     }
 
-    return lorem;
+    // Return an array or each letter will be created as an individual element
+    return [lorem];
   }
 
 }

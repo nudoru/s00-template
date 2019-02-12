@@ -20085,31 +20085,38 @@ function () {
 
   _createClass(Component, [{
     key: "render",
-    //----------------------------------------------------------------------------
-    // Returns the view. Override in subclass
+    // Returns the children (or view). Override in subclass for custom
     value: function render() {
       return this.props.children;
     } // If render returns  a component, don't use the tag for the element, just use all of what render returns
+    // TODO get rid of the fragment?
 
   }, {
     key: "$render",
     value: function $render() {
+      var _this = this;
+
       var fragment = document.createDocumentFragment(),
           element,
           rendered = this.render();
 
       if (_is.default.object(rendered)) {
         // Was custom render, returned a component
-        // TODO allow for an array to be returned rather than only one
+        // TODO allow for an array to be returned rather than only one child
         element = rendered.$render().firstChild;
         fragment.appendChild(element);
       } else {
         // Non-custom component, just returned an array of children
         element = document.createElement(this.tag);
         fragment.appendChild(element);
-        this.$setTagAttrs(element, this.attrs);
-        (0, _ArrayUtils.arrify)(rendered).map(this.$createElement).forEach(function (child) {
-          return element.appendChild(child);
+        this.$setTagAttrs(element, this.attrs); // Ugh, if rendered isn't an array each child will be created individually
+
+        (0, _ArrayUtils.arrify)(rendered).map(function (el) {
+          // console.log('creating element:',el);
+          return _this.$createElement(el);
+        }).forEach(function (child) {
+          // console.log('Appending child:', child);
+          element.appendChild(child);
         });
       }
 
@@ -20122,25 +20129,28 @@ function () {
   }, {
     key: "$update",
     // TODO: diff and patch rather than just replace
+    // Simple example here: https://github.com/heiskr/prezzy-vdom-example
     value: function $update() {
       if (!this.renderedElement) {
         console.warn("Component not rendered, can't update!", this.tag, this.props);
         return;
       }
 
+      this.willUpdate();
       var prevEl = this.renderedElement;
       this.remove();
       var newEl = this.$render();
       (0, _DOMToolbox.replaceElementWith)(prevEl, newEl);
       this.$performBehavior(BEHAVIOR_UPDATE);
-    } //----------------------------------------------------------------------------
-    // TODO filter out non-HTML attributes
+      this.didUpdate();
+    } // TODO filter out non-HTML attributes
     // https://developer.mozilla.org/en-US/docs/Web/HTML/Attributes
 
   }, {
     key: "remove",
     value: function remove() {
       this.$performBehavior(BEHAVIOR_WILLREMOVE);
+      this.willRemove();
       this.$removeTriggers(this.renderedElement, this.triggerMap);
       this.props.children.forEach(function (child) {
         if (_is.default.object(child) && typeof child.remove === 'function') {
@@ -20160,6 +20170,7 @@ function () {
       (0, _DOMToolbox.removeElement)(this.renderedElement);
       this.renderedElement = null;
       this.$performBehavior(BEHAVIOR_DIDDELETE);
+      this.didDelete();
     }
   }, {
     key: "state",
@@ -20203,7 +20214,9 @@ function () {
     key: "isInViewport",
     get: function get() {
       return (0, _DOMToolbox.isElementInViewport)(this.current);
-    }
+    } // Stub "lifecycle" methods. Override in subclass.
+    // Works around applying triggers for this behaviors a level above the component to where the component is used
+
   }]);
 
   return Component;
@@ -20238,7 +20251,7 @@ function () {
 exports.default = Component;
 
 var _initialiseProps = function _initialiseProps() {
-  var _this = this;
+  var _this2 = this;
 
   this.$filterSpecialProps = function (props) {
     return Object.keys(props).reduce(function (acc, key) {
@@ -20263,7 +20276,7 @@ var _initialiseProps = function _initialiseProps() {
           internalHandler: null // Will be assigned in $applyTriggers
 
         });
-      } else if (BEHAVIORS.indexOf(key)) {
+      } else if (BEHAVIORS.includes(key)) {
         acc.push({
           type: TRIGGER_BEHAVIOR,
           event: key,
@@ -20284,7 +20297,7 @@ var _initialiseProps = function _initialiseProps() {
     return triggerMap.forEach(function (evt) {
       // TRIGGER_BEHAVIOR are broadcast directly from the function where they occur
       if (evt.type === TRIGGER_EVENT) {
-        evt.internalHandler = _this.$handleEventTrigger(evt); // TODO implement options and useCapture? https://developer.mozilla.org/en-US/docs/Web/API/EventTarget/addEventListener
+        evt.internalHandler = _this2.$handleEventTrigger(evt); // TODO implement options and useCapture? https://developer.mozilla.org/en-US/docs/Web/API/EventTarget/addEventListener
 
         element.addEventListener(evt.event, evt.internalHandler);
       }
@@ -20294,27 +20307,25 @@ var _initialiseProps = function _initialiseProps() {
   this.$createEventPacket = function (e) {
     return {
       event: e,
-      component: _this // element  : this.current
-
+      component: _this2
     };
   };
 
   this.$handleEventTrigger = function (evt) {
     return function (e) {
-      return evt.externalHandler(_this.$createEventPacket(e));
+      return evt.externalHandler(_this2.$createEventPacket(e));
     };
   };
 
   this.$performBehavior = function (behavior, e) {
-    return _this.triggerMap.forEach(function (evt) {
+    return _this2.triggerMap.forEach(function (evt) {
       if (evt.type === TRIGGER_BEHAVIOR && evt.event === behavior) {
         // fake an event object
         var event = e || {
           type: behavior,
-          target: _this
-        }; //.current
-
-        evt.externalHandler(_this.$createEventPacket(event));
+          target: _this2
+        };
+        evt.externalHandler(_this2.$createEventPacket(event));
       }
     });
   };
@@ -20328,9 +20339,17 @@ var _initialiseProps = function _initialiseProps() {
     });
   };
 
+  this.willRemove = function () {};
+
+  this.didDelete = function () {};
+
+  this.willUpdate = function () {};
+
+  this.didUpdate = function () {};
+
   this.$createElement = function (child) {
     if (_is.default.string(child)) {
-      return (0, _DOMToolbox.HTMLStrToNode)(_mustache.default.render(child, _this.internalState));
+      return (0, _DOMToolbox.HTMLStrToNode)(_mustache.default.render(child, _this2.internalState));
     } else if (_is.default.object(child) && typeof child.$render === 'function') {
       return child.$render();
     } else {
@@ -20341,8 +20360,13 @@ var _initialiseProps = function _initialiseProps() {
 
   this.$setTagAttrs = function (element, attributes) {
     return Object.keys(attributes).forEach(function (key) {
-      var value = attributes[key];
-      element.setAttribute(key, value);
+      var excludeAttrs = ['element', 'children', 'min', 'max', 'mode'];
+
+      if (!excludeAttrs.includes(key)) {
+        // So, maybe I should use "className" == "class" ? Haven't had an issue yet ¯\_(シ)_/¯
+        var value = attributes[key];
+        element.setAttribute(key, value);
+      }
     });
   };
 };
@@ -20575,9 +20599,10 @@ function (_Component) {
         case 'fullNameFL':
           lorem = L.firstLastName();
           break;
-      }
+      } // Return an array or each letter will be created as an individual element
 
-      return lorem;
+
+      return [lorem];
     }
   }]);
 
@@ -20603,7 +20628,9 @@ var _Component2 = _interopRequireDefault(require("../nori/Component"));
 
 var _C = require("../nori/C");
 
-var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
+var L = _interopRequireWildcard(require("../nori/util/Lorem"));
+
+function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) { var desc = Object.defineProperty && Object.getOwnPropertyDescriptor ? Object.getOwnPropertyDescriptor(obj, key) : {}; if (desc.get || desc.set) { Object.defineProperty(newObj, key, desc); } else { newObj[key] = obj[key]; } } } } newObj.default = obj; return newObj; } }
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -20625,29 +20652,6 @@ function _inherits(subClass, superClass) { if (typeof superClass !== "function" 
 
 function _setPrototypeOf(o, p) { _setPrototypeOf = Object.setPrototypeOf || function _setPrototypeOf(o, p) { o.__proto__ = p; return o; }; return _setPrototypeOf(o, p); }
 
-/*
-Testing stuff for Greeter ...
-
-const _onGreetClick = evt => {
-    //console.log('greet!',evt);
-    evt.component.state = {name:Lorem.firstLastName()};
-  };
-
-  const _onGreetRender = evt => {
-    //console.log('greet rendered!', evt);
-  };
-
-  const _onGreetUpdate = evt => {
-    //console.log('greet update!', evt.component.state);
-  };
-
-  // let test = <p class={blue}>Hi, <Greeter triggers={{
-  //   click: _onGreetClick,
-  //   render: _onGreetRender,
-  //   update: _onGreetUpdate,
-  // }}>There</Greeter></p>;
-
- */
 var Greeter =
 /*#__PURE__*/
 function (_Component) {
@@ -20659,11 +20663,38 @@ function (_Component) {
 
     _classCallCheck(this, Greeter);
 
-    // call super and pass what's needed
     _this = _possibleConstructorReturn(this, _getPrototypeOf(Greeter).call(this, 'h1', props, []));
     _this.internalState = {
-      name: 'Matt'
+      name: L.firstLastName()
     };
+
+    _this.$onClick = function (evt) {
+      console.log('Greet click!', evt);
+      _this.state = {
+        name: L.firstLastName()
+      };
+    };
+
+    _this.$onRender = function (evt) {
+      console.log('Greet rendered!', evt);
+    };
+
+    _this.willRemove = function () {
+      console.log('Greet will remove');
+    };
+
+    _this.didDelete = function () {
+      console.log('Greet did delete');
+    };
+
+    _this.willUpdate = function () {
+      console.log('Greet will update');
+    };
+
+    _this.didUpdate = function () {
+      console.log('Greet did update');
+    };
+
     return _this;
   } // Default state
 
@@ -20671,12 +20702,12 @@ function (_Component) {
   _createClass(Greeter, [{
     key: "render",
     value: function render() {
-      var _useState = (0, _C.useState)('Hello, <em>{{name}}!</em>'),
-          _useState2 = _slicedToArray(_useState, 2);
-
-      var greeting = _useState2[0],
-          setGreet = _useState2[1];
-      return (0, _C.h)("h1", null, "Hello, ", (0, _C.h)("em", null, this.internalState.name));
+      return (0, _C.h)("h1", {
+        triggers: {
+          click: this.$onClick,
+          render: this.$onRender
+        }
+      }, "Hello, ", (0, _C.h)("em", null, this.internalState.name));
     }
   }]);
 
@@ -20684,7 +20715,7 @@ function (_Component) {
 }(_Component2.default);
 
 exports.default = Greeter;
-},{"../nori/Component":"js/nori/Component.js","../nori/C":"js/nori/C.js"}],"img/pattern/shattered.png":[function(require,module,exports) {
+},{"../nori/Component":"js/nori/Component.js","../nori/C":"js/nori/C.js","../nori/util/Lorem":"js/nori/util/Lorem.js"}],"img/pattern/shattered.png":[function(require,module,exports) {
 module.exports = "/shattered.a446e091.png";
 },{}],"js/index.js":[function(require,module,exports) {
 "use strict";
@@ -20747,22 +20778,24 @@ var appContainerBG = require('../img/pattern/shattered.png');
 var appContainer = (0, _emotion.css)(_templateObject(), appContainerBG);
 var whiteBox = (0, _emotion.css)(_templateObject2(), _Theme.theme.gradients['premium-white'], _Theme.theme.shadows.dropShadow.bigsoft);
 var blackBox = (0, _emotion.css)(_templateObject3(), _Theme.theme.gradients['premium-dark'], _Theme.theme.shadows.dropShadow.bigsoft);
-var applicationRoot = document.querySelector('#js-application');
-
-var _onGreetClick = function _onGreetClick(evt) {
-  console.log('greet!', evt);
-  evt.component.state = {
-    name: L.firstLastName()
-  };
-};
-
-var _onGreetRender = function _onGreetRender(evt) {
-  console.log('greet rendered!', evt);
-};
-
-var _onGreetUpdate = function _onGreetUpdate(evt) {
-  console.log('greet update!', evt.component.state);
-};
+var applicationRoot = document.querySelector('#js-application'); // const _onGreetClick = evt => {
+//   console.log('greet!',evt);
+//   evt.component.state = {name:L.firstLastName()};
+// };
+//
+// const _onGreetRender = evt => {
+//   console.log('greet rendered!', evt);
+// };
+//
+// const _onGreetUpdate = evt => {
+//   console.log('greet update!', evt.component.state);
+// };
+//
+// <Greeter triggers={{
+//   click: _onGreetClick,
+//   render: _onGreetRender,
+//   update: _onGreetUpdate,
+// }}>There</Greeter>
 
 var testBox = (0, _C.h)(_Box.default, {
   "class": appContainer
@@ -20789,13 +20822,7 @@ var testBox = (0, _C.h)(_Box.default, {
   mode: _Lorem2.default.TITLE
 }), (0, _C.h)(_Box.default, {
   "class": whiteBox
-}, (0, _C.h)(_Greeter.default, {
-  triggers: {
-    click: _onGreetClick,
-    render: _onGreetRender,
-    update: _onGreetUpdate
-  }
-}, "There"))))));
+}, (0, _C.h)(_Greeter.default, null))))));
 (0, _C.render)(testBox, applicationRoot);
 },{"./theme/Global":"js/theme/Global.js","./theme/Theme":"js/theme/Theme.js","emotion":"../node_modules/emotion/dist/index.esm.js","./nori/util/Lorem":"js/nori/util/Lorem.js","./nori/C":"js/nori/C.js","./components/Box":"js/components/Box.js","./components/Lorem":"js/components/Lorem.js","./components/Greeter":"js/components/Greeter.js","../img/pattern/shattered.png":"img/pattern/shattered.png"}],"../node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
 var global = arguments[3];

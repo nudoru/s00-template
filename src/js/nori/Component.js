@@ -53,7 +53,6 @@ export default class Component {
     this.tweens            = props.hasOwnProperty('tweens') ? props.tweens : {};
     this.internalState     = props.hasOwnProperty('state') ? props.state : {};
     this.triggerMap        = this.$mapTriggers(props.hasOwnProperty('triggers') ? props.triggers : {});
-
     this.renderedElement = null;
   }
 
@@ -111,7 +110,7 @@ export default class Component {
         externalHandler: value, // passed in handler
         internalHandler: null   // Will be assigned in $applyTriggers
       });
-    } else if (BEHAVIORS.indexOf(key)) {
+    } else if (BEHAVIORS.includes(key)) {
       acc.push({
         type           : TRIGGER_BEHAVIOR,
         event          : key,
@@ -137,7 +136,6 @@ export default class Component {
   $createEventPacket = e => ({
     event    : e,
     component: this
-    // element  : this.current
   });
 
   $handleEventTrigger = evt => e => evt.externalHandler(this.$createEventPacket(e));
@@ -145,7 +143,7 @@ export default class Component {
   $performBehavior = (behavior, e) => this.triggerMap.forEach(evt => {
     if (evt.type === TRIGGER_BEHAVIOR && evt.event === behavior) {
       // fake an event object
-      let event = e || {type: behavior, target: this}; //.current
+      let event = e || {type: behavior, target: this};
       evt.externalHandler(this.$createEventPacket(event));
     }
   });
@@ -158,15 +156,20 @@ export default class Component {
     }
   });
 
-  //----------------------------------------------------------------------------
+  // Stub "lifecycle" methods. Override in subclass.
+  // Works around applying triggers for this behaviors a level above the component to where the component is used
+  willRemove = () => {};
+  didDelete = () => {};
+  willUpdate = () => {};
+  didUpdate = () => {};
 
-
-  // Returns the view. Override in subclass
+  // Returns the children (or view). Override in subclass for custom
   render() {
     return this.props.children;
   }
 
   // If render returns  a component, don't use the tag for the element, just use all of what render returns
+  // TODO get rid of the fragment?
   $render() {
     let fragment = document.createDocumentFragment(),
         element,
@@ -174,7 +177,7 @@ export default class Component {
 
     if (Is.object(rendered)) {
       // Was custom render, returned a component
-      // TODO allow for an array to be returned rather than only one
+      // TODO allow for an array to be returned rather than only one child
       element = rendered.$render().firstChild;
       fragment.appendChild(element)
     } else {
@@ -182,7 +185,14 @@ export default class Component {
       element = document.createElement(this.tag);
       fragment.appendChild(element);
       this.$setTagAttrs(element, this.attrs);
-      arrify(rendered).map(this.$createElement).forEach(child => element.appendChild(child));
+      // Ugh, if rendered isn't an array each child will be created individually
+      arrify(rendered).map(el => {
+        // console.log('creating element:',el);
+        return this.$createElement(el)
+      }).forEach(child => {
+        // console.log('Appending child:', child);
+        element.appendChild(child)
+      });
     }
 
     this.$applyTriggers(element, this.triggerMap);
@@ -205,30 +215,35 @@ export default class Component {
   };
 
   // TODO: diff and patch rather than just replace
+  // Simple example here: https://github.com/heiskr/prezzy-vdom-example
   $update() {
     if (!this.renderedElement) {
       console.warn(`Component not rendered, can't update!`, this.tag, this.props);
       return;
     }
+    this.willUpdate();
     const prevEl = this.renderedElement;
     this.remove();
     const newEl = this.$render();
     replaceElementWith(prevEl, newEl);
     this.$performBehavior(BEHAVIOR_UPDATE);
+    this.didUpdate();
   }
-
-  //----------------------------------------------------------------------------
 
   // TODO filter out non-HTML attributes
   // https://developer.mozilla.org/en-US/docs/Web/HTML/Attributes
   $setTagAttrs = (element, attributes) => Object.keys(attributes).forEach(key => {
-    let value = attributes[key];
-    element.setAttribute(key, value);
+    const excludeAttrs = ['element','children', 'min','max', 'mode'];
+    if(!excludeAttrs.includes(key)) {
+      // So, maybe I should use "className" == "class" ? Haven't had an issue yet ¯\_(シ)_/¯
+      let value = attributes[key];
+      element.setAttribute(key, value);
+    }
   });
 
   remove() {
     this.$performBehavior(BEHAVIOR_WILLREMOVE);
-
+    this.willRemove();
     this.$removeTriggers(this.renderedElement, this.triggerMap);
     this.props.children.forEach(child => {
       if (Is.object(child) && typeof child.remove === 'function') {
@@ -248,6 +263,7 @@ export default class Component {
     this.renderedElement = null;
 
     this.$performBehavior(BEHAVIOR_DIDDELETE);
+    this.didDelete();
   }
 
 }

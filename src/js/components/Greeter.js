@@ -2,46 +2,44 @@
 
 import Component from '../nori/Component';
 import {h} from "../nori/C";
-import {useState} from "../nori/C";
-
-/*
-Testing stuff for Greeter ...
-
-const _onGreetClick = evt => {
-    //console.log('greet!',evt);
-    evt.component.state = {name:Lorem.firstLastName()};
-  };
-
-  const _onGreetRender = evt => {
-    //console.log('greet rendered!', evt);
-  };
-
-  const _onGreetUpdate = evt => {
-    //console.log('greet update!', evt.component.state);
-  };
-
-  // let test = <p class={blue}>Hi, <Greeter triggers={{
-  //   click: _onGreetClick,
-  //   render: _onGreetRender,
-  //   update: _onGreetUpdate,
-  // }}>There</Greeter></p>;
-
- */
+import * as L from '../nori/util/Lorem';
 
 export default class Greeter extends Component {
 
   // Default state
-  internalState = {name: 'Matt'};
+  internalState = {name: L.firstLastName()};
 
   // Subclasses should only take passed props and children
   constructor(props, children) {
-    // call super and pass what's needed
-
     super('h1', props, []);
   }
 
+  $onClick = evt => {
+    console.log('Greet click!',evt);
+    this.state = {name:L.firstLastName()};
+  };
+
+  $onRender = evt => {
+    console.log('Greet rendered!', evt);
+  };
+
+  willRemove = () => {
+    console.log('Greet will remove');
+  };
+  didDelete = () => {
+    console.log('Greet did delete');
+  };
+  willUpdate = () => {
+    console.log('Greet will update');
+  };
+  didUpdate = () => {
+    console.log('Greet did update');
+  };
+
   render() {
-    let [greeting, setGreet] = useState('Hello, <em>{{name}}!</em>');
-    return <h1>Hello, <em>{this.internalState.name}</em></h1>;
+    return <h1 triggers={{
+      click: this.$onClick,
+      render: this.$onRender
+    }}>Hello, <em>{this.internalState.name}</em></h1>;
   }
 }
