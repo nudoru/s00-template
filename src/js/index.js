@@ -4,7 +4,7 @@ import * as GlobalCSS from './theme/Global'; // For global CSS reset + a few sty
 import {theme} from './theme/Theme';
 import {css} from 'emotion';
 import * as L from './nori/util/Lorem'
-import {h, render, useState} from './nori/C';
+import {h, render, useState} from './nori/Nori';
 
 import Box from './components/Box';
 import Lorem from './components/Lorem';

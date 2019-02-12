@@ -19685,7 +19685,7 @@ var _initialiseProps = function _initialiseProps() {
     });
   };
 };
-},{"ramda":"../node_modules/ramda/es/index.js","./util/is":"js/nori/util/is.js","./util/ArrayUtils":"js/nori/util/ArrayUtils.js","./browser/DOMToolbox":"js/nori/browser/DOMToolbox.js","./events/DomEvents":"js/nori/events/DomEvents.js","./util/ElementIDCreator":"js/nori/util/ElementIDCreator.js"}],"js/nori/C.js":[function(require,module,exports) {
+},{"ramda":"../node_modules/ramda/es/index.js","./util/is":"js/nori/util/is.js","./util/ArrayUtils":"js/nori/util/ArrayUtils.js","./browser/DOMToolbox":"js/nori/browser/DOMToolbox.js","./events/DomEvents":"js/nori/events/DomEvents.js","./util/ElementIDCreator":"js/nori/util/ElementIDCreator.js"}],"js/nori/Nori.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -19941,7 +19941,7 @@ exports.default = void 0;
 
 var _Component2 = _interopRequireDefault(require("../nori/Component"));
 
-var _C = require("../nori/C");
+var _Nori = require("../nori/Nori");
 
 var L = _interopRequireWildcard(require("../nori/util/Lorem"));
 
@@ -20017,12 +20017,12 @@ function (_Component) {
   _createClass(Greeter, [{
     key: "render",
     value: function render() {
-      return (0, _C.h)("h1", {
+      return (0, _Nori.h)("h1", {
         triggers: {
           click: this.$onClick,
           render: this.$onRender
         }
-      }, "Hello, ", (0, _C.h)("em", null, this.internalState.name));
+      }, "Hello, ", (0, _Nori.h)("em", null, this.internalState.name));
     }
   }]);
 
@@ -20030,7 +20030,7 @@ function (_Component) {
 }(_Component2.default);
 
 exports.default = Greeter;
-},{"../nori/Component":"js/nori/Component.js","../nori/C":"js/nori/C.js","../nori/util/Lorem":"js/nori/util/Lorem.js"}],"img/pattern/shattered.png":[function(require,module,exports) {
+},{"../nori/Component":"js/nori/Component.js","../nori/Nori":"js/nori/Nori.js","../nori/util/Lorem":"js/nori/util/Lorem.js"}],"img/pattern/shattered.png":[function(require,module,exports) {
 module.exports = "/shattered.a446e091.png";
 },{}],"js/index.js":[function(require,module,exports) {
 "use strict";
@@ -20043,7 +20043,7 @@ var _emotion = require("emotion");
 
 var L = _interopRequireWildcard(require("./nori/util/Lorem"));
 
-var _C = require("./nori/C");
+var _Nori = require("./nori/Nori");
 
 var _Box = _interopRequireDefault(require("./components/Box"));
 
@@ -20094,34 +20094,34 @@ var appContainer = (0, _emotion.css)(_templateObject(), appContainerBG);
 var whiteBox = (0, _emotion.css)(_templateObject2(), _Theme.theme.gradients['premium-white'], _Theme.theme.shadows.dropShadow.bigsoft);
 var blackBox = (0, _emotion.css)(_templateObject3(), _Theme.theme.gradients['premium-dark'], _Theme.theme.shadows.dropShadow.bigsoft);
 var applicationRoot = document.querySelector('#js-application');
-var testBox = (0, _C.h)(_Box.default, {
+var testBox = (0, _Nori.h)(_Box.default, {
   "class": appContainer
-}, (0, _C.h)(_Box.default, {
+}, (0, _Nori.h)(_Box.default, {
   "class": blackBox
-}, (0, _C.h)(_Lorem2.default, {
+}, (0, _Nori.h)(_Lorem2.default, {
   element: "p",
   min: 5,
   max: 5,
   mode: _Lorem2.default.TITLE
-}), (0, _C.h)(_Box.default, {
+}), (0, _Nori.h)(_Box.default, {
   "class": whiteBox
-}, (0, _C.h)(_Lorem2.default, {
+}, (0, _Nori.h)(_Lorem2.default, {
   element: "p",
   min: 5,
   max: 5,
   mode: _Lorem2.default.TITLE
-}), (0, _C.h)(_Box.default, {
+}), (0, _Nori.h)(_Box.default, {
   "class": blackBox
-}, (0, _C.h)(_Lorem2.default, {
+}, (0, _Nori.h)(_Lorem2.default, {
   element: "p",
   min: 5,
   max: 5,
   mode: _Lorem2.default.TITLE
-}), (0, _C.h)(_Box.default, {
+}), (0, _Nori.h)(_Box.default, {
   "class": whiteBox
-}, (0, _C.h)("p", null, "Click the name below to change ..."), (0, _C.h)(_Greeter.default, null))))));
-(0, _C.render)(testBox, applicationRoot);
-},{"./theme/Global":"js/theme/Global.js","./theme/Theme":"js/theme/Theme.js","emotion":"../node_modules/emotion/dist/index.esm.js","./nori/util/Lorem":"js/nori/util/Lorem.js","./nori/C":"js/nori/C.js","./components/Box":"js/components/Box.js","./components/Lorem":"js/components/Lorem.js","./components/Greeter":"js/components/Greeter.js","../img/pattern/shattered.png":"img/pattern/shattered.png"}],"../node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
+}, (0, _Nori.h)("p", null, "Click the name below to change ..."), (0, _Nori.h)(_Greeter.default, null))))));
+(0, _Nori.render)(testBox, applicationRoot);
+},{"./theme/Global":"js/theme/Global.js","./theme/Theme":"js/theme/Theme.js","emotion":"../node_modules/emotion/dist/index.esm.js","./nori/util/Lorem":"js/nori/util/Lorem.js","./nori/Nori":"js/nori/Nori.js","./components/Box":"js/components/Box.js","./components/Lorem":"js/components/Lorem.js","./components/Greeter":"js/components/Greeter.js","../img/pattern/shattered.png":"img/pattern/shattered.png"}],"../node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
 var global = arguments[3];
 var OVERLAY_ID = '__parcel__error__overlay__';
 var OldModule = module.bundle.Module;

@@ -5,7 +5,7 @@
  */
 
 import Component from '../nori/Component';
-import {h} from "../nori/C";
+import {h} from "../nori/Nori";
 import * as L from '../nori/util/Lorem';
 
 export default class Greeter extends Component {
