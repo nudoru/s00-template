@@ -19378,12 +19378,12 @@ var SPECIAL_PROPS = ['tweens', 'state', 'triggers'];
 var Component =
 /*#__PURE__*/
 function () {
-  function Component(tag, props, children) {
+  function Component(type, props, children) {
     _classCallCheck(this, Component);
 
     _initialiseProps.call(this);
 
-    this.tag = tag;
+    this.type = type;
     this.props = props || {};
     this.props.children = _is.default.array(children) ? children : [children];
     this.attrs = this.$filterSpecialProps(this.props); //props.hasOwnProperty('attrs') ? props.attrs : {};
@@ -19419,7 +19419,7 @@ function () {
         fragment.appendChild(element);
       } else {
         // Non-custom component, just returned an array of children
-        element = document.createElement(this.tag);
+        element = document.createElement(this.type);
         fragment.appendChild(element);
         this.$setTagAttrs(element, this.attrs); // Ugh, if rendered isn't an array each child will be created individually
 
@@ -19444,7 +19444,7 @@ function () {
     // Simple example here: https://github.com/heiskr/prezzy-vdom-example
     value: function $update() {
       if (!this.renderedElement) {
-        console.warn("Component not rendered, can't update!", this.tag, this.props);
+        console.warn("Component not rendered, can't update!", this.type, this.props);
         return;
       }
 
@@ -19710,7 +19710,7 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 Convenience method to create new components. Used by the Babel/JSX transpiler
 and matches React's JSX syntax
  */
-var h = function h(node, props) {
+var h = function h(type, props) {
   props = props || {};
 
   for (var _len = arguments.length, args = new Array(_len > 2 ? _len - 2 : 0), _key = 2; _key < _len; _key++) {
@@ -19719,12 +19719,12 @@ var h = function h(node, props) {
 
   var children = args.length ? (0, _ArrayUtils.flatten)(args) : null;
 
-  if (_is.default.string(node)) {
+  if (_is.default.string(type)) {
     // "regular" html tag
-    return new _Component.default(node, props, children);
+    return new _Component.default(type, props, children);
   } else {
     // another component
-    return new node(props, children);
+    return new type(props, children);
   }
 };
 /*

@@ -10,19 +10,18 @@ import {flatten} from "./util/ArrayUtils";
 Convenience method to create new components. Used by the Babel/JSX transpiler
 and matches React's JSX syntax
  */
-export const h = (node, props, ...args) => {
+export const h = (type, props, ...args) => {
 
   props = props || {};
 
   let children = args.length ? flatten(args) : null;
 
-
-  if (Is.string(node)) {
+  if (Is.string(type)) {
     // "regular" html tag
-    return new Component(node, props, children);
+    return new Component(type, props, children);
   } else {
     // another component
-    return new node(props, children);
+    return new type(props, children);
   }
 };
 
@@ -36,7 +35,6 @@ export const render = (component, targetEl, removeExisting = true) => {
   const element = component.$render();
   targetEl.appendChild(element);
 };
-
 
 // Simple implementation of React's useState hook, similar API totes different impl
 // https://reactjs.org/docs/hooks-state.html

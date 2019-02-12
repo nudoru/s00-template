@@ -43,8 +43,8 @@ const SPECIAL_PROPS = ['tweens', 'state', 'triggers'];
 
 export default class Component {
 
-  constructor(tag, props, children) {
-    this.tag            = tag;
+  constructor(type, props, children) {
+    this.type            = type;
     this.props          = props || {};
     this.props.children = Is.array(children) ? children : [children];
 
@@ -183,7 +183,7 @@ export default class Component {
       fragment.appendChild(element)
     } else {
       // Non-custom component, just returned an array of children
-      element = document.createElement(this.tag);
+      element = document.createElement(this.type);
       fragment.appendChild(element);
       this.$setTagAttrs(element, this.attrs);
       // Ugh, if rendered isn't an array each child will be created individually
@@ -220,7 +220,7 @@ export default class Component {
   // Simple example here: https://github.com/heiskr/prezzy-vdom-example
   $update() {
     if (!this.renderedElement) {
-      console.warn(`Component not rendered, can't update!`, this.tag, this.props);
+      console.warn(`Component not rendered, can't update!`, this.type, this.props);
       return;
     }
     this.willUpdate();
