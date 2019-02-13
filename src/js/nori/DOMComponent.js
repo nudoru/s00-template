@@ -10,10 +10,10 @@ import {
 } from './browser/DOMToolbox';
 import {getNextId} from './util/ElementIDCreator';
 import {
-  $applyTriggers,
-  $mapTriggers,
-  $performBehavior,
-  $removeTriggers,
+  applyActions,
+  mapActions,
+  performBehavior,
+  removeActions,
   BEHAVIOR_RENDER,
   BEHAVIOR_STATECHANGE,
   BEHAVIOR_UPDATE,
@@ -24,7 +24,6 @@ import {
 Simple string based component to quickly get html on the screen
 
 TODO
-- rename triggers to actions
 - break out events into own key in the props
 - break out tweens into own key in the props - on over, out, click, move, enter, exit
 - styles
@@ -41,7 +40,7 @@ export default class DOMComponent {
     this.internalState   = props.hasOwnProperty('state') ? props.state : {};
     this.$$typeof        = Symbol.for('nori.component');
     this.renderedElement = null;
-    this.triggerMap      = $mapTriggers(props.hasOwnProperty('triggers') ? props.triggers : {});
+    this.actionMap      = mapActions(props.hasOwnProperty('actions') ? props.actions : {});
   }
 
   $isNoriComponent = test => test.$$typeof && Symbol.keyFor(test.$$typeof) === 'nori.component';
@@ -57,7 +56,7 @@ export default class DOMComponent {
     }
 
     this.internalState = Object.assign({}, this.internalState, nextState);
-    $performBehavior(this.triggerMap, BEHAVIOR_STATECHANGE);
+    performBehavior(this.actionMap, BEHAVIOR_STATECHANGE);
     this.willUpdate();
     this.$update();
   }
@@ -108,8 +107,8 @@ export default class DOMComponent {
       arrify(result).map(el => this.$createElement(el)).forEach(child => element.appendChild(child));
     }
 
-    $applyTriggers(this.triggerMap, element);
-    $performBehavior(this.triggerMap, BEHAVIOR_RENDER);
+    applyActions(this.actionMap, element);
+    performBehavior(this.actionMap, BEHAVIOR_RENDER);
 
     this.renderedElement = fragment.firstChild;
     return fragment;
@@ -138,11 +137,11 @@ export default class DOMComponent {
     this.remove();
     const newEl = this.$createVDOM();
     replaceElementWith(prevEl, newEl);
-    $performBehavior(this.triggerMap, BEHAVIOR_UPDATE);
+    performBehavior(this.actionMap, BEHAVIOR_UPDATE);
     this.didUpdate();
   }
 
-  $isSpecialProp = test => ['tweens', 'state', 'triggers', 'children', 'element', 'min', 'max', 'mode'].includes(test);
+  $isSpecialProp = test => ['tweens', 'state', 'actions', 'children', 'element', 'min', 'max', 'mode'].includes(test);
 
   // TODO filter out non-HTML attributes
   // TODO set boolean props?
@@ -160,9 +159,9 @@ export default class DOMComponent {
   });
 
   remove() {
-    $performBehavior(this.triggerMap, BEHAVIOR_WILLREMOVE);
+    performBehavior(this.actionMap, BEHAVIOR_WILLREMOVE);
     this.willRemove();
-    $removeTriggers(this.triggerMap, this.renderedElement);
+    removeActions(this.actionMap, this.renderedElement);
     this.props.children.forEach(child => {
       if (this.$isNoriComponent(child)) {
         child.remove();
@@ -172,7 +171,7 @@ export default class DOMComponent {
   }
 
   // Stub "lifecycle" methods. Override in subclass.
-  // Works around applying triggers for this behaviors a level above the component to where the component is used
+  // Works around applying actions for this behaviors a level above the component to where the component is used
   willRemove = () => {
   };
   didDelete  = () => {

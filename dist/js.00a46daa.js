@@ -19322,14 +19322,14 @@ exports.isDomEvent = isDomEvent;
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.$removeTriggers = exports.$performBehavior = exports.$handleEventTrigger = exports.$createEventObject = exports.$applyTriggers = exports.$mapTriggers = exports.BEHAVIOR_DIDDELETE = exports.BEHAVIOR_WILLREMOVE = exports.BEHAVIOR_UPDATE = exports.BEHAVIOR_STATECHANGE = exports.BEHAVIOR_RENDER = void 0;
+exports.removeActions = exports.performBehavior = exports.$handleEventTrigger = exports.$createEventObject = exports.applyActions = exports.mapActions = exports.BEHAVIOR_DIDDELETE = exports.BEHAVIOR_WILLREMOVE = exports.BEHAVIOR_UPDATE = exports.BEHAVIOR_STATECHANGE = exports.BEHAVIOR_RENDER = void 0;
 
 var _DomEvents = require("./events/DomEvents");
 
 var _this = void 0;
 
-var TRIGGER_EVENT = 'event';
-var TRIGGER_BEHAVIOR = 'behavior';
+var ACTION_EVENT = 'event';
+var ACTION_BEHAVIOR = 'behavior';
 var BEHAVIOR_RENDER = 'render'; // on initial render only
 
 exports.BEHAVIOR_RENDER = BEHAVIOR_RENDER;
@@ -19344,22 +19344,22 @@ var BEHAVIOR_DIDDELETE = 'didDelete';
 exports.BEHAVIOR_DIDDELETE = BEHAVIOR_DIDDELETE;
 var BEHAVIORS = [BEHAVIOR_WILLREMOVE, BEHAVIOR_RENDER, BEHAVIOR_STATECHANGE, BEHAVIOR_UPDATE];
 
-var $mapTriggers = function $mapTriggers(props) {
+var mapActions = function mapActions(props) {
   return Object.keys(props).reduce(function (acc, key) {
     var value = props[key];
 
     if ((0, _DomEvents.isDomEvent)(key)) {
       acc.push({
-        type: TRIGGER_EVENT,
+        type: ACTION_EVENT,
         event: key,
         externalHandler: value,
         // passed in handler
-        internalHandler: null // Will be assigned in $applyTriggers
+        internalHandler: null // Will be assigned in applyActions
 
       });
     } else if (BEHAVIORS.includes(key)) {
       acc.push({
-        type: TRIGGER_BEHAVIOR,
+        type: ACTION_BEHAVIOR,
         event: key,
         externalHandler: value,
         // passed in handler
@@ -19374,11 +19374,11 @@ var $mapTriggers = function $mapTriggers(props) {
   }, []);
 };
 
-exports.$mapTriggers = $mapTriggers;
+exports.mapActions = mapActions;
 
-var $applyTriggers = function $applyTriggers(triggerMap, element) {
-  return triggerMap.forEach(function (evt) {
-    if (evt.type === TRIGGER_EVENT) {
+var applyActions = function applyActions(actionMap, element) {
+  return actionMap.forEach(function (evt) {
+    if (evt.type === ACTION_EVENT) {
       evt.internalHandler = $handleEventTrigger(evt); // TODO implement options and useCapture? https://developer.mozilla.org/en-US/docs/Web/API/EventTarget/addEventListener
 
       element.addEventListener(evt.event, evt.internalHandler);
@@ -19386,7 +19386,7 @@ var $applyTriggers = function $applyTriggers(triggerMap, element) {
   });
 };
 
-exports.$applyTriggers = $applyTriggers;
+exports.applyActions = applyActions;
 
 var $createEventObject = function $createEventObject(e) {
   return {
@@ -19405,9 +19405,9 @@ var $handleEventTrigger = function $handleEventTrigger(evt) {
 
 exports.$handleEventTrigger = $handleEventTrigger;
 
-var $performBehavior = function $performBehavior(triggerMap, behavior, e) {
-  return triggerMap.forEach(function (evt) {
-    if (evt.type === TRIGGER_BEHAVIOR && evt.event === behavior) {
+var performBehavior = function performBehavior(actionMap, behavior, e) {
+  return actionMap.forEach(function (evt) {
+    if (evt.type === ACTION_BEHAVIOR && evt.event === behavior) {
       var event = e || {
         type: behavior,
         target: _this
@@ -19418,11 +19418,11 @@ var $performBehavior = function $performBehavior(triggerMap, behavior, e) {
 }; // behaviors don't have listeners
 
 
-exports.$performBehavior = $performBehavior;
+exports.performBehavior = performBehavior;
 
-var $removeTriggers = function $removeTriggers(triggerMap, element) {
-  return triggerMap.forEach(function (evt) {
-    if (evt.type === TRIGGER_EVENT) {
+var removeActions = function removeActions(actionMap, element) {
+  return actionMap.forEach(function (evt) {
+    if (evt.type === ACTION_EVENT) {
       element.removeEventListener(evt.event, evt.internalHandler);
     }
   });
@@ -19455,7 +19455,7 @@ Don't want to loose this ...
  */
 
 
-exports.$removeTriggers = $removeTriggers;
+exports.removeActions = removeActions;
 },{"./events/DomEvents":"js/nori/events/DomEvents.js"}],"js/nori/DOMComponent.js":[function(require,module,exports) {
 "use strict";
 
@@ -19488,7 +19488,6 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
 Simple string based component to quickly get html on the screen
 
 TODO
-- rename triggers to actions
 - break out events into own key in the props
 - break out tweens into own key in the props - on over, out, click, move, enter, exit
 - styles
@@ -19509,7 +19508,7 @@ function () {
     this.internalState = props.hasOwnProperty('state') ? props.state : {};
     this.$$typeof = Symbol.for('nori.component');
     this.renderedElement = null;
-    this.triggerMap = (0, _Eventing.$mapTriggers)(props.hasOwnProperty('triggers') ? props.triggers : {});
+    this.actionMap = (0, _Eventing.mapActions)(props.hasOwnProperty('actions') ? props.actions : {});
   }
 
   _createClass(DOMComponent, [{
@@ -19542,8 +19541,8 @@ function () {
         });
       }
 
-      (0, _Eventing.$applyTriggers)(this.triggerMap, element);
-      (0, _Eventing.$performBehavior)(this.triggerMap, _Eventing.BEHAVIOR_RENDER);
+      (0, _Eventing.applyActions)(this.actionMap, element);
+      (0, _Eventing.performBehavior)(this.actionMap, _Eventing.BEHAVIOR_RENDER);
       this.renderedElement = fragment.firstChild;
       return fragment;
     }
@@ -19563,7 +19562,7 @@ function () {
       this.remove();
       var newEl = this.$createVDOM();
       (0, _DOMToolbox.replaceElementWith)(prevEl, newEl);
-      (0, _Eventing.$performBehavior)(this.triggerMap, _Eventing.BEHAVIOR_UPDATE);
+      (0, _Eventing.performBehavior)(this.actionMap, _Eventing.BEHAVIOR_UPDATE);
       this.didUpdate();
     } // TODO filter out non-HTML attributes
     // TODO set boolean props?
@@ -19574,9 +19573,9 @@ function () {
     value: function remove() {
       var _this2 = this;
 
-      (0, _Eventing.$performBehavior)(this.triggerMap, _Eventing.BEHAVIOR_WILLREMOVE);
+      (0, _Eventing.performBehavior)(this.actionMap, _Eventing.BEHAVIOR_WILLREMOVE);
       this.willRemove();
-      (0, _Eventing.$removeTriggers)(this.triggerMap, this.renderedElement);
+      (0, _Eventing.removeActions)(this.actionMap, this.renderedElement);
       this.props.children.forEach(function (child) {
         if (_this2.$isNoriComponent(child)) {
           child.remove();
@@ -19584,7 +19583,7 @@ function () {
       });
       this.renderedElement = null;
     } // Stub "lifecycle" methods. Override in subclass.
-    // Works around applying triggers for this behaviors a level above the component to where the component is used
+    // Works around applying actions for this behaviors a level above the component to where the component is used
 
   }, {
     key: "render",
@@ -19605,7 +19604,7 @@ function () {
       }
 
       this.internalState = Object.assign({}, this.internalState, nextState);
-      (0, _Eventing.$performBehavior)(this.triggerMap, _Eventing.BEHAVIOR_STATECHANGE);
+      (0, _Eventing.performBehavior)(this.actionMap, _Eventing.BEHAVIOR_STATECHANGE);
       this.willUpdate();
       this.$update();
     },
@@ -19663,7 +19662,7 @@ var _initialiseProps = function _initialiseProps() {
   };
 
   this.$isSpecialProp = function (test) {
-    return ['tweens', 'state', 'triggers', 'children', 'element', 'min', 'max', 'mode'].includes(test);
+    return ['tweens', 'state', 'actions', 'children', 'element', 'min', 'max', 'mode'].includes(test);
   };
 
   this.$setProps = function (element, props) {
@@ -20015,7 +20014,7 @@ function (_DOMComponent) {
     key: "render",
     value: function render() {
       return (0, _Nori.h)("h1", {
-        triggers: {
+        actions: {
           click: this.$onClick,
           render: this.$onRender
         }

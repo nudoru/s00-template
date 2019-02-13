@@ -1,7 +1,7 @@
 import {isDomEvent} from "./events/DomEvents";
 
-const TRIGGER_EVENT    = 'event';
-const TRIGGER_BEHAVIOR = 'behavior';
+const ACTION_EVENT    = 'event';
+const ACTION_BEHAVIOR = 'behavior';
 
 export const BEHAVIOR_RENDER      = 'render';       // on initial render only
 export const BEHAVIOR_STATECHANGE = 'stateChange';
@@ -11,18 +11,18 @@ export const BEHAVIOR_DIDDELETE   = 'didDelete';
 
 const BEHAVIORS = [BEHAVIOR_WILLREMOVE, BEHAVIOR_RENDER, BEHAVIOR_STATECHANGE, BEHAVIOR_UPDATE];
 
-export const $mapTriggers = props => Object.keys(props).reduce((acc, key) => {
+export const mapActions = props => Object.keys(props).reduce((acc, key) => {
     let value = props[key];
     if (isDomEvent(key)) {
       acc.push({
-        type           : TRIGGER_EVENT,
+        type           : ACTION_EVENT,
         event          : key,
         externalHandler: value, // passed in handler
-        internalHandler: null   // Will be assigned in $applyTriggers
+        internalHandler: null   // Will be assigned in applyActions
       });
     } else if (BEHAVIORS.includes(key)) {
       acc.push({
-        type           : TRIGGER_BEHAVIOR,
+        type           : ACTION_BEHAVIOR,
         event          : key,
         externalHandler: value, // passed in handler
         internalHandler: null   // Not used for behavior, fn's just called when they occur in code
@@ -34,8 +34,8 @@ export const $mapTriggers = props => Object.keys(props).reduce((acc, key) => {
     return acc;
   }, []);
 
-export const $applyTriggers = (triggerMap, element) => triggerMap.forEach(evt => {
-  if (evt.type === TRIGGER_EVENT) {
+export const applyActions = (actionMap, element) => actionMap.forEach(evt => {
+  if (evt.type === ACTION_EVENT) {
     evt.internalHandler = $handleEventTrigger(evt);
     // TODO implement options and useCapture? https://developer.mozilla.org/en-US/docs/Web/API/EventTarget/addEventListener
     element.addEventListener(evt.event, evt.internalHandler);
@@ -49,16 +49,16 @@ export const $createEventObject = e => ({
 
 export const $handleEventTrigger = evt => e => evt.externalHandler($createEventObject(e));
 
-export const $performBehavior = (triggerMap, behavior, e) => triggerMap.forEach(evt => {
-  if (evt.type === TRIGGER_BEHAVIOR && evt.event === behavior) {
+export const performBehavior = (actionMap, behavior, e) => actionMap.forEach(evt => {
+  if (evt.type === ACTION_BEHAVIOR && evt.event === behavior) {
     let event = e || {type: behavior, target: this};
     evt.externalHandler($createEventObject(event));
   }
 });
 
 // behaviors don't have listeners
-export const $removeTriggers = (triggerMap, element) => triggerMap.forEach(evt => {
-  if (evt.type === TRIGGER_EVENT) {
+export const removeActions = (actionMap, element) => actionMap.forEach(evt => {
+  if (evt.type === ACTION_EVENT) {
     element.removeEventListener(evt.event, evt.internalHandler);
   }
 });
