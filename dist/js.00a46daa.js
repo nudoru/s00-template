@@ -19316,7 +19316,7 @@ var getNextId = function getNextId() {
 };
 
 exports.getNextId = getNextId;
-},{}],"js/nori/Component.js":[function(require,module,exports) {
+},{}],"js/nori/DOMComponent.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -19375,17 +19375,17 @@ exports.BEHAVIOR_DIDDELETE = BEHAVIOR_DIDDELETE;
 var BEHAVIORS = [BEHAVIOR_WILLREMOVE, BEHAVIOR_RENDER, BEHAVIOR_STATECHANGE, BEHAVIOR_UPDATE];
 var SPECIAL_PROPS = ['tweens', 'state', 'triggers', 'children'];
 
-var Component =
+var DOMComponent =
 /*#__PURE__*/
 function () {
-  function Component(type, props, children) {
-    _classCallCheck(this, Component);
+  function DOMComponent(type, props, children) {
+    _classCallCheck(this, DOMComponent);
 
     _initialiseProps.call(this);
 
     this.type = type;
     this.props = props || {};
-    this.props.id = (0, _ElementIDCreator.getNextId)();
+    this.props.id = props.key || (0, _ElementIDCreator.getNextId)();
     this.props.children = _is.default.array(children) ? children : [children];
     this.tweens = props.hasOwnProperty('tweens') ? props.tweens : {};
     this.internalState = props.hasOwnProperty('state') ? props.state : {};
@@ -19394,7 +19394,7 @@ function () {
     this.$$typeof = Symbol.for('nori.component');
   }
 
-  _createClass(Component, [{
+  _createClass(DOMComponent, [{
     key: "render",
     // Returns the children (or view). Override in subclass for custom
     value: function render() {
@@ -19537,7 +19537,7 @@ function () {
 
   }]);
 
-  return Component;
+  return DOMComponent;
 }();
 /*
 Don't want to loose this ...
@@ -19567,7 +19567,7 @@ Don't want to loose this ...
  */
 
 
-exports.default = Component;
+exports.default = DOMComponent;
 
 var _initialiseProps = function _initialiseProps() {
   var _this4 = this;
@@ -19708,7 +19708,7 @@ Object.defineProperty(exports, "__esModule", {
 exports.useState = useState;
 exports.render = exports.h = void 0;
 
-var _Component = _interopRequireDefault(require("./Component"));
+var _DOMComponent = _interopRequireDefault(require("./DOMComponent"));
 
 var _is = _interopRequireDefault(require("./util/is"));
 
@@ -19723,7 +19723,6 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 
 /*
 Convenience method to create new components. Used by the Babel/JSX transpiler
-and matches React's JSX syntax
  */
 var h = function h(type, props) {
   props = props || {};
@@ -19736,7 +19735,7 @@ var h = function h(type, props) {
 
   if (_is.default.string(type)) {
     // "regular" html tag
-    return new _Component.default(type, props, children);
+    return new _DOMComponent.default(type, props, children);
   } else {
     // another component
     return new type(props, children);
@@ -19806,7 +19805,7 @@ function useState(initial) {
 
   return [initial, setState];
 }
-},{"./Component":"js/nori/Component.js","./util/is":"js/nori/util/is.js","./browser/DOMToolbox":"js/nori/browser/DOMToolbox.js","./util/ArrayUtils":"js/nori/util/ArrayUtils.js"}],"js/components/Box.js":[function(require,module,exports) {
+},{"./DOMComponent":"js/nori/DOMComponent.js","./util/is":"js/nori/util/is.js","./browser/DOMToolbox":"js/nori/browser/DOMToolbox.js","./util/ArrayUtils":"js/nori/util/ArrayUtils.js"}],"js/components/Box.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -19814,7 +19813,7 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.default = void 0;
 
-var _Component2 = _interopRequireDefault(require("../nori/Component"));
+var _DOMComponent2 = _interopRequireDefault(require("../nori/DOMComponent"));
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -19834,8 +19833,8 @@ function _setPrototypeOf(o, p) { _setPrototypeOf = Object.setPrototypeOf || func
 
 var Box =
 /*#__PURE__*/
-function (_Component) {
-  _inherits(Box, _Component);
+function (_DOMComponent) {
+  _inherits(Box, _DOMComponent);
 
   function Box(props, children) {
     _classCallCheck(this, Box);
@@ -19845,10 +19844,10 @@ function (_Component) {
   }
 
   return Box;
-}(_Component2.default);
+}(_DOMComponent2.default);
 
 exports.default = Box;
-},{"../nori/Component":"js/nori/Component.js"}],"js/components/Lorem.js":[function(require,module,exports) {
+},{"../nori/DOMComponent":"js/nori/DOMComponent.js"}],"js/components/Lorem.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -19858,7 +19857,7 @@ exports.default = void 0;
 
 var L = _interopRequireWildcard(require("../nori/util/Lorem"));
 
-var _Component2 = _interopRequireDefault(require("../nori/Component"));
+var _DOMComponent2 = _interopRequireDefault(require("../nori/DOMComponent"));
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -19884,8 +19883,8 @@ function _setPrototypeOf(o, p) { _setPrototypeOf = Object.setPrototypeOf || func
 
 var Lorem =
 /*#__PURE__*/
-function (_Component) {
-  _inherits(Lorem, _Component);
+function (_DOMComponent) {
+  _inherits(Lorem, _DOMComponent);
 
   function Lorem(props) {
     var _this;
@@ -19936,7 +19935,7 @@ function (_Component) {
   }]);
 
   return Lorem;
-}(_Component2.default);
+}(_DOMComponent2.default);
 
 exports.default = Lorem;
 Lorem.TEXT = 'text';
@@ -19945,7 +19944,7 @@ Lorem.TITLE = 'title';
 Lorem.SENTENCE = 'sentence';
 Lorem.DATE = 'date';
 Lorem.FULLNAMEFL = 'fullNameFL';
-},{"../nori/util/Lorem":"js/nori/util/Lorem.js","../nori/Component":"js/nori/Component.js"}],"js/components/Greeter.js":[function(require,module,exports) {
+},{"../nori/util/Lorem":"js/nori/util/Lorem.js","../nori/DOMComponent":"js/nori/DOMComponent.js"}],"js/components/Greeter.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -19953,7 +19952,7 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.default = void 0;
 
-var _Component2 = _interopRequireDefault(require("../nori/Component"));
+var _DOMComponent2 = _interopRequireDefault(require("../nori/DOMComponent"));
 
 var _Nori = require("../nori/Nori");
 
@@ -19983,8 +19982,8 @@ function _setPrototypeOf(o, p) { _setPrototypeOf = Object.setPrototypeOf || func
 
 var Greeter =
 /*#__PURE__*/
-function (_Component) {
-  _inherits(Greeter, _Component);
+function (_DOMComponent) {
+  _inherits(Greeter, _DOMComponent);
 
   // Subclasses should only take passed props and children
   function Greeter(props, children) {
@@ -20041,10 +20040,10 @@ function (_Component) {
   }]);
 
   return Greeter;
-}(_Component2.default);
+}(_DOMComponent2.default);
 
 exports.default = Greeter;
-},{"../nori/Component":"js/nori/Component.js","../nori/Nori":"js/nori/Nori.js","../nori/util/Lorem":"js/nori/util/Lorem.js"}],"img/pattern/shattered.png":[function(require,module,exports) {
+},{"../nori/DOMComponent":"js/nori/DOMComponent.js","../nori/Nori":"js/nori/Nori.js","../nori/util/Lorem":"js/nori/util/Lorem.js"}],"img/pattern/shattered.png":[function(require,module,exports) {
 module.exports = "/shattered.a446e091.png";
 },{}],"js/index.js":[function(require,module,exports) {
 "use strict";
@@ -20108,7 +20107,13 @@ var appContainer = (0, _emotion.css)(_templateObject(), appContainerBG);
 var whiteBox = (0, _emotion.css)(_templateObject2(), _Theme.theme.gradients['premium-white'], _Theme.theme.shadows.dropShadow.bigsoft);
 var blackBox = (0, _emotion.css)(_templateObject3(), _Theme.theme.gradients['premium-dark'], _Theme.theme.shadows.dropShadow.bigsoft);
 var applicationRoot = document.querySelector('#js-application');
+
+var Sfc = function Sfc(_) {
+  return (0, _Nori.h)("h1", null, "I'm a stateless functional component");
+};
+
 var testBox = (0, _Nori.h)(_Box.default, {
+  key: "main",
   className: appContainer
 }, (0, _Nori.h)(_Box.default, {
   className: blackBox
@@ -20133,7 +20138,7 @@ var testBox = (0, _Nori.h)(_Box.default, {
   mode: _Lorem2.default.TITLE
 }), (0, _Nori.h)(_Box.default, {
   className: whiteBox
-}, (0, _Nori.h)("p", null, "Click the name below to change ..."), (0, _Nori.h)(_Greeter.default, null), (0, _Nori.h)("p", null, "Oh, look. Another one ..."), (0, _Nori.h)(_Greeter.default, null))))));
+}, (0, _Nori.h)(Sfc, null), (0, _Nori.h)("p", null, "Click the name below to change ..."), (0, _Nori.h)(_Greeter.default, null), (0, _Nori.h)("p", null, "Oh, look. Another one ..."), (0, _Nori.h)(_Greeter.default, null))))));
 (0, _Nori.render)(testBox, applicationRoot);
 },{"./theme/Global":"js/theme/Global.js","./theme/Theme":"js/theme/Theme.js","emotion":"../node_modules/emotion/dist/index.esm.js","./nori/util/Lorem":"js/nori/util/Lorem.js","./nori/Nori":"js/nori/Nori.js","./components/Box":"js/components/Box.js","./components/Lorem":"js/components/Lorem.js","./components/Greeter":"js/components/Greeter.js","../img/pattern/shattered.png":"img/pattern/shattered.png"}],"../node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
 var global = arguments[3];

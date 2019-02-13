@@ -2,9 +2,9 @@
  * Simple wrapper component. I'll extend this with more functionality later
  */
 
-import Component from '../nori/Component';
+import DOMComponent from '../nori/DOMComponent';
 
-export default class Box extends Component {
+export default class Box extends DOMComponent {
 
   constructor(props, children) {
     const baseElement = props.element || 'div';

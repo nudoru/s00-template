@@ -46,7 +46,9 @@ const blackBox = css`
 
 const applicationRoot = document.querySelector('#js-application');
 
-let testBox = <Box className={appContainer}>
+const Sfc = _ => <h1>I'm a stateless functional component</h1>;
+
+let testBox = <Box key='main' className={appContainer}>
     <Box className={blackBox}>
       <Lorem element='p' min={5} max={5} mode={Lorem.TITLE}/>
       <Box className={whiteBox}>
@@ -54,6 +56,7 @@ let testBox = <Box className={appContainer}>
         <Box className={blackBox}>
           <Lorem element='p' min={5} max={5} mode={Lorem.TITLE}/>
           <Box className={whiteBox}>
+            <Sfc/>
             <p>Click the name below to change ...</p>
             <Greeter />
             <p>Oh, look. Another one ...</p>

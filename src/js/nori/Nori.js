@@ -1,4 +1,4 @@
-import Component from './Component';
+import DOMComponent from './DOMComponent';
 import Is from './util/is';
 import {removeAllElements} from "./browser/DOMToolbox";
 import {flatten} from "./util/ArrayUtils";
@@ -8,17 +8,15 @@ import {flatten} from "./util/ArrayUtils";
 
 /*
 Convenience method to create new components. Used by the Babel/JSX transpiler
-and matches React's JSX syntax
  */
 export const h = (type, props, ...args) => {
-
   props = props || {};
 
   let children = args.length ? flatten(args) : null;
 
   if (Is.string(type)) {
     // "regular" html tag
-    return new Component(type, props, children);
+    return new DOMComponent(type, props, children);
   } else {
     // another component
     return new type(props, children);

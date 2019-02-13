@@ -41,19 +41,19 @@ const BEHAVIORS = [BEHAVIOR_WILLREMOVE, BEHAVIOR_RENDER, BEHAVIOR_STATECHANGE, B
 
 const SPECIAL_PROPS = ['tweens', 'state', 'triggers', 'children'];
 
-export default class Component {
+export default class DOMComponent {
 
   constructor(type, props, children) {
     this.type           = type;
     this.props          = props || {};
-    this.props.id = getNextId();
+    this.props.id       = props.key || getNextId();
     this.props.children = Is.array(children) ? children : [children];
 
-    this.tweens            = props.hasOwnProperty('tweens') ? props.tweens : {};
-    this.internalState     = props.hasOwnProperty('state') ? props.state : {};
-    this.triggerMap        = this.$mapTriggers(props.hasOwnProperty('triggers') ? props.triggers : {});
-    this.renderedElement   = null;
-    this.$$typeof          = Symbol.for('nori.component');
+    this.tweens          = props.hasOwnProperty('tweens') ? props.tweens : {};
+    this.internalState   = props.hasOwnProperty('state') ? props.state : {};
+    this.triggerMap      = this.$mapTriggers(props.hasOwnProperty('triggers') ? props.triggers : {});
+    this.renderedElement = null;
+    this.$$typeof        = Symbol.for('nori.component');
   }
 
   $filterSpecialProps = (props) => Object.keys(props).reduce((acc, key) => {
@@ -177,7 +177,7 @@ export default class Component {
   $createVDOM() {
     let fragment = document.createDocumentFragment(),
         element,
-        result = this.render();
+        result   = this.render();
 
     if (this.$isNoriComponent(result)) {
       // Was custom render, returned a component
@@ -241,7 +241,7 @@ export default class Component {
       let value = props[key];
       if (key === 'className') {
         key = 'class';
-      } else if(key === 'id') {
+      } else if (key === 'id') {
         key = 'data-nid';
       }
       element.setAttribute(key, value);

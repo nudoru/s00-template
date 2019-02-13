@@ -3,9 +3,9 @@
  */
 
 import * as L from '../nori/util/Lorem';
-import Component from '../nori/Component';
+import DOMComponent from '../nori/DOMComponent';
 
-export default class Lorem extends Component {
+export default class Lorem extends DOMComponent {
 
   TEXT = 'text';
 
