@@ -19367,7 +19367,7 @@ var mapActions = function mapActions(props) {
 
       });
     } else {
-      console.warn("Unknown component trigger '".concat(key, "'"));
+      console.warn("Unknown component action '".concat(key, "'"));
     }
 
     return acc;
