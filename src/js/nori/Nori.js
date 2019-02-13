@@ -6,9 +6,7 @@ import {flatten} from "./util/ArrayUtils";
 //https://jasonformat.com/wtf-is-jsx/
 //https://medium.com/@bluepnume/jsx-is-a-stellar-invention-even-with-react-out-of-the-picture-c597187134b7
 
-/*
-Convenience method to create new components. Used by the Babel/JSX transpiler
- */
+// Convenience method to create new components. Used by the Babel/JSX transpiler
 export const h = (type, props, ...args) => {
   props = props || {};
 
@@ -23,15 +21,13 @@ export const h = (type, props, ...args) => {
   }
 };
 
-/*
-Render a component to a dom node
- */
-export const render = (component, targetEl, removeExisting = true) => {
+
+// Render a component to a dom node
+export const renderDOM = (component, targetEl, removeExisting = true) => {
   if (removeExisting) {
     removeAllElements(targetEl);
   }
-  const element = component.$createVDOM();
-  targetEl.appendChild(element);
+  targetEl.appendChild(component.$createVDOM());
 };
 
 // Simple implementation of React's useState hook, similar API totes different impl

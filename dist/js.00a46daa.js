@@ -19279,23 +19279,7 @@ var centerElementInViewPort = function centerElementInViewPort(el) {
 };
 
 exports.centerElementInViewPort = centerElementInViewPort;
-},{"ramda":"../node_modules/ramda/es/index.js"}],"js/nori/events/DomEvents.js":[function(require,module,exports) {
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.isDomEvent = exports.DomEvents = void 0;
-//https://developer.mozilla.org/en-US/docs/Web/Events
-var DomEvents = ['focus', 'blur', 'resize', 'scroll', 'keydown', 'keypress', 'keyup', 'mouseenter', 'mousemove', 'mousedown', 'mouseup', 'click', 'dblclick', 'contextmenu', 'wheel', 'mouseleave', 'mouseout', 'select'];
-exports.DomEvents = DomEvents;
-
-var isDomEvent = function isDomEvent(e) {
-  return DomEvents.indexOf(e) > -1;
-};
-
-exports.isDomEvent = isDomEvent;
-},{}],"js/nori/util/ElementIDCreator.js":[function(require,module,exports) {
+},{"ramda":"../node_modules/ramda/es/index.js"}],"js/nori/util/ElementIDCreator.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -19316,13 +19300,169 @@ var getNextId = function getNextId() {
 };
 
 exports.getNextId = getNextId;
-},{}],"js/nori/DOMComponent.js":[function(require,module,exports) {
+},{}],"js/nori/events/DomEvents.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.default = exports.BEHAVIOR_DIDDELETE = exports.BEHAVIOR_WILLREMOVE = exports.BEHAVIOR_UPDATE = exports.BEHAVIOR_STATECHANGE = exports.BEHAVIOR_RENDER = void 0;
+exports.isDomEvent = exports.DomEvents = void 0;
+//https://developer.mozilla.org/en-US/docs/Web/Events
+var DomEvents = ['focus', 'blur', 'resize', 'scroll', 'keydown', 'keypress', 'keyup', 'mouseenter', 'mousemove', 'mousedown', 'mouseup', 'click', 'dblclick', 'contextmenu', 'wheel', 'mouseleave', 'mouseout', 'select'];
+exports.DomEvents = DomEvents;
+
+var isDomEvent = function isDomEvent(e) {
+  return DomEvents.indexOf(e) > -1;
+};
+
+exports.isDomEvent = isDomEvent;
+},{}],"js/nori/Eventing.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.$removeTriggers = exports.$performBehavior = exports.$handleEventTrigger = exports.$createEventObject = exports.$applyTriggers = exports.$mapTriggers = exports.BEHAVIOR_DIDDELETE = exports.BEHAVIOR_WILLREMOVE = exports.BEHAVIOR_UPDATE = exports.BEHAVIOR_STATECHANGE = exports.BEHAVIOR_RENDER = void 0;
+
+var _DomEvents = require("./events/DomEvents");
+
+var _this = void 0;
+
+var TRIGGER_EVENT = 'event';
+var TRIGGER_BEHAVIOR = 'behavior';
+var BEHAVIOR_RENDER = 'render'; // on initial render only
+
+exports.BEHAVIOR_RENDER = BEHAVIOR_RENDER;
+var BEHAVIOR_STATECHANGE = 'stateChange';
+exports.BEHAVIOR_STATECHANGE = BEHAVIOR_STATECHANGE;
+var BEHAVIOR_UPDATE = 'update'; // rerender
+
+exports.BEHAVIOR_UPDATE = BEHAVIOR_UPDATE;
+var BEHAVIOR_WILLREMOVE = 'willRemove';
+exports.BEHAVIOR_WILLREMOVE = BEHAVIOR_WILLREMOVE;
+var BEHAVIOR_DIDDELETE = 'didDelete';
+exports.BEHAVIOR_DIDDELETE = BEHAVIOR_DIDDELETE;
+var BEHAVIORS = [BEHAVIOR_WILLREMOVE, BEHAVIOR_RENDER, BEHAVIOR_STATECHANGE, BEHAVIOR_UPDATE];
+
+var $mapTriggers = function $mapTriggers(props) {
+  return Object.keys(props).reduce(function (acc, key) {
+    var value = props[key];
+
+    if ((0, _DomEvents.isDomEvent)(key)) {
+      acc.push({
+        type: TRIGGER_EVENT,
+        event: key,
+        externalHandler: value,
+        // passed in handler
+        internalHandler: null // Will be assigned in $applyTriggers
+
+      });
+    } else if (BEHAVIORS.includes(key)) {
+      acc.push({
+        type: TRIGGER_BEHAVIOR,
+        event: key,
+        externalHandler: value,
+        // passed in handler
+        internalHandler: null // Not used for behavior, fn's just called when they occur in code
+
+      });
+    } else {
+      console.warn("Unknown component trigger '".concat(key, "'"));
+    }
+
+    return acc;
+  }, []);
+};
+
+exports.$mapTriggers = $mapTriggers;
+
+var $applyTriggers = function $applyTriggers(triggerMap, element) {
+  return triggerMap.forEach(function (evt) {
+    if (evt.type === TRIGGER_EVENT) {
+      evt.internalHandler = $handleEventTrigger(evt); // TODO implement options and useCapture? https://developer.mozilla.org/en-US/docs/Web/API/EventTarget/addEventListener
+
+      element.addEventListener(evt.event, evt.internalHandler);
+    }
+  });
+};
+
+exports.$applyTriggers = $applyTriggers;
+
+var $createEventObject = function $createEventObject(e) {
+  return {
+    event: e,
+    component: _this
+  };
+};
+
+exports.$createEventObject = $createEventObject;
+
+var $handleEventTrigger = function $handleEventTrigger(evt) {
+  return function (e) {
+    return evt.externalHandler($createEventObject(e));
+  };
+};
+
+exports.$handleEventTrigger = $handleEventTrigger;
+
+var $performBehavior = function $performBehavior(triggerMap, behavior, e) {
+  return triggerMap.forEach(function (evt) {
+    if (evt.type === TRIGGER_BEHAVIOR && evt.event === behavior) {
+      var event = e || {
+        type: behavior,
+        target: _this
+      };
+      evt.externalHandler($createEventObject(event));
+    }
+  });
+}; // behaviors don't have listeners
+
+
+exports.$performBehavior = $performBehavior;
+
+var $removeTriggers = function $removeTriggers(triggerMap, element) {
+  return triggerMap.forEach(function (evt) {
+    if (evt.type === TRIGGER_EVENT) {
+      element.removeEventListener(evt.event, evt.internalHandler);
+    }
+  });
+};
+/*
+Don't want to loose this ...
+
+// export const BEHAVIOR_SCOLLIN     = 'scrollIn';
+// export const BEHAVIOR_SCROLLOUT   = 'scrollOut';
+// export const BEHAVIOR_MOUSENEAR   = 'mouseNear';
+
+// also touch
+  // getDistanceFromCursor(mevt) {
+  //
+  //   const offset = this.offset;
+  // }
+  //
+  // also touch
+  // getCursorPositionOnElement(mevt) {
+  //
+  // }
+  //
+  // $onScroll = e => {
+  //   // TEST for in to view?
+  // };
+  //
+  // $onMouseMove = e => {
+  //   // test for proximity
+  // };
+ */
+
+
+exports.$removeTriggers = $removeTriggers;
+},{"./events/DomEvents":"js/nori/events/DomEvents.js"}],"js/nori/DOMComponent.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = void 0;
 
 var _ramda = require("ramda");
 
@@ -19332,9 +19472,9 @@ var _ArrayUtils = require("./util/ArrayUtils");
 
 var _DOMToolbox = require("./browser/DOMToolbox");
 
-var _DomEvents = require("./events/DomEvents");
-
 var _ElementIDCreator = require("./util/ElementIDCreator");
+
+var _Eventing = require("./Eventing");
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -19352,29 +19492,7 @@ TODO
 - break out events into own key in the props
 - break out tweens into own key in the props - on over, out, click, move, enter, exit
 - styles
-- return a function that renders?
-- COMPOSITION enable more functionality
-  withShadow(alignRight(rootComp))
-  are these styles or functionality?
-- support gsap tweens
  */
-var TRIGGER_EVENT = 'event';
-var TRIGGER_BEHAVIOR = 'behavior';
-var BEHAVIOR_RENDER = 'render'; // on initial render only
-
-exports.BEHAVIOR_RENDER = BEHAVIOR_RENDER;
-var BEHAVIOR_STATECHANGE = 'stateChange';
-exports.BEHAVIOR_STATECHANGE = BEHAVIOR_STATECHANGE;
-var BEHAVIOR_UPDATE = 'update'; // rerender
-
-exports.BEHAVIOR_UPDATE = BEHAVIOR_UPDATE;
-var BEHAVIOR_WILLREMOVE = 'willRemove';
-exports.BEHAVIOR_WILLREMOVE = BEHAVIOR_WILLREMOVE;
-var BEHAVIOR_DIDDELETE = 'didDelete';
-exports.BEHAVIOR_DIDDELETE = BEHAVIOR_DIDDELETE;
-var BEHAVIORS = [BEHAVIOR_WILLREMOVE, BEHAVIOR_RENDER, BEHAVIOR_STATECHANGE, BEHAVIOR_UPDATE];
-var SPECIAL_PROPS = ['tweens', 'state', 'triggers', 'children'];
-
 var DOMComponent =
 /*#__PURE__*/
 function () {
@@ -19389,18 +19507,12 @@ function () {
     this.props.children = _is.default.array(children) ? children : [children];
     this.tweens = props.hasOwnProperty('tweens') ? props.tweens : {};
     this.internalState = props.hasOwnProperty('state') ? props.state : {};
-    this.triggerMap = this.$mapTriggers(props.hasOwnProperty('triggers') ? props.triggers : {});
-    this.renderedElement = null;
     this.$$typeof = Symbol.for('nori.component');
+    this.renderedElement = null;
+    this.triggerMap = (0, _Eventing.$mapTriggers)(props.hasOwnProperty('triggers') ? props.triggers : {});
   }
 
   _createClass(DOMComponent, [{
-    key: "render",
-    // Returns the children (or view). Override in subclass for custom
-    value: function render() {
-      return this.props.children;
-    }
-  }, {
     key: "$createVDOM",
     // If render returns  a component, don't use the tag for the element, just use all of what render returns
     // TODO get rid of the fragment?
@@ -19430,9 +19542,8 @@ function () {
         });
       }
 
-      this.$applyTriggers(element, this.triggerMap);
-      this.$performBehavior(BEHAVIOR_RENDER); // move this out somewhere?
-
+      (0, _Eventing.$applyTriggers)(this.triggerMap, element);
+      (0, _Eventing.$performBehavior)(this.triggerMap, _Eventing.BEHAVIOR_RENDER);
       this.renderedElement = fragment.firstChild;
       return fragment;
     }
@@ -19448,12 +19559,11 @@ function () {
         return;
       }
 
-      this.willUpdate();
       var prevEl = this.renderedElement;
       this.remove();
       var newEl = this.$createVDOM();
       (0, _DOMToolbox.replaceElementWith)(prevEl, newEl);
-      this.$performBehavior(BEHAVIOR_UPDATE);
+      (0, _Eventing.$performBehavior)(this.triggerMap, _Eventing.BEHAVIOR_UPDATE);
       this.didUpdate();
     } // TODO filter out non-HTML attributes
     // TODO set boolean props?
@@ -19464,30 +19574,23 @@ function () {
     value: function remove() {
       var _this2 = this;
 
-      this.$performBehavior(BEHAVIOR_WILLREMOVE);
+      (0, _Eventing.$performBehavior)(this.triggerMap, _Eventing.BEHAVIOR_WILLREMOVE);
       this.willRemove();
-      this.$removeTriggers(this.renderedElement, this.triggerMap);
+      (0, _Eventing.$removeTriggers)(this.triggerMap, this.renderedElement);
       this.props.children.forEach(function (child) {
         if (_this2.$isNoriComponent(child)) {
           child.remove();
         }
       });
-    }
-  }, {
-    key: "delete",
-    value: function _delete() {
-      var _this3 = this;
-
-      this.remove();
-      this.props.children.forEach(function (child) {
-        if (_this3.$isNoriComponent(child)) {
-          child.delete();
-        }
-      });
-      (0, _DOMToolbox.removeElement)(this.renderedElement);
       this.renderedElement = null;
-      this.$performBehavior(BEHAVIOR_DIDDELETE);
-      this.didDelete();
+    } // Stub "lifecycle" methods. Override in subclass.
+    // Works around applying triggers for this behaviors a level above the component to where the component is used
+
+  }, {
+    key: "render",
+    // Returns the children (or view). Override in subclass for custom
+    value: function render() {
+      return this.props.children;
     }
   }, {
     key: "state",
@@ -19502,8 +19605,8 @@ function () {
       }
 
       this.internalState = Object.assign({}, this.internalState, nextState);
-      this.$performBehavior(BEHAVIOR_STATECHANGE); // TODO call willupdate hook here?
-
+      (0, _Eventing.$performBehavior)(this.triggerMap, _Eventing.BEHAVIOR_STATECHANGE);
+      this.willUpdate();
       this.$update();
     },
     get: function get() {
@@ -19513,7 +19616,7 @@ function () {
     key: "current",
     get: function get() {
       if (!this.renderedElement) {
-        console.warn("Component ".concat(this.props.id, " hasn't been rendered yet"));
+        console.warn("No current element: component ".concat(this.props.id, " hasn't been rendered yet"));
       }
 
       return this.renderedElement;
@@ -19527,142 +19630,23 @@ function () {
     key: "offset",
     get: function get() {
       return (0, _DOMToolbox.offset)(this.current);
+
+      current: this.current;
     }
   }, {
     key: "isInViewport",
     get: function get() {
       return (0, _DOMToolbox.isElementInViewport)(this.current);
-    } // Stub "lifecycle" methods. Override in subclass.
-    // Works around applying triggers for this behaviors a level above the component to where the component is used
-
+    }
   }]);
 
   return DOMComponent;
 }();
-/*
-Don't want to loose this ...
-
-// export const BEHAVIOR_SCOLLIN     = 'scrollIn';
-// export const BEHAVIOR_SCROLLOUT   = 'scrollOut';
-// export const BEHAVIOR_MOUSENEAR   = 'mouseNear';
-
-// also touch
-  // getDistanceFromCursor(mevt) {
-  //
-  //   const offset = this.offset;
-  // }
-  //
-  // also touch
-  // getCursorPositionOnElement(mevt) {
-  //
-  // }
-  //
-  // $onScroll = e => {
-  //   // TEST for in to view?
-  // };
-  //
-  // $onMouseMove = e => {
-  //   // test for proximity
-  // };
- */
-
 
 exports.default = DOMComponent;
 
 var _initialiseProps = function _initialiseProps() {
-  var _this4 = this;
-
-  this.$filterSpecialProps = function (props) {
-    return Object.keys(props).reduce(function (acc, key) {
-      if (!SPECIAL_PROPS.includes(key)) {
-        acc[key] = props[key];
-      }
-
-      return acc;
-    }, {});
-  };
-
-  this.$mapTriggers = function (props) {
-    return Object.keys(props).reduce(function (acc, key) {
-      var value = props[key];
-
-      if ((0, _DomEvents.isDomEvent)(key)) {
-        acc.push({
-          type: TRIGGER_EVENT,
-          event: key,
-          externalHandler: value,
-          // passed in handler
-          internalHandler: null // Will be assigned in $applyTriggers
-
-        });
-      } else if (BEHAVIORS.includes(key)) {
-        acc.push({
-          type: TRIGGER_BEHAVIOR,
-          event: key,
-          externalHandler: value,
-          // passed in handler
-          internalHandler: null // Not used for behavior, fn's just called when they occur in code
-
-        });
-      } else {
-        console.warn("Unknown component trigger '".concat(key, "'"));
-      }
-
-      return acc;
-    }, []);
-  };
-
-  this.$applyTriggers = function (element, triggerMap) {
-    return triggerMap.forEach(function (evt) {
-      if (evt.type === TRIGGER_EVENT) {
-        evt.internalHandler = _this4.$handleEventTrigger(evt); // TODO implement options and useCapture? https://developer.mozilla.org/en-US/docs/Web/API/EventTarget/addEventListener
-
-        element.addEventListener(evt.event, evt.internalHandler);
-      }
-    });
-  };
-
-  this.$createEventPacket = function (e) {
-    return {
-      event: e,
-      component: _this4
-    };
-  };
-
-  this.$handleEventTrigger = function (evt) {
-    return function (e) {
-      return evt.externalHandler(_this4.$createEventPacket(e));
-    };
-  };
-
-  this.$performBehavior = function (behavior, e) {
-    return _this4.triggerMap.forEach(function (evt) {
-      if (evt.type === TRIGGER_BEHAVIOR && evt.event === behavior) {
-        var event = e || {
-          type: behavior,
-          target: _this4
-        };
-        evt.externalHandler(_this4.$createEventPacket(event));
-      }
-    });
-  };
-
-  this.$removeTriggers = function (element, triggerMap) {
-    return triggerMap.forEach(function (evt) {
-      if (evt.type === TRIGGER_EVENT) {
-        element.removeEventListener(evt.event, evt.internalHandler);
-      } // behaviors don't have listeners
-
-    });
-  };
-
-  this.willRemove = function () {};
-
-  this.didDelete = function () {};
-
-  this.willUpdate = function () {};
-
-  this.didUpdate = function () {};
+  var _this3 = this;
 
   this.$isNoriComponent = function (test) {
     return test.$$typeof && Symbol.keyFor(test.$$typeof) === 'nori.component';
@@ -19670,9 +19654,8 @@ var _initialiseProps = function _initialiseProps() {
 
   this.$createElement = function (child) {
     if (_is.default.string(child)) {
-      // return HTMLStrToNode(Mustache.render(child, this.internalState));
       return (0, _DOMToolbox.HTMLStrToNode)(child);
-    } else if (_this4.$isNoriComponent(child)) {
+    } else if (_this3.$isNoriComponent(child)) {
       return child.$createVDOM();
     } else {
       console.error("createElement, unexpected type ".concat(child));
@@ -19685,7 +19668,7 @@ var _initialiseProps = function _initialiseProps() {
 
   this.$setProps = function (element, props) {
     return Object.keys(props).forEach(function (key) {
-      if (!_this4.$isSpecialProp(key)) {
+      if (!_this3.$isSpecialProp(key)) {
         var value = props[key];
 
         if (key === 'className') {
@@ -19698,15 +19681,23 @@ var _initialiseProps = function _initialiseProps() {
       }
     });
   };
+
+  this.willRemove = function () {};
+
+  this.didDelete = function () {};
+
+  this.willUpdate = function () {};
+
+  this.didUpdate = function () {};
 };
-},{"ramda":"../node_modules/ramda/es/index.js","./util/is":"js/nori/util/is.js","./util/ArrayUtils":"js/nori/util/ArrayUtils.js","./browser/DOMToolbox":"js/nori/browser/DOMToolbox.js","./events/DomEvents":"js/nori/events/DomEvents.js","./util/ElementIDCreator":"js/nori/util/ElementIDCreator.js"}],"js/nori/Nori.js":[function(require,module,exports) {
+},{"ramda":"../node_modules/ramda/es/index.js","./util/is":"js/nori/util/is.js","./util/ArrayUtils":"js/nori/util/ArrayUtils.js","./browser/DOMToolbox":"js/nori/browser/DOMToolbox.js","./util/ElementIDCreator":"js/nori/util/ElementIDCreator.js","./Eventing":"js/nori/Eventing.js"}],"js/nori/Nori.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.useState = useState;
-exports.render = exports.h = void 0;
+exports.renderDOM = exports.h = void 0;
 
 var _DOMComponent = _interopRequireDefault(require("./DOMComponent"));
 
@@ -19720,10 +19711,7 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 
 //https://jasonformat.com/wtf-is-jsx/
 //https://medium.com/@bluepnume/jsx-is-a-stellar-invention-even-with-react-out-of-the-picture-c597187134b7
-
-/*
-Convenience method to create new components. Used by the Babel/JSX transpiler
- */
+// Convenience method to create new components. Used by the Babel/JSX transpiler
 var h = function h(type, props) {
   props = props || {};
 
@@ -19740,23 +19728,19 @@ var h = function h(type, props) {
     // another component
     return new type(props, children);
   }
-};
-/*
-Render a component to a dom node
- */
+}; // Render a component to a dom node
 
 
 exports.h = h;
 
-var render = function render(component, targetEl) {
+var renderDOM = function renderDOM(component, targetEl) {
   var removeExisting = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : true;
 
   if (removeExisting) {
     (0, _DOMToolbox.removeAllElements)(targetEl);
   }
 
-  var element = component.$createVDOM();
-  targetEl.appendChild(element);
+  targetEl.appendChild(component.$createVDOM());
 }; // Simple implementation of React's useState hook, similar API totes different impl
 // https://reactjs.org/docs/hooks-state.html
 
@@ -19779,7 +19763,7 @@ prevState => ({...prevState, ...updatedValues});
  */
 
 
-exports.render = render;
+exports.renderDOM = renderDOM;
 var __stateValueMap = [];
 
 function useState(initial) {
@@ -20139,7 +20123,7 @@ var testBox = (0, _Nori.h)(_Box.default, {
 }), (0, _Nori.h)(_Box.default, {
   className: whiteBox
 }, (0, _Nori.h)(Sfc, null), (0, _Nori.h)("p", null, "Click the name below to change ..."), (0, _Nori.h)(_Greeter.default, null), (0, _Nori.h)("p", null, "Oh, look. Another one ..."), (0, _Nori.h)(_Greeter.default, null))))));
-(0, _Nori.render)(testBox, applicationRoot);
+(0, _Nori.renderDOM)(testBox, applicationRoot);
 },{"./theme/Global":"js/theme/Global.js","./theme/Theme":"js/theme/Theme.js","emotion":"../node_modules/emotion/dist/index.esm.js","./nori/util/Lorem":"js/nori/util/Lorem.js","./nori/Nori":"js/nori/Nori.js","./components/Box":"js/components/Box.js","./components/Lorem":"js/components/Lorem.js","./components/Greeter":"js/components/Greeter.js","../img/pattern/shattered.png":"img/pattern/shattered.png"}],"../node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
 var global = arguments[3];
 var OVERLAY_ID = '__parcel__error__overlay__';
