@@ -17,7 +17,6 @@ import {getNextId} from './util/ElementIDCreator';
 Simple string based component to quickly get html on the screen
 
 TODO
-- strip non-html attrs from nodes
 - rename triggers to actions
 - break out events into own key in the props
 - break out tweens into own key in the props - on over, out, click, move, enter, exit
@@ -47,11 +46,9 @@ export default class Component {
   constructor(type, props, children) {
     this.type           = type;
     this.props          = props || {};
+    this.props.id = getNextId();
     this.props.children = Is.array(children) ? children : [children];
 
-    // TODO remove attrs and just use props
-    this.attrs             = this.$filterSpecialProps(this.props); //props.hasOwnProperty('attrs') ? props.attrs : {};
-    this.attrs['data-nid'] = getNextId();
     this.tweens            = props.hasOwnProperty('tweens') ? props.tweens : {};
     this.internalState     = props.hasOwnProperty('state') ? props.state : {};
     this.triggerMap        = this.$mapTriggers(props.hasOwnProperty('triggers') ? props.triggers : {});
@@ -88,7 +85,7 @@ export default class Component {
 
   get current() {
     if (!this.renderedElement) {
-      console.warn(`Component ${this.attrs.id} hasn't been rendered yet`);
+      console.warn(`Component ${this.props.id} hasn't been rendered yet`);
     }
     return this.renderedElement;
   }
@@ -119,7 +116,7 @@ export default class Component {
         type           : TRIGGER_BEHAVIOR,
         event          : key,
         externalHandler: value, // passed in handler
-        internalHandler: null   // Not used for behavior
+        internalHandler: null   // Not used for behavior, fn's just called when they occur in code
       });
     } else {
       console.warn(`Unknown component trigger '${key}'`);
@@ -129,7 +126,6 @@ export default class Component {
   }, []);
 
   $applyTriggers = (element, triggerMap) => triggerMap.forEach(evt => {
-    // TRIGGER_BEHAVIOR are broadcast directly from the function where they occur
     if (evt.type === TRIGGER_EVENT) {
       evt.internalHandler = this.$handleEventTrigger(evt);
       // TODO implement options and useCapture? https://developer.mozilla.org/en-US/docs/Web/API/EventTarget/addEventListener
@@ -146,7 +142,6 @@ export default class Component {
 
   $performBehavior = (behavior, e) => this.triggerMap.forEach(evt => {
     if (evt.type === TRIGGER_BEHAVIOR && evt.event === behavior) {
-      // fake an event object
       let event = e || {type: behavior, target: this};
       evt.externalHandler(this.$createEventPacket(event));
     }
@@ -155,9 +150,8 @@ export default class Component {
   $removeTriggers = (element, triggerMap) => triggerMap.forEach(evt => {
     if (evt.type === TRIGGER_EVENT) {
       element.removeEventListener(evt.event, evt.internalHandler);
-    } else if (evt.type === TRIGGER_BEHAVIOR) {
-      // Behavior?
     }
+    // behaviors don't have listeners
   });
 
   // Stub "lifecycle" methods. Override in subclass.
@@ -194,7 +188,7 @@ export default class Component {
       // Non-custom component, just returned an array of children
       element = document.createElement(this.type);
       fragment.appendChild(element);
-      this.$setProps(element, this.attrs);
+      this.$setProps(element, this.props);
       // If result isn't an array each child will be created individually
       // Ensure result is an array
       arrify(result).map(el => this.$createElement(el)).forEach(child => element.appendChild(child));
@@ -237,16 +231,18 @@ export default class Component {
     this.didUpdate();
   }
 
-  $isSpecialProp = test => ['element', 'children', 'min', 'max', 'mode'].includes(test);
+  $isSpecialProp = test => ['tweens', 'state', 'triggers', 'children', 'element', 'min', 'max', 'mode'].includes(test);
 
   // TODO filter out non-HTML attributes
   // TODO set boolean props?
   // https://developer.mozilla.org/en-US/docs/Web/HTML/Attributes
-  $setProps = (element, attributes) => Object.keys(attributes).forEach(key => {
+  $setProps = (element, props) => Object.keys(props).forEach(key => {
     if (!this.$isSpecialProp(key)) {
-      let value = attributes[key];
+      let value = props[key];
       if (key === 'className') {
         key = 'class';
+      } else if(key === 'id') {
+        key = 'data-nid';
       }
       element.setAttribute(key, value);
     }

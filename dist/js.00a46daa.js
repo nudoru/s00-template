@@ -19348,7 +19348,6 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
 Simple string based component to quickly get html on the screen
 
 TODO
-- strip non-html attrs from nodes
 - rename triggers to actions
 - break out events into own key in the props
 - break out tweens into own key in the props - on over, out, click, move, enter, exit
@@ -19386,11 +19385,8 @@ function () {
 
     this.type = type;
     this.props = props || {};
-    this.props.children = _is.default.array(children) ? children : [children]; // TODO remove attrs and just use props
-
-    this.attrs = this.$filterSpecialProps(this.props); //props.hasOwnProperty('attrs') ? props.attrs : {};
-
-    this.attrs['data-nid'] = (0, _ElementIDCreator.getNextId)();
+    this.props.id = (0, _ElementIDCreator.getNextId)();
+    this.props.children = _is.default.array(children) ? children : [children];
     this.tweens = props.hasOwnProperty('tweens') ? props.tweens : {};
     this.internalState = props.hasOwnProperty('state') ? props.state : {};
     this.triggerMap = this.$mapTriggers(props.hasOwnProperty('triggers') ? props.triggers : {});
@@ -19424,7 +19420,7 @@ function () {
         // Non-custom component, just returned an array of children
         element = document.createElement(this.type);
         fragment.appendChild(element);
-        this.$setProps(element, this.attrs); // If result isn't an array each child will be created individually
+        this.$setProps(element, this.props); // If result isn't an array each child will be created individually
         // Ensure result is an array
 
         (0, _ArrayUtils.arrify)(result).map(function (el) {
@@ -19517,7 +19513,7 @@ function () {
     key: "current",
     get: function get() {
       if (!this.renderedElement) {
-        console.warn("Component ".concat(this.attrs.id, " hasn't been rendered yet"));
+        console.warn("Component ".concat(this.props.id, " hasn't been rendered yet"));
       }
 
       return this.renderedElement;
@@ -19605,7 +19601,7 @@ var _initialiseProps = function _initialiseProps() {
           event: key,
           externalHandler: value,
           // passed in handler
-          internalHandler: null // Not used for behavior
+          internalHandler: null // Not used for behavior, fn's just called when they occur in code
 
         });
       } else {
@@ -19618,7 +19614,6 @@ var _initialiseProps = function _initialiseProps() {
 
   this.$applyTriggers = function (element, triggerMap) {
     return triggerMap.forEach(function (evt) {
-      // TRIGGER_BEHAVIOR are broadcast directly from the function where they occur
       if (evt.type === TRIGGER_EVENT) {
         evt.internalHandler = _this4.$handleEventTrigger(evt); // TODO implement options and useCapture? https://developer.mozilla.org/en-US/docs/Web/API/EventTarget/addEventListener
 
@@ -19643,7 +19638,6 @@ var _initialiseProps = function _initialiseProps() {
   this.$performBehavior = function (behavior, e) {
     return _this4.triggerMap.forEach(function (evt) {
       if (evt.type === TRIGGER_BEHAVIOR && evt.event === behavior) {
-        // fake an event object
         var event = e || {
           type: behavior,
           target: _this4
@@ -19657,8 +19651,8 @@ var _initialiseProps = function _initialiseProps() {
     return triggerMap.forEach(function (evt) {
       if (evt.type === TRIGGER_EVENT) {
         element.removeEventListener(evt.event, evt.internalHandler);
-      } else if (evt.type === TRIGGER_BEHAVIOR) {// Behavior?
-      }
+      } // behaviors don't have listeners
+
     });
   };
 
@@ -19686,16 +19680,18 @@ var _initialiseProps = function _initialiseProps() {
   };
 
   this.$isSpecialProp = function (test) {
-    return ['element', 'children', 'min', 'max', 'mode'].includes(test);
+    return ['tweens', 'state', 'triggers', 'children', 'element', 'min', 'max', 'mode'].includes(test);
   };
 
-  this.$setProps = function (element, attributes) {
-    return Object.keys(attributes).forEach(function (key) {
+  this.$setProps = function (element, props) {
+    return Object.keys(props).forEach(function (key) {
       if (!_this4.$isSpecialProp(key)) {
-        var value = attributes[key];
+        var value = props[key];
 
         if (key === 'className') {
           key = 'class';
+        } else if (key === 'id') {
+          key = 'data-nid';
         }
 
         element.setAttribute(key, value);
