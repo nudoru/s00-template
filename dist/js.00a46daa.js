@@ -19349,6 +19349,7 @@ Simple string based component to quickly get html on the screen
 
 TODO
 - strip non-html attrs from nodes
+- rename triggers to actions
 - break out events into own key in the props
 - break out tweens into own key in the props - on over, out, click, move, enter, exit
 - styles
@@ -19373,7 +19374,7 @@ exports.BEHAVIOR_WILLREMOVE = BEHAVIOR_WILLREMOVE;
 var BEHAVIOR_DIDDELETE = 'didDelete';
 exports.BEHAVIOR_DIDDELETE = BEHAVIOR_DIDDELETE;
 var BEHAVIORS = [BEHAVIOR_WILLREMOVE, BEHAVIOR_RENDER, BEHAVIOR_STATECHANGE, BEHAVIOR_UPDATE];
-var SPECIAL_PROPS = ['tweens', 'state', 'triggers'];
+var SPECIAL_PROPS = ['tweens', 'state', 'triggers', 'children'];
 
 var Component =
 /*#__PURE__*/
@@ -19385,7 +19386,8 @@ function () {
 
     this.type = type;
     this.props = props || {};
-    this.props.children = _is.default.array(children) ? children : [children];
+    this.props.children = _is.default.array(children) ? children : [children]; // TODO remove attrs and just use props
+
     this.attrs = this.$filterSpecialProps(this.props); //props.hasOwnProperty('attrs') ? props.attrs : {};
 
     this.attrs['data-nid'] = (0, _ElementIDCreator.getNextId)();
@@ -19393,6 +19395,7 @@ function () {
     this.internalState = props.hasOwnProperty('state') ? props.state : {};
     this.triggerMap = this.$mapTriggers(props.hasOwnProperty('triggers') ? props.triggers : {});
     this.renderedElement = null;
+    this.$$typeof = Symbol.for('nori.component');
   }
 
   _createClass(Component, [{
@@ -19400,36 +19403,34 @@ function () {
     // Returns the children (or view). Override in subclass for custom
     value: function render() {
       return this.props.children;
-    } // If render returns  a component, don't use the tag for the element, just use all of what render returns
-    // TODO get rid of the fragment?
-
+    }
   }, {
     key: "$createVDOM",
+    // If render returns  a component, don't use the tag for the element, just use all of what render returns
+    // TODO get rid of the fragment?
     value: function $createVDOM() {
       var _this = this;
 
       var fragment = document.createDocumentFragment(),
           element,
-          rendered = this.render();
+          result = this.render();
 
-      if (_is.default.object(rendered)) {
+      if (this.$isNoriComponent(result)) {
         // Was custom render, returned a component
         // TODO allow for an array to be returned rather than only one child
-        element = rendered.$createVDOM().firstChild;
+        element = result.$createVDOM().firstChild;
         fragment.appendChild(element);
       } else {
         // Non-custom component, just returned an array of children
         element = document.createElement(this.type);
         fragment.appendChild(element);
-        this.$setTagAttrs(element, this.attrs); // If rendered isn't an array each child will be created individually
-        // Ensure rendered is an array
+        this.$setProps(element, this.attrs); // If result isn't an array each child will be created individually
+        // Ensure result is an array
 
-        (0, _ArrayUtils.arrify)(rendered).map(function (el) {
-          // console.log('creating element:',el);
+        (0, _ArrayUtils.arrify)(result).map(function (el) {
           return _this.$createElement(el);
         }).forEach(function (child) {
-          // console.log('Appending child:', child);
-          element.appendChild(child);
+          return element.appendChild(child);
         });
       }
 
@@ -19437,7 +19438,6 @@ function () {
       this.$performBehavior(BEHAVIOR_RENDER); // move this out somewhere?
 
       this.renderedElement = fragment.firstChild;
-      console.log(this.renderedElement);
       return fragment;
     }
   }, {
@@ -19460,16 +19460,19 @@ function () {
       this.$performBehavior(BEHAVIOR_UPDATE);
       this.didUpdate();
     } // TODO filter out non-HTML attributes
+    // TODO set boolean props?
     // https://developer.mozilla.org/en-US/docs/Web/HTML/Attributes
 
   }, {
     key: "remove",
     value: function remove() {
+      var _this2 = this;
+
       this.$performBehavior(BEHAVIOR_WILLREMOVE);
       this.willRemove();
       this.$removeTriggers(this.renderedElement, this.triggerMap);
       this.props.children.forEach(function (child) {
-        if (_is.default.object(child) && typeof child.remove === 'function') {
+        if (_this2.$isNoriComponent(child)) {
           child.remove();
         }
       });
@@ -19477,9 +19480,11 @@ function () {
   }, {
     key: "delete",
     value: function _delete() {
+      var _this3 = this;
+
       this.remove();
       this.props.children.forEach(function (child) {
-        if (_is.default.object(child) && typeof child.delete === 'function') {
+        if (_this3.$isNoriComponent(child)) {
           child.delete();
         }
       });
@@ -19539,7 +19544,8 @@ function () {
   return Component;
 }();
 /*
-// These will require listeners
+Don't want to loose this ...
+
 // export const BEHAVIOR_SCOLLIN     = 'scrollIn';
 // export const BEHAVIOR_SCROLLOUT   = 'scrollOut';
 // export const BEHAVIOR_MOUSENEAR   = 'mouseNear';
@@ -19568,7 +19574,7 @@ function () {
 exports.default = Component;
 
 var _initialiseProps = function _initialiseProps() {
-  var _this2 = this;
+  var _this4 = this;
 
   this.$filterSpecialProps = function (props) {
     return Object.keys(props).reduce(function (acc, key) {
@@ -19614,7 +19620,7 @@ var _initialiseProps = function _initialiseProps() {
     return triggerMap.forEach(function (evt) {
       // TRIGGER_BEHAVIOR are broadcast directly from the function where they occur
       if (evt.type === TRIGGER_EVENT) {
-        evt.internalHandler = _this2.$handleEventTrigger(evt); // TODO implement options and useCapture? https://developer.mozilla.org/en-US/docs/Web/API/EventTarget/addEventListener
+        evt.internalHandler = _this4.$handleEventTrigger(evt); // TODO implement options and useCapture? https://developer.mozilla.org/en-US/docs/Web/API/EventTarget/addEventListener
 
         element.addEventListener(evt.event, evt.internalHandler);
       }
@@ -19624,25 +19630,25 @@ var _initialiseProps = function _initialiseProps() {
   this.$createEventPacket = function (e) {
     return {
       event: e,
-      component: _this2
+      component: _this4
     };
   };
 
   this.$handleEventTrigger = function (evt) {
     return function (e) {
-      return evt.externalHandler(_this2.$createEventPacket(e));
+      return evt.externalHandler(_this4.$createEventPacket(e));
     };
   };
 
   this.$performBehavior = function (behavior, e) {
-    return _this2.triggerMap.forEach(function (evt) {
+    return _this4.triggerMap.forEach(function (evt) {
       if (evt.type === TRIGGER_BEHAVIOR && evt.event === behavior) {
         // fake an event object
         var event = e || {
           type: behavior,
-          target: _this2
+          target: _this4
         };
-        evt.externalHandler(_this2.$createEventPacket(event));
+        evt.externalHandler(_this4.$createEventPacket(event));
       }
     });
   };
@@ -19664,22 +19670,28 @@ var _initialiseProps = function _initialiseProps() {
 
   this.didUpdate = function () {};
 
+  this.$isNoriComponent = function (test) {
+    return test.$$typeof && Symbol.keyFor(test.$$typeof) === 'nori.component';
+  };
+
   this.$createElement = function (child) {
     if (_is.default.string(child)) {
       // return HTMLStrToNode(Mustache.render(child, this.internalState));
       return (0, _DOMToolbox.HTMLStrToNode)(child);
-    } else if (_is.default.object(child) && typeof child.$createVDOM === 'function') {
+    } else if (_this4.$isNoriComponent(child)) {
       return child.$createVDOM();
     } else {
       console.error("createElement, unexpected type ".concat(child));
     }
   };
 
-  this.$setTagAttrs = function (element, attributes) {
-    return Object.keys(attributes).forEach(function (key) {
-      var excludeAttrs = ['element', 'children', 'min', 'max', 'mode'];
+  this.$isSpecialProp = function (test) {
+    return ['element', 'children', 'min', 'max', 'mode'].includes(test);
+  };
 
-      if (!excludeAttrs.includes(key)) {
+  this.$setProps = function (element, attributes) {
+    return Object.keys(attributes).forEach(function (key) {
+      if (!_this4.$isSpecialProp(key)) {
         var value = attributes[key];
 
         if (key === 'className') {
@@ -20125,7 +20137,7 @@ var testBox = (0, _Nori.h)(_Box.default, {
   mode: _Lorem2.default.TITLE
 }), (0, _Nori.h)(_Box.default, {
   className: whiteBox
-}, (0, _Nori.h)("p", null, "Click the name below to change ..."), (0, _Nori.h)(_Greeter.default, null))))));
+}, (0, _Nori.h)("p", null, "Click the name below to change ..."), (0, _Nori.h)(_Greeter.default, null), (0, _Nori.h)("p", null, "Oh, look. Another one ..."), (0, _Nori.h)(_Greeter.default, null))))));
 (0, _Nori.render)(testBox, applicationRoot);
 },{"./theme/Global":"js/theme/Global.js","./theme/Theme":"js/theme/Theme.js","emotion":"../node_modules/emotion/dist/index.esm.js","./nori/util/Lorem":"js/nori/util/Lorem.js","./nori/Nori":"js/nori/Nori.js","./components/Box":"js/components/Box.js","./components/Lorem":"js/components/Lorem.js","./components/Greeter":"js/components/Greeter.js","../img/pattern/shattered.png":"img/pattern/shattered.png"}],"../node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
 var global = arguments[3];

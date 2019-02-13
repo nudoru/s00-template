@@ -18,6 +18,7 @@ Simple string based component to quickly get html on the screen
 
 TODO
 - strip non-html attrs from nodes
+- rename triggers to actions
 - break out events into own key in the props
 - break out tweens into own key in the props - on over, out, click, move, enter, exit
 - styles
@@ -39,7 +40,7 @@ export const BEHAVIOR_DIDDELETE   = 'didDelete';
 
 const BEHAVIORS = [BEHAVIOR_WILLREMOVE, BEHAVIOR_RENDER, BEHAVIOR_STATECHANGE, BEHAVIOR_UPDATE];
 
-const SPECIAL_PROPS = ['tweens', 'state', 'triggers'];
+const SPECIAL_PROPS = ['tweens', 'state', 'triggers', 'children'];
 
 export default class Component {
 
@@ -48,12 +49,14 @@ export default class Component {
     this.props          = props || {};
     this.props.children = Is.array(children) ? children : [children];
 
+    // TODO remove attrs and just use props
     this.attrs             = this.$filterSpecialProps(this.props); //props.hasOwnProperty('attrs') ? props.attrs : {};
     this.attrs['data-nid'] = getNextId();
     this.tweens            = props.hasOwnProperty('tweens') ? props.tweens : {};
     this.internalState     = props.hasOwnProperty('state') ? props.state : {};
     this.triggerMap        = this.$mapTriggers(props.hasOwnProperty('triggers') ? props.triggers : {});
-    this.renderedElement = null;
+    this.renderedElement   = null;
+    this.$$typeof          = Symbol.for('nori.component');
   }
 
   $filterSpecialProps = (props) => Object.keys(props).reduce((acc, key) => {
@@ -159,42 +162,42 @@ export default class Component {
 
   // Stub "lifecycle" methods. Override in subclass.
   // Works around applying triggers for this behaviors a level above the component to where the component is used
-  willRemove = () => {};
-  didDelete = () => {};
-  willUpdate = () => {};
-  didUpdate = () => {};
+  willRemove = () => {
+  };
+  didDelete  = () => {
+  };
+  willUpdate = () => {
+  };
+  didUpdate  = () => {
+  };
 
   // Returns the children (or view). Override in subclass for custom
   render() {
     return this.props.children;
   }
 
+  $isNoriComponent = test => test.$$typeof && Symbol.keyFor(test.$$typeof) === 'nori.component';
+
   // If render returns  a component, don't use the tag for the element, just use all of what render returns
   // TODO get rid of the fragment?
   $createVDOM() {
     let fragment = document.createDocumentFragment(),
         element,
-        rendered = this.render();
+        result = this.render();
 
-    if (Is.object(rendered)) {
+    if (this.$isNoriComponent(result)) {
       // Was custom render, returned a component
       // TODO allow for an array to be returned rather than only one child
-      element = rendered.$createVDOM().firstChild;
+      element = result.$createVDOM().firstChild;
       fragment.appendChild(element)
     } else {
       // Non-custom component, just returned an array of children
       element = document.createElement(this.type);
       fragment.appendChild(element);
-      this.$setTagAttrs(element, this.attrs);
-      // If rendered isn't an array each child will be created individually
-      // Ensure rendered is an array
-      arrify(rendered).map(el => {
-        // console.log('creating element:',el);
-        return this.$createElement(el)
-      }).forEach(child => {
-        // console.log('Appending child:', child);
-        element.appendChild(child)
-      });
+      this.$setProps(element, this.attrs);
+      // If result isn't an array each child will be created individually
+      // Ensure result is an array
+      arrify(result).map(el => this.$createElement(el)).forEach(child => element.appendChild(child));
     }
 
     this.$applyTriggers(element, this.triggerMap);
@@ -202,7 +205,6 @@ export default class Component {
 
     // move this out somewhere?
     this.renderedElement = fragment.firstChild;
-    console.log(this.renderedElement);
     return fragment;
   }
 
@@ -210,7 +212,7 @@ export default class Component {
     if (Is.string(child)) {
       // return HTMLStrToNode(Mustache.render(child, this.internalState));
       return HTMLStrToNode(child);
-    } else if (Is.object(child) && typeof child.$createVDOM === 'function') {
+    } else if (this.$isNoriComponent(child)) {
       return child.$createVDOM();
     } else {
       console.error(`createElement, unexpected type ${child}`);
@@ -235,13 +237,15 @@ export default class Component {
     this.didUpdate();
   }
 
+  $isSpecialProp = test => ['element', 'children', 'min', 'max', 'mode'].includes(test);
+
   // TODO filter out non-HTML attributes
+  // TODO set boolean props?
   // https://developer.mozilla.org/en-US/docs/Web/HTML/Attributes
-  $setTagAttrs = (element, attributes) => Object.keys(attributes).forEach(key => {
-    const excludeAttrs = ['element','children', 'min','max', 'mode'];
-    if(!excludeAttrs.includes(key)) {
+  $setProps = (element, attributes) => Object.keys(attributes).forEach(key => {
+    if (!this.$isSpecialProp(key)) {
       let value = attributes[key];
-      if(key === 'className') {
+      if (key === 'className') {
         key = 'class';
       }
       element.setAttribute(key, value);
@@ -253,7 +257,7 @@ export default class Component {
     this.willRemove();
     this.$removeTriggers(this.renderedElement, this.triggerMap);
     this.props.children.forEach(child => {
-      if (Is.object(child) && typeof child.remove === 'function') {
+      if (this.$isNoriComponent(child)) {
         child.remove();
       }
     });
@@ -262,7 +266,7 @@ export default class Component {
   delete() {
     this.remove();
     this.props.children.forEach(child => {
-      if (Is.object(child) && typeof child.delete === 'function') {
+      if (this.$isNoriComponent(child)) {
         child.delete();
       }
     });
@@ -272,12 +276,12 @@ export default class Component {
     this.$performBehavior(BEHAVIOR_DIDDELETE);
     this.didDelete();
   }
-
 }
 
 
 /*
-// These will require listeners
+Don't want to loose this ...
+
 // export const BEHAVIOR_SCOLLIN     = 'scrollIn';
 // export const BEHAVIOR_SCROLLOUT   = 'scrollOut';
 // export const BEHAVIOR_MOUSENEAR   = 'mouseNear';

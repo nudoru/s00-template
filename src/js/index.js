@@ -56,6 +56,8 @@ let testBox = <Box className={appContainer}>
           <Box className={whiteBox}>
             <p>Click the name below to change ...</p>
             <Greeter />
+            <p>Oh, look. Another one ...</p>
+            <Greeter />
           </Box>
         </Box>
       </Box>
