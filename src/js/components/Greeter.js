@@ -30,16 +30,16 @@ export default class Greeter extends DOMComponent {
     console.log('Greet rendered!', evt);
   };
 
-  willRemove = () => {
+  componentWillUnmount = () => {
     console.log('Greet will remove');
   };
-  didDelete = () => {
+  didDelete            = () => {
     console.log('Greet did delete');
   };
-  willUpdate = () => {
+  componentWillUpdate  = () => {
     console.log('Greet will update');
   };
-  didUpdate = () => {
+  componentDidUpdate   = () => {
     console.log('Greet did update');
   };
 

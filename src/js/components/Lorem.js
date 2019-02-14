@@ -15,8 +15,8 @@ export default class Lorem extends DOMComponent {
   }
 
   render() {
-    const min = this.props.min || 1;
-    const max = this.props.max || 2;
+    const min = this.props.min || 3;
+    const max = this.props.max || 5;
     const mode = this.props.mode || 'text';
 
     let lorem = L.text(min, max);
@@ -40,6 +40,7 @@ export default class Lorem extends DOMComponent {
     }
 
     // Return an array or each letter will be created as an individual element
+    // The base element in the constructor determines what dom element it gets wrapped in
     return [lorem];
   }
 

@@ -14,23 +14,23 @@ import {
 } from './Eventing';
 import {createDOM, isNoriComponent, removeChildren} from "./DOMing";
 
-const STAGE_NOINIT = 'stage_noinit';
+const STAGE_NOINIT   = 'stage_noinit';
 const STAGE_RENDERED = 'stage_rendered';
 const STAGE_UPDATING = 'stage_updating';
 
 export default class DOMComponent {
 
   constructor(type, props, children) {
-    this.type            = type;
-    this.props           = props || {};
-    this.props.id        = props.key || getNextId();
-    this.props.children  = Is.array(children) ? children : [children];
-    this.tweens          = props.hasOwnProperty('tweens') ? props.tweens : {};
-    this.internalState   = props.hasOwnProperty('state') ? props.state : {};
-    this.$$typeof        = Symbol.for('nori.component');
-    this.renderedElement = null;
-    this.actionMap       = mapActions(props.hasOwnProperty('actions') ? props.actions : {});
-    this.stage = STAGE_NOINIT;
+    this.stage          = STAGE_NOINIT;
+    this.type           = type;
+    this.props          = props || {};
+    this.props.id       = props.key || getNextId();
+    this.props.children = Is.array(children) ? children : [children];
+    this.tweens         = props.hasOwnProperty('tweens') ? props.tweens : {};
+    this.internalState  = props.hasOwnProperty('state') ? props.state : {};
+    this.current        = null;
+    this.actionMap      = mapActions(props.hasOwnProperty('actions') ? props.actions : {});
+    this.$$typeof       = Symbol.for('nori.component');
   }
 
   set state(nextState) {
@@ -45,7 +45,7 @@ export default class DOMComponent {
 
     this.internalState = Object.assign({}, this.internalState, nextState);
     performBehavior(this, BEHAVIOR_STATECHANGE);
-    this.willUpdate();
+    this.componentWillUpdate();
     this.$update();
   }
 
@@ -53,77 +53,70 @@ export default class DOMComponent {
     return Object.assign({}, this.internalState);
   }
 
-  get current() {
-    if (!this.renderedElement) {
-      console.warn(`No current element: component ${this.props.id} hasn't been rendered yet`);
-    }
-    return this.renderedElement;
-  }
-
-  // First called from Nori.renderDOM() method
   $createVDOM() {
-    let fragment   = document.createDocumentFragment(),
-        resultTree = this.render(), // either array, text or component
+    let resultTree = this.render(),
         element;
 
     if (isNoriComponent(resultTree)) {
-      element = resultTree.$createVDOM().firstChild;
+      element = resultTree.$createVDOM();
     } else {
       element = createDOM(this.type, this.props, resultTree);
     }
 
-    fragment.appendChild(element);
     applyActions(this, element);
-    this.renderedElement = element;
+    this.current = element;
 
-    if(this.stage === STAGE_NOINIT) {
+    if (this.stage === STAGE_NOINIT) {
       performBehavior(this, BEHAVIOR_RENDER);
-      this.didRender();
+      this.componentDidMount();
     }
 
     this.stage = STAGE_RENDERED;
-
-    return fragment;
+    return element;
   }
 
-  // TODO: diff and patch rather than just replace
-  // Simple example here: https://github.com/heiskr/prezzy-vdom-example
-  // https://blog.javascripting.com/2016/10/05/building-your-own-react-clone-in-five-easy-steps/
-  // https://medium.com/@deathmood/how-to-write-your-own-virtual-dom-ee74acc13060
+  forceUpdate() {
+    this.$update();
+  }
+
   $update() {
-    if (!this.renderedElement) {
-      console.warn(`Component not rendered, can't update!`, this.type, this.props);
+    let prevEl, newEl;
+
+    if (this.stage === STAGE_NOINIT) {
+      console.warn(`Can't update ${this.props.id} because it hasn't been rendered first`);
       return;
     }
+
     this.stage = STAGE_UPDATING;
-    const prevEl = this.renderedElement;
+    prevEl     = this.current;
     this.remove();
-    const newEl = this.$createVDOM();
+    newEl = this.$createVDOM();
     replaceElementWith(prevEl, newEl);
     performBehavior(this, BEHAVIOR_UPDATE);
-    this.didUpdate();
+    this.componentDidUpdate();
   }
 
   remove() {
     performBehavior(this, BEHAVIOR_WILLREMOVE);
-    this.willRemove();
-    removeActions(this.actionMap, this.renderedElement);
+    if(this.stage !== STAGE_UPDATING) {
+      this.componentWillUnmount();
+    }
+    removeActions(this.actionMap, this.current);
     removeChildren(this.props.children);
-    this.renderedElement = null;
+    this.current = null;
   }
 
   //--------------------------------------------------------------------------------
   // Stub "lifecycle" methods. Override in subclass.
   //--------------------------------------------------------------------------------
 
-  didRender = () => {}
-  willRemove = () => {
+  componentDidMount    = () => {
   };
-  didDelete  = () => {
+  componentWillUnmount = () => {
   };
-  willUpdate = () => {
+  componentWillUpdate  = () => {
   };
-  didUpdate  = () => {
+  componentDidUpdate   = () => {
   };
 
   render() {

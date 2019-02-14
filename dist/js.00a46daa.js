@@ -19344,7 +19344,7 @@ exports.BEHAVIOR_STATECHANGE = BEHAVIOR_STATECHANGE;
 var BEHAVIOR_UPDATE = 'update'; // rerender
 
 exports.BEHAVIOR_UPDATE = BEHAVIOR_UPDATE;
-var BEHAVIOR_WILLREMOVE = 'willRemove';
+var BEHAVIOR_WILLREMOVE = 'componentWillUnmount';
 exports.BEHAVIOR_WILLREMOVE = BEHAVIOR_WILLREMOVE;
 var BEHAVIOR_DIDDELETE = 'didDelete';
 exports.BEHAVIOR_DIDDELETE = BEHAVIOR_DIDDELETE;
@@ -19591,83 +19591,84 @@ function () {
   function DOMComponent(type, props, children) {
     _classCallCheck(this, DOMComponent);
 
-    this.didRender = function () {};
+    this.componentDidMount = function () {};
 
-    this.willRemove = function () {};
+    this.componentWillUnmount = function () {};
 
-    this.didDelete = function () {};
+    this.componentWillUpdate = function () {};
 
-    this.willUpdate = function () {};
+    this.componentDidUpdate = function () {};
 
-    this.didUpdate = function () {};
-
+    this.stage = STAGE_NOINIT;
     this.type = type;
     this.props = props || {};
     this.props.id = props.key || (0, _ElementIDCreator.getNextId)();
     this.props.children = _is.default.array(children) ? children : [children];
     this.tweens = props.hasOwnProperty('tweens') ? props.tweens : {};
     this.internalState = props.hasOwnProperty('state') ? props.state : {};
-    this.$$typeof = Symbol.for('nori.component');
-    this.renderedElement = null;
+    this.current = null;
     this.actionMap = (0, _Eventing.mapActions)(props.hasOwnProperty('actions') ? props.actions : {});
-    this.stage = STAGE_NOINIT;
+    this.$$typeof = Symbol.for('nori.component');
   }
 
   _createClass(DOMComponent, [{
     key: "$createVDOM",
-    // First called from Nori.renderDOM() method
     value: function $createVDOM() {
-      var fragment = document.createDocumentFragment(),
-          resultTree = this.render(),
-          // either array, text or component
-      element;
+      var resultTree = this.render(),
+          element;
 
       if ((0, _DOMing.isNoriComponent)(resultTree)) {
-        element = resultTree.$createVDOM().firstChild;
+        element = resultTree.$createVDOM();
       } else {
         element = (0, _DOMing.createDOM)(this.type, this.props, resultTree);
       }
 
-      fragment.appendChild(element);
       (0, _Eventing.applyActions)(this, element);
-      this.renderedElement = element;
+      this.current = element;
 
       if (this.stage === STAGE_NOINIT) {
         (0, _Eventing.performBehavior)(this, _Eventing.BEHAVIOR_RENDER);
-        this.didRender();
+        this.componentDidMount();
       }
 
       this.stage = STAGE_RENDERED;
-      return fragment;
-    } // TODO: diff and patch rather than just replace
-    // Simple example here: https://github.com/heiskr/prezzy-vdom-example
-    // https://blog.javascripting.com/2016/10/05/building-your-own-react-clone-in-five-easy-steps/
-    // https://medium.com/@deathmood/how-to-write-your-own-virtual-dom-ee74acc13060
-
+      return element;
+    }
+  }, {
+    key: "forceUpdate",
+    value: function forceUpdate() {
+      this.$update();
+    }
   }, {
     key: "$update",
     value: function $update() {
-      if (!this.renderedElement) {
-        console.warn("Component not rendered, can't update!", this.type, this.props);
+      var prevEl, newEl;
+
+      if (this.stage === STAGE_NOINIT) {
+        console.warn("Can't update ".concat(this.props.id, " because it hasn't been rendered first"));
         return;
       }
 
       this.stage = STAGE_UPDATING;
-      var prevEl = this.renderedElement;
+      prevEl = this.current;
       this.remove();
-      var newEl = this.$createVDOM();
+      newEl = this.$createVDOM();
       (0, _DOMToolbox.replaceElementWith)(prevEl, newEl);
       (0, _Eventing.performBehavior)(this, _Eventing.BEHAVIOR_UPDATE);
-      this.didUpdate();
+      this.componentDidUpdate();
     }
   }, {
     key: "remove",
     value: function remove() {
       (0, _Eventing.performBehavior)(this, _Eventing.BEHAVIOR_WILLREMOVE);
-      this.willRemove();
-      (0, _Eventing.removeActions)(this.actionMap, this.renderedElement);
+
+      if (this.stage !== STAGE_UPDATING) {
+        this.componentWillUnmount();
+      }
+
+      (0, _Eventing.removeActions)(this.actionMap, this.current);
       (0, _DOMing.removeChildren)(this.props.children);
-      this.renderedElement = null;
+      this.current = null;
     } //--------------------------------------------------------------------------------
     // Stub "lifecycle" methods. Override in subclass.
     //--------------------------------------------------------------------------------
@@ -19691,20 +19692,11 @@ function () {
 
       this.internalState = Object.assign({}, this.internalState, nextState);
       (0, _Eventing.performBehavior)(this, _Eventing.BEHAVIOR_STATECHANGE);
-      this.willUpdate();
+      this.componentWillUpdate();
       this.$update();
     },
     get: function get() {
       return Object.assign({}, this.internalState);
-    }
-  }, {
-    key: "current",
-    get: function get() {
-      if (!this.renderedElement) {
-        console.warn("No current element: component ".concat(this.props.id, " hasn't been rendered yet"));
-      }
-
-      return this.renderedElement;
     }
   }]);
 
@@ -19908,8 +19900,8 @@ function (_DOMComponent) {
   _createClass(Lorem, [{
     key: "render",
     value: function render() {
-      var min = this.props.min || 1;
-      var max = this.props.max || 2;
+      var min = this.props.min || 3;
+      var max = this.props.max || 5;
       var mode = this.props.mode || 'text';
       var lorem = L.text(min, max);
 
@@ -19934,6 +19926,7 @@ function (_DOMComponent) {
           lorem = L.firstLastName();
           break;
       } // Return an array or each letter will be created as an individual element
+      // The base element in the constructor determines what dom element it gets wrapped in
 
 
       return [lorem];
@@ -20029,7 +20022,7 @@ function (_DOMComponent) {
       console.log('Greet rendered!', evt);
     };
 
-    _this.willRemove = function () {
+    _this.componentWillUnmount = function () {
       console.log('Greet will remove');
     };
 
@@ -20037,11 +20030,11 @@ function (_DOMComponent) {
       console.log('Greet did delete');
     };
 
-    _this.willUpdate = function () {
+    _this.componentWillUpdate = function () {
       console.log('Greet will update');
     };
 
-    _this.didUpdate = function () {
+    _this.componentDidUpdate = function () {
       console.log('Greet did update');
     };
 
@@ -20131,7 +20124,7 @@ function (_DOMComponent) {
       counter: 0
     };
 
-    _this.didRender = function () {
+    _this.componentDidMount = function () {
       console.log('Ticker rendered!');
       setInterval(function (_) {
         _this.state = {
@@ -20140,7 +20133,10 @@ function (_DOMComponent) {
       }, 1000);
     };
 
-    _this.didUpdate = function () {//console.log('Ticker update', this.state);
+    _this.componentDidUpdate = function () {//console.log('Ticker update', this.state);
+    };
+
+    _this.componentWillUnmount = function () {//console.log('Ticker will umount');
     };
 
     return _this;
@@ -20237,23 +20233,14 @@ var testBox = (0, _Nori.h)(_Box.default, {
 }, (0, _Nori.h)(_Box.default, {
   className: blackBox
 }, (0, _Nori.h)(_Lorem2.default, {
-  element: "p",
-  min: 5,
-  max: 5,
   mode: _Lorem2.default.TITLE
 }), (0, _Nori.h)(_Box.default, {
   className: whiteBox
 }, (0, _Nori.h)(_Lorem2.default, {
-  element: "p",
-  min: 5,
-  max: 5,
   mode: _Lorem2.default.TITLE
 }), (0, _Nori.h)(_Box.default, {
   className: blackBox
 }, (0, _Nori.h)(_Lorem2.default, {
-  element: "p",
-  min: 5,
-  max: 5,
   mode: _Lorem2.default.TITLE
 }), (0, _Nori.h)(_Box.default, {
   className: whiteBox

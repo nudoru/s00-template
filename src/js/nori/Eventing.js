@@ -10,7 +10,7 @@ const ACTION_BEHAVIOR = 'behavior';
 export const BEHAVIOR_RENDER      = 'render';       // on initial render only
 export const BEHAVIOR_STATECHANGE = 'stateChange';
 export const BEHAVIOR_UPDATE      = 'update';       // rerender
-export const BEHAVIOR_WILLREMOVE  = 'willRemove';
+export const BEHAVIOR_WILLREMOVE  = 'componentWillUnmount';
 export const BEHAVIOR_DIDDELETE   = 'didDelete';
 
 const BEHAVIORS = [BEHAVIOR_WILLREMOVE, BEHAVIOR_RENDER, BEHAVIOR_STATECHANGE, BEHAVIOR_UPDATE];

@@ -20,13 +20,17 @@ export default class Ticker extends DOMComponent {
     super('h1', props, []);
   }
 
-  didRender = () => {
+  componentDidMount = () => {
     console.log('Ticker rendered!');
     setInterval(_ => {this.state = {counter: ++this.state.counter}}, 1000)
   };
 
-  didUpdate = () => {
+  componentDidUpdate = () => {
     //console.log('Ticker update', this.state);
+  };
+
+  componentWillUnmount = () => {
+    //console.log('Ticker will umount');
   };
 
   render() {

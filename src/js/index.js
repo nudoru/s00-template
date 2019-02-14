@@ -51,11 +51,11 @@ const Sfc = _ => <h1>I'm a stateless functional component</h1>;
 
 let testBox = <Box key='main' className={appContainer}>
     <Box className={blackBox}>
-      <Lorem element='p' min={5} max={5} mode={Lorem.TITLE}/>
+      <Lorem mode={Lorem.TITLE}/>
       <Box className={whiteBox}>
-        <Lorem element='p' min={5} max={5} mode={Lorem.TITLE}/>
+        <Lorem mode={Lorem.TITLE}/>
         <Box className={blackBox}>
-          <Lorem element='p' min={5} max={5} mode={Lorem.TITLE}/>
+          <Lorem mode={Lorem.TITLE}/>
           <Box className={whiteBox}>
             <Sfc/>
             <Ticker />
