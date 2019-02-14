@@ -1,3 +1,7 @@
+/**
+ * Events and actions for Nori Components
+ */
+
 import {isDomEvent} from "./events/DomEvents";
 
 const ACTION_EVENT    = 'event';
@@ -12,47 +16,47 @@ export const BEHAVIOR_DIDDELETE   = 'didDelete';
 const BEHAVIORS = [BEHAVIOR_WILLREMOVE, BEHAVIOR_RENDER, BEHAVIOR_STATECHANGE, BEHAVIOR_UPDATE];
 
 export const mapActions = props => Object.keys(props).reduce((acc, key) => {
-    let value = props[key];
-    if (isDomEvent(key)) {
-      acc.push({
-        type           : ACTION_EVENT,
-        event          : key,
-        externalHandler: value, // passed in handler
-        internalHandler: null   // Will be assigned in applyActions
-      });
-    } else if (BEHAVIORS.includes(key)) {
-      acc.push({
-        type           : ACTION_BEHAVIOR,
-        event          : key,
-        externalHandler: value, // passed in handler
-        internalHandler: null   // Not used for behavior, fn's just called when they occur in code
-      });
-    } else {
-      console.warn(`Unknown component action '${key}'`);
-    }
+  let value = props[key];
+  if (isDomEvent(key)) {
+    acc.push({
+      type           : ACTION_EVENT,
+      event          : key,
+      externalHandler: value, // passed in handler
+      internalHandler: null   // Will be assigned in applyActions
+    });
+  } else if (BEHAVIORS.includes(key)) {
+    acc.push({
+      type           : ACTION_BEHAVIOR,
+      event          : key,
+      externalHandler: value, // passed in handler
+      internalHandler: null   // Not used for behavior, fn's just called when they occur in code
+    });
+  } else {
+    console.warn(`Unknown component action '${key}'`);
+  }
 
-    return acc;
-  }, []);
+  return acc;
+}, []);
 
-export const applyActions = (actionMap, element) => actionMap.forEach(evt => {
+// TODO implement options and useCapture? https://developer.mozilla.org/en-US/docs/Web/API/EventTarget/addEventListener
+export const applyActions = (component, element) => component.actionMap.forEach(evt => {
   if (evt.type === ACTION_EVENT) {
-    evt.internalHandler = $handleEventTrigger(evt);
-    // TODO implement options and useCapture? https://developer.mozilla.org/en-US/docs/Web/API/EventTarget/addEventListener
+    evt.internalHandler = $handleEventTrigger(evt, component);
     element.addEventListener(evt.event, evt.internalHandler);
   }
 });
 
-export const $createEventObject = e => ({
+export const $createEventObject = (e, src = null) => ({
   event    : e,
-  component: this
+  component: src
 });
 
-export const $handleEventTrigger = evt => e => evt.externalHandler($createEventObject(e));
+export const $handleEventTrigger = (evt, src) => e => evt.externalHandler($createEventObject(e, src));
 
-export const performBehavior = (actionMap, behavior, e) => actionMap.forEach(evt => {
+export const performBehavior = (component, behavior, e) => component.actionMap.forEach(evt => {
   if (evt.type === ACTION_BEHAVIOR && evt.event === behavior) {
     let event = e || {type: behavior, target: this};
-    evt.externalHandler($createEventObject(event));
+    evt.externalHandler($createEventObject(event, component));
   }
 });
 

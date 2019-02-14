@@ -23,11 +23,11 @@ export const h = (type, props, ...args) => {
 
 
 // Render a component to a dom node
-export const renderDOM = (component, targetEl, removeExisting = true) => {
+export const renderDOM = (component, hostNode, removeExisting = true) => {
   if (removeExisting) {
-    removeAllElements(targetEl);
+    removeAllElements(hostNode);
   }
-  targetEl.appendChild(component.$createVDOM());
+  hostNode.appendChild(component.$createVDOM());
 };
 
 // Simple implementation of React's useState hook, similar API totes different impl

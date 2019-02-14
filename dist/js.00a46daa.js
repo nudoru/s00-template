@@ -19372,15 +19372,15 @@ var mapActions = function mapActions(props) {
 
     return acc;
   }, []);
-};
+}; // TODO implement options and useCapture? https://developer.mozilla.org/en-US/docs/Web/API/EventTarget/addEventListener
+
 
 exports.mapActions = mapActions;
 
-var applyActions = function applyActions(actionMap, element) {
-  return actionMap.forEach(function (evt) {
+var applyActions = function applyActions(component, element) {
+  return component.actionMap.forEach(function (evt) {
     if (evt.type === ACTION_EVENT) {
-      evt.internalHandler = $handleEventTrigger(evt); // TODO implement options and useCapture? https://developer.mozilla.org/en-US/docs/Web/API/EventTarget/addEventListener
-
+      evt.internalHandler = $handleEventTrigger(evt, component);
       element.addEventListener(evt.event, evt.internalHandler);
     }
   });
@@ -19389,30 +19389,31 @@ var applyActions = function applyActions(actionMap, element) {
 exports.applyActions = applyActions;
 
 var $createEventObject = function $createEventObject(e) {
+  var src = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : null;
   return {
     event: e,
-    component: _this
+    component: src
   };
 };
 
 exports.$createEventObject = $createEventObject;
 
-var $handleEventTrigger = function $handleEventTrigger(evt) {
+var $handleEventTrigger = function $handleEventTrigger(evt, src) {
   return function (e) {
-    return evt.externalHandler($createEventObject(e));
+    return evt.externalHandler($createEventObject(e, src));
   };
 };
 
 exports.$handleEventTrigger = $handleEventTrigger;
 
-var performBehavior = function performBehavior(actionMap, behavior, e) {
-  return actionMap.forEach(function (evt) {
+var performBehavior = function performBehavior(component, behavior, e) {
+  return component.actionMap.forEach(function (evt) {
     if (evt.type === ACTION_BEHAVIOR && evt.event === behavior) {
       var event = e || {
         type: behavior,
         target: _this
       };
-      evt.externalHandler($createEventObject(event));
+      evt.externalHandler($createEventObject(event, component));
     }
   });
 }; // behaviors don't have listeners
@@ -19456,7 +19457,103 @@ Don't want to loose this ...
 
 
 exports.removeActions = removeActions;
-},{"./events/DomEvents":"js/nori/events/DomEvents.js"}],"js/nori/DOMComponent.js":[function(require,module,exports) {
+},{"./events/DomEvents":"js/nori/events/DomEvents.js"}],"js/nori/DOMing.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.removeChildren = exports.removeChild = exports.isNoriComponent = exports.setProps = exports.createElement = exports.createElementTree = exports.createDOM = void 0;
+
+var _is = _interopRequireDefault(require("./util/is"));
+
+var _DOMToolbox = require("./browser/DOMToolbox");
+
+var _ArrayUtils = require("./util/ArrayUtils");
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+/**
+ * DOM functionality for Nori Components
+ */
+var $isSpecialProp = function $isSpecialProp(test) {
+  return ['tweens', 'state', 'actions', 'children', 'element', 'min', 'max', 'mode'].includes(test);
+};
+
+var createDOM = function createDOM(type, props, children) {
+  var element = document.createElement(type);
+  setProps(element, props);
+  createElementTree(element, children);
+  return element;
+};
+
+exports.createDOM = createDOM;
+
+var createElementTree = function createElementTree(hostNode, children) {
+  return (0, _ArrayUtils.arrify)(children).map(function (el) {
+    return createElement(el);
+  }).forEach(function (child) {
+    return hostNode.appendChild(child);
+  });
+};
+
+exports.createElementTree = createElementTree;
+
+var createElement = function createElement(child) {
+  if (_is.default.string(child)) {
+    return (0, _DOMToolbox.HTMLStrToNode)(child);
+  } else if (isNoriComponent(child)) {
+    return child.$createVDOM();
+  } else {
+    console.error("createElement, unexpected type ".concat(child));
+  }
+}; // TODO filter out non-HTML attributes
+// TODO set boolean props?
+// https://developer.mozilla.org/en-US/docs/Web/HTML/Attributes
+
+
+exports.createElement = createElement;
+
+var setProps = function setProps(element, props) {
+  return Object.keys(props).forEach(function (key) {
+    if (!$isSpecialProp(key)) {
+      var value = props[key];
+
+      if (key === 'className') {
+        key = 'class';
+      } else if (key === 'id') {
+        key = 'data-nid';
+      }
+
+      element.setAttribute(key, value);
+    }
+
+    return element;
+  });
+};
+
+exports.setProps = setProps;
+
+var isNoriComponent = function isNoriComponent(test) {
+  return test.$$typeof && Symbol.keyFor(test.$$typeof) === 'nori.component';
+};
+
+exports.isNoriComponent = isNoriComponent;
+
+var removeChild = function removeChild(child) {
+  if (isNoriComponent(child)) {
+    child.remove();
+  }
+};
+
+exports.removeChild = removeChild;
+
+var removeChildren = function removeChildren(children) {
+  return children.forEach(removeChild);
+};
+
+exports.removeChildren = removeChildren;
+},{"./util/is":"js/nori/util/is.js","./browser/DOMToolbox":"js/nori/browser/DOMToolbox.js","./util/ArrayUtils":"js/nori/util/ArrayUtils.js"}],"js/nori/DOMComponent.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -19468,13 +19565,13 @@ var _ramda = require("ramda");
 
 var _is = _interopRequireDefault(require("./util/is"));
 
-var _ArrayUtils = require("./util/ArrayUtils");
-
 var _DOMToolbox = require("./browser/DOMToolbox");
 
 var _ElementIDCreator = require("./util/ElementIDCreator");
 
 var _Eventing = require("./Eventing");
+
+var _DOMing = require("./DOMing");
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -19484,21 +19581,19 @@ function _defineProperties(target, props) { for (var i = 0; i < props.length; i+
 
 function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
 
-/*
-Simple string based component to quickly get html on the screen
-
-TODO
-- break out events into own key in the props
-- break out tweens into own key in the props - on over, out, click, move, enter, exit
-- styles
- */
 var DOMComponent =
 /*#__PURE__*/
 function () {
   function DOMComponent(type, props, children) {
     _classCallCheck(this, DOMComponent);
 
-    _initialiseProps.call(this);
+    this.willRemove = function () {};
+
+    this.didDelete = function () {};
+
+    this.willUpdate = function () {};
+
+    this.didUpdate = function () {};
 
     this.type = type;
     this.props = props || {};
@@ -19513,45 +19608,31 @@ function () {
 
   _createClass(DOMComponent, [{
     key: "$createVDOM",
-    // If render returns  a component, don't use the tag for the element, just use all of what render returns
-    // TODO get rid of the fragment?
+    // First called from Nori.renderDOM() method
     value: function $createVDOM() {
-      var _this = this;
-
       var fragment = document.createDocumentFragment(),
-          element,
-          result = this.render();
+          resultTree = this.render(),
+          // either array, text or component
+      element;
 
-      if (this.$isNoriComponent(result)) {
-        // Was custom render, returned a component
-        // TODO allow for an array to be returned rather than only one child
-        element = result.$createVDOM().firstChild;
-        fragment.appendChild(element);
+      if ((0, _DOMing.isNoriComponent)(resultTree)) {
+        element = resultTree.$createVDOM().firstChild;
       } else {
-        // Non-custom component, just returned an array of children
-        element = document.createElement(this.type);
-        fragment.appendChild(element);
-        this.$setProps(element, this.props); // If result isn't an array each child will be created individually
-        // Ensure result is an array
-
-        (0, _ArrayUtils.arrify)(result).map(function (el) {
-          return _this.$createElement(el);
-        }).forEach(function (child) {
-          return element.appendChild(child);
-        });
+        element = (0, _DOMing.createDOM)(this.type, this.props, resultTree);
       }
 
-      (0, _Eventing.applyActions)(this.actionMap, element);
-      (0, _Eventing.performBehavior)(this.actionMap, _Eventing.BEHAVIOR_RENDER);
-      this.renderedElement = fragment.firstChild;
+      fragment.appendChild(element);
+      (0, _Eventing.applyActions)(this, element);
+      this.renderedElement = element;
+      (0, _Eventing.performBehavior)(this, _Eventing.BEHAVIOR_RENDER);
       return fragment;
-    }
-  }, {
-    key: "$update",
-    // TODO: diff and patch rather than just replace
+    } // TODO: diff and patch rather than just replace
     // Simple example here: https://github.com/heiskr/prezzy-vdom-example
     // https://blog.javascripting.com/2016/10/05/building-your-own-react-clone-in-five-easy-steps/
     // https://medium.com/@deathmood/how-to-write-your-own-virtual-dom-ee74acc13060
+
+  }, {
+    key: "$update",
     value: function $update() {
       if (!this.renderedElement) {
         console.warn("Component not rendered, can't update!", this.type, this.props);
@@ -19562,32 +19643,23 @@ function () {
       this.remove();
       var newEl = this.$createVDOM();
       (0, _DOMToolbox.replaceElementWith)(prevEl, newEl);
-      (0, _Eventing.performBehavior)(this.actionMap, _Eventing.BEHAVIOR_UPDATE);
+      (0, _Eventing.performBehavior)(this, _Eventing.BEHAVIOR_UPDATE);
       this.didUpdate();
-    } // TODO filter out non-HTML attributes
-    // TODO set boolean props?
-    // https://developer.mozilla.org/en-US/docs/Web/HTML/Attributes
-
+    }
   }, {
     key: "remove",
     value: function remove() {
-      var _this2 = this;
-
-      (0, _Eventing.performBehavior)(this.actionMap, _Eventing.BEHAVIOR_WILLREMOVE);
+      (0, _Eventing.performBehavior)(this, _Eventing.BEHAVIOR_WILLREMOVE);
       this.willRemove();
       (0, _Eventing.removeActions)(this.actionMap, this.renderedElement);
-      this.props.children.forEach(function (child) {
-        if (_this2.$isNoriComponent(child)) {
-          child.remove();
-        }
-      });
+      (0, _DOMing.removeChildren)(this.props.children);
       this.renderedElement = null;
-    } // Stub "lifecycle" methods. Override in subclass.
-    // Works around applying actions for this behaviors a level above the component to where the component is used
+    } //--------------------------------------------------------------------------------
+    // Stub "lifecycle" methods. Override in subclass.
+    //--------------------------------------------------------------------------------
 
   }, {
     key: "render",
-    // Returns the children (or view). Override in subclass for custom
     value: function render() {
       return this.props.children;
     }
@@ -19604,7 +19676,7 @@ function () {
       }
 
       this.internalState = Object.assign({}, this.internalState, nextState);
-      (0, _Eventing.performBehavior)(this.actionMap, _Eventing.BEHAVIOR_STATECHANGE);
+      (0, _Eventing.performBehavior)(this, _Eventing.BEHAVIOR_STATECHANGE);
       this.willUpdate();
       this.$update();
     },
@@ -19620,76 +19692,13 @@ function () {
 
       return this.renderedElement;
     }
-  }, {
-    key: "position",
-    get: function get() {
-      return (0, _DOMToolbox.position)(this.current);
-    }
-  }, {
-    key: "offset",
-    get: function get() {
-      return (0, _DOMToolbox.offset)(this.current);
-
-      current: this.current;
-    }
-  }, {
-    key: "isInViewport",
-    get: function get() {
-      return (0, _DOMToolbox.isElementInViewport)(this.current);
-    }
   }]);
 
   return DOMComponent;
 }();
 
 exports.default = DOMComponent;
-
-var _initialiseProps = function _initialiseProps() {
-  var _this3 = this;
-
-  this.$isNoriComponent = function (test) {
-    return test.$$typeof && Symbol.keyFor(test.$$typeof) === 'nori.component';
-  };
-
-  this.$createElement = function (child) {
-    if (_is.default.string(child)) {
-      return (0, _DOMToolbox.HTMLStrToNode)(child);
-    } else if (_this3.$isNoriComponent(child)) {
-      return child.$createVDOM();
-    } else {
-      console.error("createElement, unexpected type ".concat(child));
-    }
-  };
-
-  this.$isSpecialProp = function (test) {
-    return ['tweens', 'state', 'actions', 'children', 'element', 'min', 'max', 'mode'].includes(test);
-  };
-
-  this.$setProps = function (element, props) {
-    return Object.keys(props).forEach(function (key) {
-      if (!_this3.$isSpecialProp(key)) {
-        var value = props[key];
-
-        if (key === 'className') {
-          key = 'class';
-        } else if (key === 'id') {
-          key = 'data-nid';
-        }
-
-        element.setAttribute(key, value);
-      }
-    });
-  };
-
-  this.willRemove = function () {};
-
-  this.didDelete = function () {};
-
-  this.willUpdate = function () {};
-
-  this.didUpdate = function () {};
-};
-},{"ramda":"../node_modules/ramda/es/index.js","./util/is":"js/nori/util/is.js","./util/ArrayUtils":"js/nori/util/ArrayUtils.js","./browser/DOMToolbox":"js/nori/browser/DOMToolbox.js","./util/ElementIDCreator":"js/nori/util/ElementIDCreator.js","./Eventing":"js/nori/Eventing.js"}],"js/nori/Nori.js":[function(require,module,exports) {
+},{"ramda":"../node_modules/ramda/es/index.js","./util/is":"js/nori/util/is.js","./browser/DOMToolbox":"js/nori/browser/DOMToolbox.js","./util/ElementIDCreator":"js/nori/util/ElementIDCreator.js","./Eventing":"js/nori/Eventing.js","./DOMing":"js/nori/DOMing.js"}],"js/nori/Nori.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -19732,14 +19741,14 @@ var h = function h(type, props) {
 
 exports.h = h;
 
-var renderDOM = function renderDOM(component, targetEl) {
+var renderDOM = function renderDOM(component, hostNode) {
   var removeExisting = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : true;
 
   if (removeExisting) {
-    (0, _DOMToolbox.removeAllElements)(targetEl);
+    (0, _DOMToolbox.removeAllElements)(hostNode);
   }
 
-  targetEl.appendChild(component.$createVDOM());
+  hostNode.appendChild(component.$createVDOM());
 }; // Simple implementation of React's useState hook, similar API totes different impl
 // https://reactjs.org/docs/hooks-state.html
 

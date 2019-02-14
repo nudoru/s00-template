@@ -1,33 +1,18 @@
 import {equals} from 'ramda';
 import Is from './util/is';
-import {arrify} from "./util/ArrayUtils";
-import {
-  HTMLStrToNode,
-  isElementInViewport,
-  offset,
-  position,
-  replaceElementWith
-} from './browser/DOMToolbox';
+import {replaceElementWith} from './browser/DOMToolbox';
 import {getNextId} from './util/ElementIDCreator';
 import {
   applyActions,
-  mapActions,
-  performBehavior,
-  removeActions,
   BEHAVIOR_RENDER,
   BEHAVIOR_STATECHANGE,
   BEHAVIOR_UPDATE,
-  BEHAVIOR_WILLREMOVE
+  BEHAVIOR_WILLREMOVE,
+  mapActions,
+  performBehavior,
+  removeActions
 } from './Eventing';
-
-/*
-Simple string based component to quickly get html on the screen
-
-TODO
-- break out events into own key in the props
-- break out tweens into own key in the props - on over, out, click, move, enter, exit
-- styles
- */
+import {createDOM, isNoriComponent, removeChildren} from "./DOMing";
 
 export default class DOMComponent {
 
@@ -40,10 +25,8 @@ export default class DOMComponent {
     this.internalState   = props.hasOwnProperty('state') ? props.state : {};
     this.$$typeof        = Symbol.for('nori.component');
     this.renderedElement = null;
-    this.actionMap      = mapActions(props.hasOwnProperty('actions') ? props.actions : {});
+    this.actionMap       = mapActions(props.hasOwnProperty('actions') ? props.actions : {});
   }
-
-  $isNoriComponent = test => test.$$typeof && Symbol.keyFor(test.$$typeof) === 'nori.component';
 
   set state(nextState) {
     if (!Is.object(nextState)) {
@@ -56,7 +39,7 @@ export default class DOMComponent {
     }
 
     this.internalState = Object.assign({}, this.internalState, nextState);
-    performBehavior(this.actionMap, BEHAVIOR_STATECHANGE);
+    performBehavior(this, BEHAVIOR_STATECHANGE);
     this.willUpdate();
     this.$update();
   }
@@ -72,57 +55,25 @@ export default class DOMComponent {
     return this.renderedElement;
   }
 
-  get position() {
-    return position(this.current);
-  }
-
-  get offset() {
-    return offset(this.current);
-    current: this.current
-  }
-
-  get isInViewport() {
-    return isElementInViewport(this.current);
-  }
-
-  // If render returns  a component, don't use the tag for the element, just use all of what render returns
-  // TODO get rid of the fragment?
+  // First called from Nori.renderDOM() method
   $createVDOM() {
-    let fragment = document.createDocumentFragment(),
-        element,
-        result   = this.render();
+    let fragment   = document.createDocumentFragment(),
+        resultTree = this.render(), // either array, text or component
+        element;
 
-    if (this.$isNoriComponent(result)) {
-      // Was custom render, returned a component
-      // TODO allow for an array to be returned rather than only one child
-      element = result.$createVDOM().firstChild;
-      fragment.appendChild(element)
+    if (isNoriComponent(resultTree)) {
+      element = resultTree.$createVDOM().firstChild;
     } else {
-      // Non-custom component, just returned an array of children
-      element = document.createElement(this.type);
-      fragment.appendChild(element);
-      this.$setProps(element, this.props);
-      // If result isn't an array each child will be created individually
-      // Ensure result is an array
-      arrify(result).map(el => this.$createElement(el)).forEach(child => element.appendChild(child));
+      element = createDOM(this.type, this.props, resultTree);
     }
 
-    applyActions(this.actionMap, element);
-    performBehavior(this.actionMap, BEHAVIOR_RENDER);
+    fragment.appendChild(element);
+    applyActions(this, element);
+    this.renderedElement = element;
+    performBehavior(this, BEHAVIOR_RENDER);
 
-    this.renderedElement = fragment.firstChild;
     return fragment;
   }
-
-  $createElement = child => {
-    if (Is.string(child)) {
-      return HTMLStrToNode(child);
-    } else if (this.$isNoriComponent(child)) {
-      return child.$createVDOM();
-    } else {
-      console.error(`createElement, unexpected type ${child}`);
-    }
-  };
 
   // TODO: diff and patch rather than just replace
   // Simple example here: https://github.com/heiskr/prezzy-vdom-example
@@ -137,41 +88,22 @@ export default class DOMComponent {
     this.remove();
     const newEl = this.$createVDOM();
     replaceElementWith(prevEl, newEl);
-    performBehavior(this.actionMap, BEHAVIOR_UPDATE);
+    performBehavior(this, BEHAVIOR_UPDATE);
     this.didUpdate();
   }
 
-  $isSpecialProp = test => ['tweens', 'state', 'actions', 'children', 'element', 'min', 'max', 'mode'].includes(test);
-
-  // TODO filter out non-HTML attributes
-  // TODO set boolean props?
-  // https://developer.mozilla.org/en-US/docs/Web/HTML/Attributes
-  $setProps = (element, props) => Object.keys(props).forEach(key => {
-    if (!this.$isSpecialProp(key)) {
-      let value = props[key];
-      if (key === 'className') {
-        key = 'class';
-      } else if (key === 'id') {
-        key = 'data-nid';
-      }
-      element.setAttribute(key, value);
-    }
-  });
-
   remove() {
-    performBehavior(this.actionMap, BEHAVIOR_WILLREMOVE);
+    performBehavior(this, BEHAVIOR_WILLREMOVE);
     this.willRemove();
     removeActions(this.actionMap, this.renderedElement);
-    this.props.children.forEach(child => {
-      if (this.$isNoriComponent(child)) {
-        child.remove();
-      }
-    });
+    removeChildren(this.props.children);
     this.renderedElement = null;
   }
 
+  //--------------------------------------------------------------------------------
   // Stub "lifecycle" methods. Override in subclass.
-  // Works around applying actions for this behaviors a level above the component to where the component is used
+  //--------------------------------------------------------------------------------
+
   willRemove = () => {
   };
   didDelete  = () => {
@@ -181,7 +113,6 @@ export default class DOMComponent {
   didUpdate  = () => {
   };
 
-  // Returns the children (or view). Override in subclass for custom
   render() {
     return this.props.children;
   }
