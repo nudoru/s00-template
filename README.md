@@ -34,10 +34,6 @@ For CSS classes, the `class` attribute is used. You may use the output of a CSS 
 
 Object to populate the initial state.
 
-#### trigger
-
-Either DOM events or one of the support life-cycle hooks and a callback.
-
 ### children
 
 Either a plain text string or an array of text strings and other component instances.
@@ -56,9 +52,11 @@ An array of text strings or other other component instances.
 
 Update the state of any component instance by using the `componentInstance.state` setter function. A deep comparison is performed (using ramda's equal function) and if the state changed a rerender of the component and it's children is triggered.
 
-### Triggers: Events and Behaviors
+### Events and Behaviors
 
 Supports any JavaScript DOM event and a matching event handler. Refer to the list here: https://developer.mozilla.org/en-US/docs/Web/Events
+
+*** Update with lifecycle hooks ***
 
 Behaviors roughly translate to React Life-Cycle hooks: 
 
@@ -141,5 +139,5 @@ Use the `render()` method to return a more detailed view w/ interactivity, etc. 
 
 ### Lifecycle hooks
 
-The triggers for removing and updating will not fire if you place them on the parent component returned from the `render()` method. To work around this, you may use the `willUpdate`, `didUpdate`, `willRemove` and `didDelete` hooks.   
+The triggers for removing and updating will not fire if you place them on the parent component returned from the `render()` method. To work around this, you may use the `componentDidMount`, `componentWillUpdate`, `compontentDidUpdate`, and `componentWillUnmout` hooks.   
 

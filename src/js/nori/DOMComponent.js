@@ -29,7 +29,7 @@ export default class DOMComponent {
     this.tweens         = props.hasOwnProperty('tweens') ? props.tweens : {};
     this.internalState  = props.hasOwnProperty('state') ? props.state : {};
     this.current        = null;
-    this.actionMap      = mapActions(props.hasOwnProperty('actions') ? props.actions : {});
+    this.actionMap      = mapActions(this.props);
     this.$$typeof       = Symbol.for('nori.component');
   }
 

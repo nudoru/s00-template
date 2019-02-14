@@ -4,6 +4,7 @@
 
 import {HTMLStrToNode} from "./browser/DOMToolbox";
 import {arrify} from "./util/ArrayUtils";
+import {isDomEvent} from "./events/DomEvents";
 
 const $isSpecialProp = test => ['tweens', 'state', 'actions', 'children', 'element', 'min', 'max', 'mode'].includes(test);
 
@@ -27,7 +28,7 @@ export const createElement = child => {
 // TODO set boolean props?
 // https://developer.mozilla.org/en-US/docs/Web/HTML/Attributes
 export const setProps = (element, props) => Object.keys(props).forEach(key => {
-  if (!$isSpecialProp(key)) {
+  if (!$isSpecialProp(key) && !isDomEvent(key)) {
     let value = props[key];
     if (key === 'className') {
       key = 'class';

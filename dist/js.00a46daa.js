@@ -19360,8 +19360,6 @@ var mapActions = function mapActions(props) {
         internalHandler: null // Not used for behavior, fn's just called when they occur in code
 
       });
-    } else {
-      console.warn("Unknown component action '".concat(key, "'"));
     }
 
     return acc;
@@ -19463,6 +19461,8 @@ var _DOMToolbox = require("./browser/DOMToolbox");
 
 var _ArrayUtils = require("./util/ArrayUtils");
 
+var _DomEvents = require("./events/DomEvents");
+
 /**
  * DOM functionality for Nori Components
  */
@@ -19504,7 +19504,7 @@ exports.createElement = createElement;
 
 var setProps = function setProps(element, props) {
   return Object.keys(props).forEach(function (key) {
-    if (!$isSpecialProp(key)) {
+    if (!$isSpecialProp(key) && !(0, _DomEvents.isDomEvent)(key)) {
       var value = props[key];
 
       if (key === 'className') {
@@ -19541,7 +19541,7 @@ var removeChildren = function removeChildren(children) {
 };
 
 exports.removeChildren = removeChildren;
-},{"./browser/DOMToolbox":"js/nori/browser/DOMToolbox.js","./util/ArrayUtils":"js/nori/util/ArrayUtils.js"}],"js/nori/DOMComponent.js":[function(require,module,exports) {
+},{"./browser/DOMToolbox":"js/nori/browser/DOMToolbox.js","./util/ArrayUtils":"js/nori/util/ArrayUtils.js","./events/DomEvents":"js/nori/events/DomEvents.js"}],"js/nori/DOMComponent.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -19595,7 +19595,7 @@ function () {
     this.tweens = props.hasOwnProperty('tweens') ? props.tweens : {};
     this.internalState = props.hasOwnProperty('state') ? props.state : {};
     this.current = null;
-    this.actionMap = (0, _Eventing.mapActions)(props.hasOwnProperty('actions') ? props.actions : {});
+    this.actionMap = (0, _Eventing.mapActions)(this.props);
     this.$$typeof = Symbol.for('nori.component');
   }
 
@@ -20025,9 +20025,7 @@ function (_DOMComponent) {
     key: "render",
     value: function render() {
       return (0, _Nori.h)("h1", {
-        actions: {
-          click: this.$onClick
-        }
+        click: this.$onClick
       }, "Hello, ", (0, _Nori.h)("em", {
         className: blue
       }, this.internalState.name));

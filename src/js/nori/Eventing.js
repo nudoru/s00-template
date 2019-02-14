@@ -25,10 +25,7 @@ export const mapActions = props => Object.keys(props).reduce((acc, key) => {
       externalHandler: value, // passed in handler
       internalHandler: null   // Not used for behavior, fn's just called when they occur in code
     });
-  } else {
-    console.warn(`Unknown component action '${key}'`);
   }
-
   return acc;
 }, []);
 

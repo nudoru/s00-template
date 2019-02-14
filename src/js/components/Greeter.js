@@ -43,8 +43,6 @@ export default class Greeter extends DOMComponent {
   };
 
   render() {
-    return <h1 actions={{
-      click: this.$onClick
-    }}>Hello, <em className={blue}>{this.internalState.name}</em></h1>;
+    return <h1 click={this.$onClick}>Hello, <em className={blue}>{this.internalState.name}</em></h1>;
   }
 }
