@@ -10,20 +10,16 @@ const ACTION_BEHAVIOR = 'behavior';
 const BEHAVIORS = [];
 
 export const mapActions = props => Object.keys(props).reduce((acc, key) => {
-  let value = props[key];
-  if (isDomEvent(key)) {
+  let value = props[key],
+      domEvt = isDomEvent(key),
+      actionType =  domEvt ? ACTION_EVENT : ACTION_BEHAVIOR;
+
+  if (domEvt || BEHAVIORS.includes(key)) {
     acc.push({
-      type           : ACTION_EVENT,
+      type           : actionType,
       event          : key,
-      externalHandler: value, // passed in handler
-      internalHandler: null   // Will be assigned in applyActions
-    });
-  } else if (BEHAVIORS.includes(key)) {
-    acc.push({
-      type           : ACTION_BEHAVIOR,
-      event          : key,
-      externalHandler: value, // passed in handler
-      internalHandler: null   // Not used for behavior, fn's just called when they occur in code
+      externalHandler: value,
+      internalHandler: null
     });
   }
   return acc;

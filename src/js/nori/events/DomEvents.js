@@ -1,5 +1,5 @@
 //https://developer.mozilla.org/en-US/docs/Web/Events
-export const DomEvents = [
+export const domEventsList = [
   'focus',
   'blur',
   'resize',
@@ -20,4 +20,4 @@ export const DomEvents = [
   'select'
 ];
 
-export const isDomEvent = e => DomEvents.indexOf(e) > -1;
+export const isDomEvent = e => domEventsList.includes(e);

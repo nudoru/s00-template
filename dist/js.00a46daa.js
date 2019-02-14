@@ -19312,13 +19312,13 @@ exports.getNextId = getNextId;
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.isDomEvent = exports.DomEvents = void 0;
+exports.isDomEvent = exports.domEventsList = void 0;
 //https://developer.mozilla.org/en-US/docs/Web/Events
-var DomEvents = ['focus', 'blur', 'resize', 'scroll', 'keydown', 'keypress', 'keyup', 'mouseenter', 'mousemove', 'mousedown', 'mouseup', 'click', 'dblclick', 'contextmenu', 'wheel', 'mouseleave', 'mouseout', 'select'];
-exports.DomEvents = DomEvents;
+var domEventsList = ['focus', 'blur', 'resize', 'scroll', 'keydown', 'keypress', 'keyup', 'mouseenter', 'mousemove', 'mousedown', 'mouseup', 'click', 'dblclick', 'contextmenu', 'wheel', 'mouseleave', 'mouseout', 'select'];
+exports.domEventsList = domEventsList;
 
 var isDomEvent = function isDomEvent(e) {
-  return DomEvents.indexOf(e) > -1;
+  return domEventsList.includes(e);
 };
 
 exports.isDomEvent = isDomEvent;
@@ -19340,25 +19340,16 @@ var BEHAVIORS = [];
 
 var mapActions = function mapActions(props) {
   return Object.keys(props).reduce(function (acc, key) {
-    var value = props[key];
+    var value = props[key],
+        domEvt = (0, _DomEvents.isDomEvent)(key),
+        actionType = domEvt ? ACTION_EVENT : ACTION_BEHAVIOR;
 
-    if ((0, _DomEvents.isDomEvent)(key)) {
+    if (domEvt || BEHAVIORS.includes(key)) {
       acc.push({
-        type: ACTION_EVENT,
+        type: actionType,
         event: key,
         externalHandler: value,
-        // passed in handler
-        internalHandler: null // Will be assigned in applyActions
-
-      });
-    } else if (BEHAVIORS.includes(key)) {
-      acc.push({
-        type: ACTION_BEHAVIOR,
-        event: key,
-        externalHandler: value,
-        // passed in handler
-        internalHandler: null // Not used for behavior, fn's just called when they occur in code
-
+        internalHandler: null
       });
     }
 
@@ -19466,8 +19457,11 @@ var _DomEvents = require("./events/DomEvents");
 /**
  * DOM functionality for Nori Components
  */
+// "Special props should be updated as new props are added to components. This is a bad design
+var specialProps = _DomEvents.domEventsList.concat(['tweens', 'state', 'actions', 'children', 'element', 'min', 'max', 'mode']);
+
 var $isSpecialProp = function $isSpecialProp(test) {
-  return ['tweens', 'state', 'actions', 'children', 'element', 'min', 'max', 'mode'].includes(test);
+  return specialProps.includes(test);
 };
 
 var createDOM = function createDOM(type, props, children) {
@@ -19504,7 +19498,7 @@ exports.createElement = createElement;
 
 var setProps = function setProps(element, props) {
   return Object.keys(props).forEach(function (key) {
-    if (!$isSpecialProp(key) && !(0, _DomEvents.isDomEvent)(key)) {
+    if (!$isSpecialProp(key)) {
       var value = props[key];
 
       if (key === 'className') {

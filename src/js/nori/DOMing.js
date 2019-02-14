@@ -4,9 +4,12 @@
 
 import {HTMLStrToNode} from "./browser/DOMToolbox";
 import {arrify} from "./util/ArrayUtils";
-import {isDomEvent} from "./events/DomEvents";
+import {domEventsList} from "./events/DomEvents";
 
-const $isSpecialProp = test => ['tweens', 'state', 'actions', 'children', 'element', 'min', 'max', 'mode'].includes(test);
+// "Special props should be updated as new props are added to components. This is a bad design
+const specialProps = domEventsList.concat(['tweens', 'state', 'actions', 'children', 'element', 'min', 'max', 'mode']);
+
+const $isSpecialProp = test => specialProps.includes(test);
 
 export const createDOM = (type, props, children) => {
   let element = document.createElement(type);
@@ -28,7 +31,7 @@ export const createElement = child => {
 // TODO set boolean props?
 // https://developer.mozilla.org/en-US/docs/Web/HTML/Attributes
 export const setProps = (element, props) => Object.keys(props).forEach(key => {
-  if (!$isSpecialProp(key) && !isDomEvent(key)) {
+  if (!$isSpecialProp(key)) {
     let value = props[key];
     if (key === 'className') {
       key = 'class';
