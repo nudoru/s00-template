@@ -44,7 +44,6 @@ export default class DOMComponent {
     }
 
     this.internalState = Object.assign({}, this.internalState, nextState);
-    performBehavior(this, BEHAVIOR_STATECHANGE);
     this.componentWillUpdate();
     this.$update();
   }
@@ -67,7 +66,6 @@ export default class DOMComponent {
     this.current = element;
 
     if (this.stage === STAGE_NOINIT) {
-      performBehavior(this, BEHAVIOR_RENDER);
       this.componentDidMount();
     }
 
@@ -92,12 +90,10 @@ export default class DOMComponent {
     this.remove();
     newEl = this.$createVDOM();
     replaceElementWith(prevEl, newEl);
-    performBehavior(this, BEHAVIOR_UPDATE);
     this.componentDidUpdate();
   }
 
   remove() {
-    performBehavior(this, BEHAVIOR_WILLREMOVE);
     if(this.stage !== STAGE_UPDATING) {
       this.componentWillUnmount();
     }

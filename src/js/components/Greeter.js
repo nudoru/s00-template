@@ -33,20 +33,18 @@ export default class Greeter extends DOMComponent {
   componentWillUnmount = () => {
     console.log('Greet will remove');
   };
-  didDelete            = () => {
-    console.log('Greet did delete');
-  };
+
   componentWillUpdate  = () => {
     console.log('Greet will update');
   };
+
   componentDidUpdate   = () => {
     console.log('Greet did update');
   };
 
   render() {
     return <h1 actions={{
-      click: this.$onClick,
-      render: this.$onRender
+      click: this.$onClick
     }}>Hello, <em className={blue}>{this.internalState.name}</em></h1>;
   }
 }

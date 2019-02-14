@@ -7,13 +7,7 @@ import {isDomEvent} from "./events/DomEvents";
 const ACTION_EVENT    = 'event';
 const ACTION_BEHAVIOR = 'behavior';
 
-export const BEHAVIOR_RENDER      = 'render';       // on initial render only
-export const BEHAVIOR_STATECHANGE = 'stateChange';
-export const BEHAVIOR_UPDATE      = 'update';       // rerender
-export const BEHAVIOR_WILLREMOVE  = 'componentWillUnmount';
-export const BEHAVIOR_DIDDELETE   = 'didDelete';
-
-const BEHAVIORS = [BEHAVIOR_WILLREMOVE, BEHAVIOR_RENDER, BEHAVIOR_STATECHANGE, BEHAVIOR_UPDATE];
+const BEHAVIORS = [];
 
 export const mapActions = props => Object.keys(props).reduce((acc, key) => {
   let value = props[key];

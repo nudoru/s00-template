@@ -19328,7 +19328,7 @@ exports.isDomEvent = isDomEvent;
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.removeActions = exports.performBehavior = exports.handleEventTrigger = exports.createEventObject = exports.applyActions = exports.mapActions = exports.BEHAVIOR_DIDDELETE = exports.BEHAVIOR_WILLREMOVE = exports.BEHAVIOR_UPDATE = exports.BEHAVIOR_STATECHANGE = exports.BEHAVIOR_RENDER = void 0;
+exports.removeActions = exports.performBehavior = exports.handleEventTrigger = exports.createEventObject = exports.applyActions = exports.mapActions = void 0;
 
 var _DomEvents = require("./events/DomEvents");
 
@@ -19336,19 +19336,7 @@ var _this = void 0;
 
 var ACTION_EVENT = 'event';
 var ACTION_BEHAVIOR = 'behavior';
-var BEHAVIOR_RENDER = 'render'; // on initial render only
-
-exports.BEHAVIOR_RENDER = BEHAVIOR_RENDER;
-var BEHAVIOR_STATECHANGE = 'stateChange';
-exports.BEHAVIOR_STATECHANGE = BEHAVIOR_STATECHANGE;
-var BEHAVIOR_UPDATE = 'update'; // rerender
-
-exports.BEHAVIOR_UPDATE = BEHAVIOR_UPDATE;
-var BEHAVIOR_WILLREMOVE = 'componentWillUnmount';
-exports.BEHAVIOR_WILLREMOVE = BEHAVIOR_WILLREMOVE;
-var BEHAVIOR_DIDDELETE = 'didDelete';
-exports.BEHAVIOR_DIDDELETE = BEHAVIOR_DIDDELETE;
-var BEHAVIORS = [BEHAVIOR_WILLREMOVE, BEHAVIOR_RENDER, BEHAVIOR_STATECHANGE, BEHAVIOR_UPDATE];
+var BEHAVIORS = [];
 
 var mapActions = function mapActions(props) {
   return Object.keys(props).reduce(function (acc, key) {
@@ -19627,7 +19615,6 @@ function () {
       this.current = element;
 
       if (this.stage === STAGE_NOINIT) {
-        (0, _Eventing.performBehavior)(this, _Eventing.BEHAVIOR_RENDER);
         this.componentDidMount();
       }
 
@@ -19654,14 +19641,11 @@ function () {
       this.remove();
       newEl = this.$createVDOM();
       (0, _DOMToolbox.replaceElementWith)(prevEl, newEl);
-      (0, _Eventing.performBehavior)(this, _Eventing.BEHAVIOR_UPDATE);
       this.componentDidUpdate();
     }
   }, {
     key: "remove",
     value: function remove() {
-      (0, _Eventing.performBehavior)(this, _Eventing.BEHAVIOR_WILLREMOVE);
-
       if (this.stage !== STAGE_UPDATING) {
         this.componentWillUnmount();
       }
@@ -19691,7 +19675,6 @@ function () {
       }
 
       this.internalState = Object.assign({}, this.internalState, nextState);
-      (0, _Eventing.performBehavior)(this, _Eventing.BEHAVIOR_STATECHANGE);
       this.componentWillUpdate();
       this.$update();
     },
@@ -20026,10 +20009,6 @@ function (_DOMComponent) {
       console.log('Greet will remove');
     };
 
-    _this.didDelete = function () {
-      console.log('Greet did delete');
-    };
-
     _this.componentWillUpdate = function () {
       console.log('Greet will update');
     };
@@ -20047,8 +20026,7 @@ function (_DOMComponent) {
     value: function render() {
       return (0, _Nori.h)("h1", {
         actions: {
-          click: this.$onClick,
-          render: this.$onRender
+          click: this.$onClick
         }
       }, "Hello, ", (0, _Nori.h)("em", {
         className: blue
