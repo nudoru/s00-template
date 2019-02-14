@@ -2,7 +2,6 @@
  * DOM functionality for Nori Components
  */
 
-import Is from "./util/is";
 import {HTMLStrToNode} from "./browser/DOMToolbox";
 import {arrify} from "./util/ArrayUtils";
 
@@ -18,13 +17,10 @@ export const createDOM = (type, props, children) => {
 export const createElementTree = (hostNode, children) => arrify(children).map(el => createElement(el)).forEach(child => hostNode.appendChild(child));
 
 export const createElement = child => {
-  if (Is.string(child)) {
-    return HTMLStrToNode(child);
-  } else if (isNoriComponent(child)) {
+  if (isNoriComponent(child)) {
     return child.$createVDOM();
-  } else {
-    console.error(`createElement, unexpected type ${child}`);
   }
+  return HTMLStrToNode(child);
 };
 
 // TODO filter out non-HTML attributes

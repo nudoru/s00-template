@@ -118,6 +118,8 @@ export const replaceElementWith = (oldEl, newEl, parentEl) => {
   return false;
 };
 
+export const escapeHTML = str => String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+
 //https://davidwalsh.name/convert-html-stings-dom-nodes
 export const HTMLStrToNode = str => {
   return document.createRange().createContextualFragment(str);

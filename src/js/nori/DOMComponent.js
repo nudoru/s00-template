@@ -14,6 +14,10 @@ import {
 } from './Eventing';
 import {createDOM, isNoriComponent, removeChildren} from "./DOMing";
 
+const STAGE_NOINIT = 'stage_noinit';
+const STAGE_RENDERED = 'stage_rendered';
+const STAGE_UPDATING = 'stage_updating';
+
 export default class DOMComponent {
 
   constructor(type, props, children) {
@@ -26,6 +30,7 @@ export default class DOMComponent {
     this.$$typeof        = Symbol.for('nori.component');
     this.renderedElement = null;
     this.actionMap       = mapActions(props.hasOwnProperty('actions') ? props.actions : {});
+    this.stage = STAGE_NOINIT;
   }
 
   set state(nextState) {
@@ -70,7 +75,13 @@ export default class DOMComponent {
     fragment.appendChild(element);
     applyActions(this, element);
     this.renderedElement = element;
-    performBehavior(this, BEHAVIOR_RENDER);
+
+    if(this.stage === STAGE_NOINIT) {
+      performBehavior(this, BEHAVIOR_RENDER);
+      this.didRender();
+    }
+
+    this.stage = STAGE_RENDERED;
 
     return fragment;
   }
@@ -84,6 +95,7 @@ export default class DOMComponent {
       console.warn(`Component not rendered, can't update!`, this.type, this.props);
       return;
     }
+    this.stage = STAGE_UPDATING;
     const prevEl = this.renderedElement;
     this.remove();
     const newEl = this.$createVDOM();
@@ -104,6 +116,7 @@ export default class DOMComponent {
   // Stub "lifecycle" methods. Override in subclass.
   //--------------------------------------------------------------------------------
 
+  didRender = () => {}
   willRemove = () => {
   };
   didDelete  = () => {

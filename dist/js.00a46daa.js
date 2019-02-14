@@ -18994,7 +18994,7 @@ exports.default = _default;
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.centerElementInViewPort = exports.querySelectorAllAsArray = exports.computeWindowScale = exports.applyCSS = exports.toggleClass = exports.removeClass = exports.addClass = exports.hasClass = exports.closest = exports.wrapElement = exports.HTMLStrToNode = exports.replaceElementWith = exports.replaceElement = exports.appendElement = exports.removeElement = exports.removeAllElements = exports.offset = exports.position = exports.isDomObj = exports.isElementInViewport = exports.isElementEntirelyInViewport = exports.pxToInt = exports.getElStyleProp = exports.getElStyle = exports.$$ = exports.$ = void 0;
+exports.centerElementInViewPort = exports.querySelectorAllAsArray = exports.computeWindowScale = exports.applyCSS = exports.toggleClass = exports.removeClass = exports.addClass = exports.hasClass = exports.closest = exports.wrapElement = exports.HTMLStrToNode = exports.escapeHTML = exports.replaceElementWith = exports.replaceElement = exports.appendElement = exports.removeElement = exports.removeAllElements = exports.offset = exports.position = exports.isDomObj = exports.isElementInViewport = exports.isElementEntirelyInViewport = exports.pxToInt = exports.getElStyleProp = exports.getElStyle = exports.$$ = exports.$ = void 0;
 
 var _ramda = require("ramda");
 
@@ -19143,10 +19143,16 @@ var replaceElementWith = function replaceElementWith(oldEl, newEl, parentEl) {
 
   console.warn('Can\'t replace element, no parent found', parent);
   return false;
+};
+
+exports.replaceElementWith = replaceElementWith;
+
+var escapeHTML = function escapeHTML(str) {
+  return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }; //https://davidwalsh.name/convert-html-stings-dom-nodes
 
 
-exports.replaceElementWith = replaceElementWith;
+exports.escapeHTML = escapeHTML;
 
 var HTMLStrToNode = function HTMLStrToNode(str) {
   return document.createRange().createContextualFragment(str);
@@ -19322,7 +19328,7 @@ exports.isDomEvent = isDomEvent;
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.removeActions = exports.performBehavior = exports.$handleEventTrigger = exports.$createEventObject = exports.applyActions = exports.mapActions = exports.BEHAVIOR_DIDDELETE = exports.BEHAVIOR_WILLREMOVE = exports.BEHAVIOR_UPDATE = exports.BEHAVIOR_STATECHANGE = exports.BEHAVIOR_RENDER = void 0;
+exports.removeActions = exports.performBehavior = exports.handleEventTrigger = exports.createEventObject = exports.applyActions = exports.mapActions = exports.BEHAVIOR_DIDDELETE = exports.BEHAVIOR_WILLREMOVE = exports.BEHAVIOR_UPDATE = exports.BEHAVIOR_STATECHANGE = exports.BEHAVIOR_RENDER = void 0;
 
 var _DomEvents = require("./events/DomEvents");
 
@@ -19380,7 +19386,7 @@ exports.mapActions = mapActions;
 var applyActions = function applyActions(component, element) {
   return component.actionMap.forEach(function (evt) {
     if (evt.type === ACTION_EVENT) {
-      evt.internalHandler = $handleEventTrigger(evt, component);
+      evt.internalHandler = handleEventTrigger(evt, component);
       element.addEventListener(evt.event, evt.internalHandler);
     }
   });
@@ -19388,7 +19394,7 @@ var applyActions = function applyActions(component, element) {
 
 exports.applyActions = applyActions;
 
-var $createEventObject = function $createEventObject(e) {
+var createEventObject = function createEventObject(e) {
   var src = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : null;
   return {
     event: e,
@@ -19396,15 +19402,15 @@ var $createEventObject = function $createEventObject(e) {
   };
 };
 
-exports.$createEventObject = $createEventObject;
+exports.createEventObject = createEventObject;
 
-var $handleEventTrigger = function $handleEventTrigger(evt, src) {
+var handleEventTrigger = function handleEventTrigger(evt, src) {
   return function (e) {
-    return evt.externalHandler($createEventObject(e, src));
+    return evt.externalHandler(createEventObject(e, src));
   };
 };
 
-exports.$handleEventTrigger = $handleEventTrigger;
+exports.handleEventTrigger = handleEventTrigger;
 
 var performBehavior = function performBehavior(component, behavior, e) {
   return component.actionMap.forEach(function (evt) {
@@ -19413,7 +19419,7 @@ var performBehavior = function performBehavior(component, behavior, e) {
         type: behavior,
         target: _this
       };
-      evt.externalHandler($createEventObject(event, component));
+      evt.externalHandler(createEventObject(event, component));
     }
   });
 }; // behaviors don't have listeners
@@ -19465,13 +19471,9 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.removeChildren = exports.removeChild = exports.isNoriComponent = exports.setProps = exports.createElement = exports.createElementTree = exports.createDOM = void 0;
 
-var _is = _interopRequireDefault(require("./util/is"));
-
 var _DOMToolbox = require("./browser/DOMToolbox");
 
 var _ArrayUtils = require("./util/ArrayUtils");
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 /**
  * DOM functionality for Nori Components
@@ -19500,13 +19502,11 @@ var createElementTree = function createElementTree(hostNode, children) {
 exports.createElementTree = createElementTree;
 
 var createElement = function createElement(child) {
-  if (_is.default.string(child)) {
-    return (0, _DOMToolbox.HTMLStrToNode)(child);
-  } else if (isNoriComponent(child)) {
+  if (isNoriComponent(child)) {
     return child.$createVDOM();
-  } else {
-    console.error("createElement, unexpected type ".concat(child));
   }
+
+  return (0, _DOMToolbox.HTMLStrToNode)(child);
 }; // TODO filter out non-HTML attributes
 // TODO set boolean props?
 // https://developer.mozilla.org/en-US/docs/Web/HTML/Attributes
@@ -19553,7 +19553,7 @@ var removeChildren = function removeChildren(children) {
 };
 
 exports.removeChildren = removeChildren;
-},{"./util/is":"js/nori/util/is.js","./browser/DOMToolbox":"js/nori/browser/DOMToolbox.js","./util/ArrayUtils":"js/nori/util/ArrayUtils.js"}],"js/nori/DOMComponent.js":[function(require,module,exports) {
+},{"./browser/DOMToolbox":"js/nori/browser/DOMToolbox.js","./util/ArrayUtils":"js/nori/util/ArrayUtils.js"}],"js/nori/DOMComponent.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -19581,11 +19581,17 @@ function _defineProperties(target, props) { for (var i = 0; i < props.length; i+
 
 function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
 
+var STAGE_NOINIT = 'stage_noinit';
+var STAGE_RENDERED = 'stage_rendered';
+var STAGE_UPDATING = 'stage_updating';
+
 var DOMComponent =
 /*#__PURE__*/
 function () {
   function DOMComponent(type, props, children) {
     _classCallCheck(this, DOMComponent);
+
+    this.didRender = function () {};
 
     this.willRemove = function () {};
 
@@ -19604,6 +19610,7 @@ function () {
     this.$$typeof = Symbol.for('nori.component');
     this.renderedElement = null;
     this.actionMap = (0, _Eventing.mapActions)(props.hasOwnProperty('actions') ? props.actions : {});
+    this.stage = STAGE_NOINIT;
   }
 
   _createClass(DOMComponent, [{
@@ -19624,7 +19631,13 @@ function () {
       fragment.appendChild(element);
       (0, _Eventing.applyActions)(this, element);
       this.renderedElement = element;
-      (0, _Eventing.performBehavior)(this, _Eventing.BEHAVIOR_RENDER);
+
+      if (this.stage === STAGE_NOINIT) {
+        (0, _Eventing.performBehavior)(this, _Eventing.BEHAVIOR_RENDER);
+        this.didRender();
+      }
+
+      this.stage = STAGE_RENDERED;
       return fragment;
     } // TODO: diff and patch rather than just replace
     // Simple example here: https://github.com/heiskr/prezzy-vdom-example
@@ -19639,6 +19652,7 @@ function () {
         return;
       }
 
+      this.stage = STAGE_UPDATING;
       var prevEl = this.renderedElement;
       this.remove();
       var newEl = this.$createVDOM();
@@ -19950,6 +19964,8 @@ var _Nori = require("../nori/Nori");
 
 var L = _interopRequireWildcard(require("../nori/util/Lorem"));
 
+var _emotion = require("emotion");
+
 function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) { var desc = Object.defineProperty && Object.getOwnPropertyDescriptor ? Object.getOwnPropertyDescriptor(obj, key) : {}; if (desc.get || desc.set) { Object.defineProperty(newObj, key, desc); } else { newObj[key] = obj[key]; } } } } newObj.default = obj; return newObj; } }
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
@@ -19971,6 +19987,20 @@ function _getPrototypeOf(o) { _getPrototypeOf = Object.setPrototypeOf ? Object.g
 function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function"); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, writable: true, configurable: true } }); if (superClass) _setPrototypeOf(subClass, superClass); }
 
 function _setPrototypeOf(o, p) { _setPrototypeOf = Object.setPrototypeOf || function _setPrototypeOf(o, p) { o.__proto__ = p; return o; }; return _setPrototypeOf(o, p); }
+
+function _templateObject() {
+  var data = _taggedTemplateLiteral(["color: blue;"]);
+
+  _templateObject = function _templateObject() {
+    return data;
+  };
+
+  return data;
+}
+
+function _taggedTemplateLiteral(strings, raw) { if (!raw) { raw = strings.slice(0); } return Object.freeze(Object.defineProperties(strings, { raw: { value: Object.freeze(raw) } })); }
+
+var blue = (0, _emotion.css)(_templateObject());
 
 var Greeter =
 /*#__PURE__*/
@@ -20027,7 +20057,9 @@ function (_DOMComponent) {
           click: this.$onClick,
           render: this.$onRender
         }
-      }, "Hello, ", (0, _Nori.h)("em", null, this.internalState.name));
+      }, "Hello, ", (0, _Nori.h)("em", {
+        className: blue
+      }, this.internalState.name));
     }
   }]);
 
@@ -20035,7 +20067,100 @@ function (_DOMComponent) {
 }(_DOMComponent2.default);
 
 exports.default = Greeter;
-},{"../nori/DOMComponent":"js/nori/DOMComponent.js","../nori/Nori":"js/nori/Nori.js","../nori/util/Lorem":"js/nori/util/Lorem.js"}],"img/pattern/shattered.png":[function(require,module,exports) {
+},{"../nori/DOMComponent":"js/nori/DOMComponent.js","../nori/Nori":"js/nori/Nori.js","../nori/util/Lorem":"js/nori/util/Lorem.js","emotion":"../node_modules/emotion/dist/index.esm.js"}],"js/components/Ticker.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = void 0;
+
+var _DOMComponent2 = _interopRequireDefault(require("../nori/DOMComponent"));
+
+var _Nori = require("../nori/Nori");
+
+var _emotion = require("emotion");
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
+
+function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
+
+function _possibleConstructorReturn(self, call) { if (call && (_typeof(call) === "object" || typeof call === "function")) { return call; } return _assertThisInitialized(self); }
+
+function _assertThisInitialized(self) { if (self === void 0) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return self; }
+
+function _getPrototypeOf(o) { _getPrototypeOf = Object.setPrototypeOf ? Object.getPrototypeOf : function _getPrototypeOf(o) { return o.__proto__ || Object.getPrototypeOf(o); }; return _getPrototypeOf(o); }
+
+function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function"); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, writable: true, configurable: true } }); if (superClass) _setPrototypeOf(subClass, superClass); }
+
+function _setPrototypeOf(o, p) { _setPrototypeOf = Object.setPrototypeOf || function _setPrototypeOf(o, p) { o.__proto__ = p; return o; }; return _setPrototypeOf(o, p); }
+
+function _templateObject() {
+  var data = _taggedTemplateLiteral(["color: red;"]);
+
+  _templateObject = function _templateObject() {
+    return data;
+  };
+
+  return data;
+}
+
+function _taggedTemplateLiteral(strings, raw) { if (!raw) { raw = strings.slice(0); } return Object.freeze(Object.defineProperties(strings, { raw: { value: Object.freeze(raw) } })); }
+
+var red = (0, _emotion.css)(_templateObject());
+
+var Ticker =
+/*#__PURE__*/
+function (_DOMComponent) {
+  _inherits(Ticker, _DOMComponent);
+
+  // Subclasses should only take passed props and children
+  function Ticker(props, children) {
+    var _this;
+
+    _classCallCheck(this, Ticker);
+
+    _this = _possibleConstructorReturn(this, _getPrototypeOf(Ticker).call(this, 'h1', props, []));
+    _this.internalState = {
+      counter: 0
+    };
+
+    _this.didRender = function () {
+      console.log('Ticker rendered!');
+      setInterval(function (_) {
+        _this.state = {
+          counter: ++_this.state.counter
+        };
+      }, 1000);
+    };
+
+    _this.didUpdate = function () {//console.log('Ticker update', this.state);
+    };
+
+    return _this;
+  } // Default state
+
+
+  _createClass(Ticker, [{
+    key: "render",
+    value: function render() {
+      return (0, _Nori.h)("h6", null, "The count is ", (0, _Nori.h)("strong", {
+        className: red
+      }, this.internalState.counter), " seconds.");
+    }
+  }]);
+
+  return Ticker;
+}(_DOMComponent2.default);
+
+exports.default = Ticker;
+},{"../nori/DOMComponent":"js/nori/DOMComponent.js","../nori/Nori":"js/nori/Nori.js","emotion":"../node_modules/emotion/dist/index.esm.js"}],"img/pattern/shattered.png":[function(require,module,exports) {
 module.exports = "/shattered.a446e091.png";
 },{}],"js/index.js":[function(require,module,exports) {
 "use strict";
@@ -20055,6 +20180,8 @@ var _Box = _interopRequireDefault(require("./components/Box"));
 var _Lorem2 = _interopRequireDefault(require("./components/Lorem"));
 
 var _Greeter = _interopRequireDefault(require("./components/Greeter"));
+
+var _Ticker = _interopRequireDefault(require("./components/Ticker"));
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -20130,9 +20257,9 @@ var testBox = (0, _Nori.h)(_Box.default, {
   mode: _Lorem2.default.TITLE
 }), (0, _Nori.h)(_Box.default, {
   className: whiteBox
-}, (0, _Nori.h)(Sfc, null), (0, _Nori.h)("p", null, "Click the name below to change ..."), (0, _Nori.h)(_Greeter.default, null), (0, _Nori.h)("p", null, "Oh, look. Another one ..."), (0, _Nori.h)(_Greeter.default, null))))));
+}, (0, _Nori.h)(Sfc, null), (0, _Nori.h)(_Ticker.default, null), (0, _Nori.h)(_Greeter.default, null), (0, _Nori.h)("p", null, "Oh, look. Another one ..."), (0, _Nori.h)(_Greeter.default, null))))));
 (0, _Nori.renderDOM)(testBox, applicationRoot);
-},{"./theme/Global":"js/theme/Global.js","./theme/Theme":"js/theme/Theme.js","emotion":"../node_modules/emotion/dist/index.esm.js","./nori/util/Lorem":"js/nori/util/Lorem.js","./nori/Nori":"js/nori/Nori.js","./components/Box":"js/components/Box.js","./components/Lorem":"js/components/Lorem.js","./components/Greeter":"js/components/Greeter.js","../img/pattern/shattered.png":"img/pattern/shattered.png"}],"../node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
+},{"./theme/Global":"js/theme/Global.js","./theme/Theme":"js/theme/Theme.js","emotion":"../node_modules/emotion/dist/index.esm.js","./nori/util/Lorem":"js/nori/util/Lorem.js","./nori/Nori":"js/nori/Nori.js","./components/Box":"js/components/Box.js","./components/Lorem":"js/components/Lorem.js","./components/Greeter":"js/components/Greeter.js","./components/Ticker":"js/components/Ticker.js","../img/pattern/shattered.png":"img/pattern/shattered.png"}],"../node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
 var global = arguments[3];
 var OVERLAY_ID = '__parcel__error__overlay__';
 var OldModule = module.bundle.Module;

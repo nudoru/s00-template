@@ -9,6 +9,7 @@ import {h, renderDOM, } from './nori/Nori';
 import Box from './components/Box';
 import Lorem from './components/Lorem';
 import Greeter from './components/Greeter';
+import Ticker from './components/Ticker';
 
 // ${tme.gradients['premium-white']};
 const appContainerBG = require('../img/pattern/shattered.png');
@@ -57,7 +58,7 @@ let testBox = <Box key='main' className={appContainer}>
           <Lorem element='p' min={5} max={5} mode={Lorem.TITLE}/>
           <Box className={whiteBox}>
             <Sfc/>
-            <p>Click the name below to change ...</p>
+            <Ticker />
             <Greeter />
             <p>Oh, look. Another one ...</p>
             <Greeter />

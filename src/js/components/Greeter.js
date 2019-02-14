@@ -7,6 +7,9 @@
 import DOMComponent from '../nori/DOMComponent';
 import {h} from "../nori/Nori";
 import * as L from '../nori/util/Lorem';
+import {css} from 'emotion';
+
+const blue = css`color: blue;`;
 
 export default class Greeter extends DOMComponent {
 
@@ -44,6 +47,6 @@ export default class Greeter extends DOMComponent {
     return <h1 actions={{
       click: this.$onClick,
       render: this.$onRender
-    }}>Hello, <em>{this.internalState.name}</em></h1>;
+    }}>Hello, <em className={blue}>{this.internalState.name}</em></h1>;
   }
 }
