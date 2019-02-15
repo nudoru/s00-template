@@ -27,6 +27,22 @@ export const createElement = child => {
   return HTMLStrToNode(child);
 };
 
+
+const updateProp = (element, key, newValue, oldVaue) => {
+  if (!newValue) {
+    removeProp(element, key, oldVaue);
+  } else if (!oldVaue || newValue !== oldVaue) {
+    setProp(element, key, newValue);
+  }
+};
+
+const updateProps = (element, newProps, oldProps = {}) => {
+  let props = Object.assign({}, newProps, oldProps);
+  Object.keys(props).forEach(key => {
+    updateProp(element, key, newProps[key], oldProps[key]);
+  });
+};
+
 export const setProps = (element, props) => Object.keys(props).forEach(key => {
   let value = props[key];
   setProp(element, key, value);

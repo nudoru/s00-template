@@ -19493,6 +19493,22 @@ var createElement = function createElement(child) {
 
 exports.createElement = createElement;
 
+var updateProp = function updateProp(element, key, newValue, oldVaue) {
+  if (!newValue) {
+    removeProp(element, key, oldVaue);
+  } else if (!oldVaue || newValue !== oldVaue) {
+    setProp(element, key, newValue);
+  }
+};
+
+var updateProps = function updateProps(element, newProps) {
+  var oldProps = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
+  var props = Object.assign({}, newProps, oldProps);
+  Object.keys(props).forEach(function (key) {
+    updateProp(element, key, newProps[key], oldProps[key]);
+  });
+};
+
 var setProps = function setProps(element, props) {
   return Object.keys(props).forEach(function (key) {
     var value = props[key];
