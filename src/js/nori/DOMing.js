@@ -27,21 +27,58 @@ export const createElement = child => {
   return HTMLStrToNode(child);
 };
 
-// TODO filter out non-HTML attributes
-// TODO set boolean props?
-// https://developer.mozilla.org/en-US/docs/Web/HTML/Attributes
 export const setProps = (element, props) => Object.keys(props).forEach(key => {
+  let value = props[key];
+  setProp(element, key, value);
+  return element;
+});
+
+export const setProp = (element, key, value) => {
   if (!$isSpecialProp(key)) {
-    let value = props[key];
     if (key === 'className') {
       key = 'class';
     } else if (key === 'id') {
       key = 'data-nid';
     }
-    element.setAttribute(key, value);
+
+    if (typeof value === 'boolean') {
+      setBooleanProp(element, key, value);
+    } else {
+      element.setAttribute(key, value);
+    }
   }
-  return element;
-});
+};
+
+export const setBooleanProp = (element, key, value) => {
+  if (value) {
+    element.setAttribute(key, value);
+    element[key] = true;
+  } else {
+    element[key] = false;
+  }
+};
+
+export const removeProp = (element, key, value) => {
+  if (!$isSpecialProp(key)) {
+    if (key === 'className') {
+      key = 'class';
+    } else if (key === 'id') {
+      key = 'data-nid';
+    }
+
+    if (typeof value === 'boolean') {
+      removeBooleanProp(element, key);
+    } else {
+      element.removeAttribute(key);
+    }
+  }
+};
+
+export const removeBooleanProp = (element, key) => {
+  element.removeAttribute(key);
+  element[key] = false;
+};
+
 
 export const isNoriComponent = test => test.$$typeof && Symbol.keyFor(test.$$typeof) === 'nori.component';
 

@@ -19446,7 +19446,7 @@ exports.removeActions = removeActions;
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.removeChildren = exports.removeChild = exports.isNoriComponent = exports.setProps = exports.createElement = exports.createElementTree = exports.createDOM = void 0;
+exports.removeChildren = exports.removeChild = exports.isNoriComponent = exports.removeBooleanProp = exports.removeProp = exports.setBooleanProp = exports.setProp = exports.setProps = exports.createElement = exports.createElementTree = exports.createDOM = void 0;
 
 var _DOMToolbox = require("./browser/DOMToolbox");
 
@@ -19489,32 +19489,73 @@ var createElement = function createElement(child) {
   }
 
   return (0, _DOMToolbox.HTMLStrToNode)(child);
-}; // TODO filter out non-HTML attributes
-// TODO set boolean props?
-// https://developer.mozilla.org/en-US/docs/Web/HTML/Attributes
-
+};
 
 exports.createElement = createElement;
 
 var setProps = function setProps(element, props) {
   return Object.keys(props).forEach(function (key) {
-    if (!$isSpecialProp(key)) {
-      var value = props[key];
-
-      if (key === 'className') {
-        key = 'class';
-      } else if (key === 'id') {
-        key = 'data-nid';
-      }
-
-      element.setAttribute(key, value);
-    }
-
+    var value = props[key];
+    setProp(element, key, value);
     return element;
   });
 };
 
 exports.setProps = setProps;
+
+var setProp = function setProp(element, key, value) {
+  if (!$isSpecialProp(key)) {
+    if (key === 'className') {
+      key = 'class';
+    } else if (key === 'id') {
+      key = 'data-nid';
+    }
+
+    if (typeof value === 'boolean') {
+      setBooleanProp(element, key, value);
+    } else {
+      element.setAttribute(key, value);
+    }
+  }
+};
+
+exports.setProp = setProp;
+
+var setBooleanProp = function setBooleanProp(element, key, value) {
+  if (value) {
+    element.setAttribute(key, value);
+    element[key] = true;
+  } else {
+    element[key] = false;
+  }
+};
+
+exports.setBooleanProp = setBooleanProp;
+
+var removeProp = function removeProp(element, key, value) {
+  if (!$isSpecialProp(key)) {
+    if (key === 'className') {
+      key = 'class';
+    } else if (key === 'id') {
+      key = 'data-nid';
+    }
+
+    if (typeof value === 'boolean') {
+      removeBooleanProp(element, key);
+    } else {
+      element.removeAttribute(key);
+    }
+  }
+};
+
+exports.removeProp = removeProp;
+
+var removeBooleanProp = function removeBooleanProp(element, key) {
+  element.removeAttribute(key);
+  element[key] = false;
+};
+
+exports.removeBooleanProp = removeBooleanProp;
 
 var isNoriComponent = function isNoriComponent(test) {
   return test.$$typeof && Symbol.keyFor(test.$$typeof) === 'nori.component';
@@ -20100,7 +20141,7 @@ function (_DOMComponent) {
         _this.state = {
           counter: ++_this.state.counter
         };
-      }, 1000);
+      }, 5000);
     };
 
     _this.componentDidUpdate = function () {//console.log('Ticker update', this.state);
