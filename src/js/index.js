@@ -1,19 +1,17 @@
 /* @jsx h */
 
-import * as GlobalCSS from './theme/Global'; // For global CSS reset + a few styles for html and body
+import {Global} from './theme/Global';
 import {theme} from './theme/Theme';
 import {css} from 'emotion';
-import * as L from './nori/util/Lorem'
-import {h, renderDOM, } from './nori/Nori';
-
+import {h, render,} from './nori/Nori';
 import Box from './components/Box';
 import Lorem from './components/Lorem';
-import Greeter from './components/Greeter';
 import Ticker from './components/Ticker';
+import Greeter from './components/Greeter';
 
 // ${tme.gradients['premium-white']};
 const appContainerBG = require('../img/pattern/shattered.png');
-const appContainer = css`
+const appContainer   = css`
   position: absolute;
   overflow: auto;
   display: grid;
@@ -49,23 +47,29 @@ const applicationRoot = document.querySelector('#js-application');
 
 const Sfc = _ => <h1>I'm a stateless functional component</h1>;
 
-let testBox = <Box key='main' className={appContainer}>
-    <Box className={blackBox}>
-      <Lorem mode={Lorem.TITLE}/>
-      <Box className={whiteBox}>
-        <Lorem mode={Lorem.TITLE}/>
-        <Box className={blackBox}>
-          <Lorem mode={Lorem.TITLE}/>
-          <Box className={whiteBox}>
-            <Sfc/>
-            <Ticker />
-            <Greeter />
-            <p>Oh, look. Another one ...</p>
-            <Greeter />
-          </Box>
-        </Box>
-      </Box>
+let testHTML = <div><h1>Heading 1</h1>
+  <div>
+    <h1>1</h1>
+    <Lorem mode={Lorem.TITLE}/>
+    <h3>3</h3>
+    <p>Para<strong>BOLD<em>EM!</em></strong></p>
+    <Box className={whiteBox}>
+      <Sfc/>
     </Box>
-  </Box>;
+  </div>
+</div>;
 
-renderDOM(testBox, applicationRoot);
+let testBox = <Box key='main' className={appContainer}>
+  <Box className={blackBox}>
+    <Lorem mode={Lorem.TITLE}/>
+    <Box className={whiteBox}>
+      <Sfc/>
+      <Ticker/>
+      <Greeter/>
+      <p>Oh, look. Another one ...</p>
+      <Greeter/>
+    </Box>
+  </Box>
+</Box>;
+
+render(testBox, applicationRoot);

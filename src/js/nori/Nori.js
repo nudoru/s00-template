@@ -1,85 +1,163 @@
-import DOMComponent from './DOMComponent';
-import Is from './util/is';
 import {removeAllElements} from "./browser/DOMToolbox";
 import {flatten} from "./util/ArrayUtils";
+import {setProps, updateProps} from "./DOMing";
+import {setEvents} from "./Eventing";
+import {getNextId} from "./util/ElementIDCreator";
 
 //https://jasonformat.com/wtf-is-jsx/
 //https://medium.com/@bluepnume/jsx-is-a-stellar-invention-even-with-react-out-of-the-picture-c597187134b7
 
+let lastHostTree,
+    $hostNode,
+    componentInstanceMap = {},
+    didMountQueue        = [];
+
 // Convenience method to create new components. Used by the Babel/JSX transpiler
 export const h = (type, props, ...args) => {
-  props = props || {};
+  props    = props || {};
+  props.id = props.key || getNextId();
 
-  let children = args.length ? flatten(args) : null;
-
-  if (Is.string(type)) {
-    // "regular" html tag
-    return new DOMComponent(type, props, children);
-  } else {
-    // another component
-    return new type(props, children);
-  }
+  return {
+    type, props, children: args.length ? flatten(args) : [], forceUpdate: false
+  };
 };
 
 
+const createElement = node => {
+  let $el;
+  if (typeof node === 'string' || typeof node === 'number') {
+    // Plain value of a tag
+    $el = document.createTextNode(node);
+  } else if (typeof node.type === 'function') {
+    let instance,
+        existingInstance = false;
+
+    // If the instance has been flagged as updated (new prop on the map entry) rerender?
+    if (componentInstanceMap.hasOwnProperty(node.props.id)) {
+      instance         = componentInstanceMap[node.props.id];
+      existingInstance = true;
+    } else {
+      instance                            = new node.type(node.props, node.children);
+      componentInstanceMap[node.props.id] = instance;
+    }
+
+    if (typeof instance.render === 'function') {
+      // Component
+      // TODO set a reference in the component to the DOM node created here
+      $el              = createElement(instance.render());
+      instance.current = $el;
+    } else {
+      // Stateless functional component
+      $el = createElement(instance);
+    }
+
+    if (typeof instance.componentDidMount === 'function' && !existingInstance) {
+      didMountQueue.push(instance.componentDidMount.bind(instance));
+    }
+  } else if (typeof node === 'object' && typeof node.type === 'string') {
+    // Normal tag
+    $el = document.createElement(node.type);
+    node.children
+      .map(createElement)
+      .forEach($el.appendChild.bind($el));
+  } else {
+    console.warn(`Unknown node type ${node} : ${node.type}`);
+  }
+
+  setProps($el, node.props || {});
+  setEvents(node.props, $el);
+
+  return $el;
+};
+
+const changed = (newNode, oldNode) => {
+  if(newNode.forceUpdate) {
+    return true;
+  }
+  return typeof newNode !== typeof oldNode ||
+    typeof newNode === 'string' && newNode !== oldNode ||
+    newNode.type !== oldNode.type
+};
+
+// TODO need to call willUpdate and didUpdate
+const updateElement = ($hostNode, newNode, oldNode, index = 0) => {
+
+  if (!oldNode) {
+    $hostNode.appendChild(
+      createElement(newNode)
+    );
+  } else if (!newNode) {
+    // TODO need to remove events
+    $hostNode.removeChild(
+      $hostNode.childNodes[index]
+    );
+  } else if (changed(newNode, oldNode)) {
+    $hostNode.replaceChild(
+      createElement(newNode),
+      $hostNode.childNodes[index]
+    );
+  } else if (newNode.type) {
+    updateProps(
+      $hostNode.childNodes[index],
+      newNode.props,
+      oldNode.props
+    );
+    const newLength = newNode.children.length;
+    const oldLength = oldNode.children.length;
+
+    for (let i = 0; i < newLength || i < oldLength; i++) {
+      updateElement(
+        $hostNode.childNodes[index],
+        newNode.children[i],
+        oldNode.children[i],
+        i
+      );
+    }
+  }
+}
+
 // Render a component to a dom node
-export const renderDOM = (component, hostNode, removeExisting = true) => {
+export const render = (component, hostNode, removeExisting = true) => {
   if (removeExisting) {
     removeAllElements(hostNode);
   }
-  hostNode.appendChild(component.$createVDOM());
+
+  lastHostTree = component;
+  $hostNode    = hostNode;
+
+  updateElement(hostNode, component);
+  // hostNode.appendChild(createElement(component));
+
+  didMountQueue.forEach(fn => fn());
+  didMountQueue = [];
 };
 
-// Simple implementation of React's useState hook, similar API totes different impl
-// https://reactjs.org/docs/hooks-state.html
+// TODO Store updates and do all at once on an interval? 1ms?
+export const enqueueUpdate = (id) => {
+  // console.log(`component update on ${id}`);
+  let newHostTree = markForceUpdateVDOMInTree(lastHostTree, id);
+  updateElement($hostNode, newHostTree, lastHostTree);
+  clearForceUpdateVDOMInTree(newHostTree);
+  lastHostTree = newHostTree;
+};
 
-/*
-Merge fn for updater
-prevState => ({...prevState, ...updatedValues});
-}
-
-//for(let i=0; i<5; i++) {
-  //   let [foo, setFoo] = useState('foo');
-  //   console.log('foo is',foo);
-  //   foo = setFoo(ps => ps + 'BAZ!');
-  //   console.log('foo is',foo);
-  //   foo = setFoo(ps => ps + 'BAZ!');
-  //   console.log('foo is',foo);
-  //   foo = setFoo(ps => ps + 'BAZ!');
-  //   console.log('foo is',foo);
-  //}
-
- */
-
-let __stateValueMap = [];
-
-export function useState(initial) {
-
-  let stateIdx = __stateValueMap.length;
-
-  if (!__stateValueMap[stateIdx]) {
-    __stateValueMap[stateIdx] = initial;
-  } else {
-  }
-
-  // console.log('useState', __stateValueMap);
-
-  let setState = (newState) => {
-
-    let currentValue = __stateValueMap[stateIdx];
-
-    // console.log('updating the index at ', stateIdx, 'current value', currentValue);
-
-    if (typeof newState === "function") {
-      currentValue = newState(currentValue);
-    } else {
-      currentValue = newState;
+const markForceUpdateVDOMInTree = (vdom, id) => {
+  if(typeof vdom === 'object') {
+    if(vdom.props.id === id) {
+      vdom.forceUpdate = true;
+    } else if(vdom.props.children){
+      vdom.props.children.forEach(child => markForceUpdateVDOMInTree(child, id));
     }
+  }
+  return vdom;
+};
 
-    __stateValueMap[stateIdx] = currentValue;
-
-    return currentValue;
-  };
-
-  return [initial, setState];
-}
+const clearForceUpdateVDOMInTree = (vdom) => {
+  if(typeof vdom === 'object') {
+    if(vdom.props.children){
+      vdom.forceUpdate = false;
+      vdom.props.children.forEach(child => clearForceUpdateVDOMInTree(child));
+    }
+  }
+  return vdom;
+};

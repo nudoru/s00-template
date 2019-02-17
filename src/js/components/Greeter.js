@@ -43,6 +43,7 @@ export default class Greeter extends DOMComponent {
   };
 
   render() {
-    return <h1 click={this.$onClick}>Hello, <em className={blue}>{this.internalState.name}</em></h1>;
+    console.log('Greeter rendering');
+    return <h1 click={this.$onClick}>Hello, <em className={blue}>{this.state.name}</em></h1>;
   }
 }

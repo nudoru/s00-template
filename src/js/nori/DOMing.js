@@ -11,23 +11,6 @@ const specialProps = domEventsList.concat(['tweens', 'state', 'actions', 'childr
 
 const $isSpecialProp = test => specialProps.includes(test);
 
-export const createDOM = (type, props, children) => {
-  let element = document.createElement(type);
-  setProps(element, props);
-  createElementTree(element, children);
-  return element;
-};
-
-export const createElementTree = (hostNode, children) => arrify(children).map(el => createElement(el)).forEach(child => hostNode.appendChild(child));
-
-export const createElement = child => {
-  if (isNoriComponent(child)) {
-    return child.$createVDOM();
-  }
-  return HTMLStrToNode(child);
-};
-
-
 const updateProp = (element, key, newValue, oldVaue) => {
   if (!newValue) {
     removeProp(element, key, oldVaue);
@@ -36,7 +19,7 @@ const updateProp = (element, key, newValue, oldVaue) => {
   }
 };
 
-const updateProps = (element, newProps, oldProps = {}) => {
+export const updateProps = (element, newProps, oldProps = {}) => {
   let props = Object.assign({}, newProps, oldProps);
   Object.keys(props).forEach(key => {
     updateProp(element, key, newProps[key], oldProps[key]);

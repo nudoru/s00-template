@@ -21,7 +21,7 @@ injectGlobal`
     margin: 0;
     padding: 0;
     min-height: 100vh;
-    font-size: ${theme.fontSizes[3]};
+    font-size: ${theme.fontSizes[2]};
     font-family: 'Abel', 'Helvetica Neue', Helvetica, Arial, sans-serif;
   }
   h1 {

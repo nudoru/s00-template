@@ -10,9 +10,9 @@ const ACTION_BEHAVIOR = 'behavior';
 const BEHAVIORS = [];
 
 export const mapActions = props => Object.keys(props).reduce((acc, key) => {
-  let value = props[key],
-      domEvt = isDomEvent(key),
-      actionType =  domEvt ? ACTION_EVENT : ACTION_BEHAVIOR;
+  let value      = props[key],
+      domEvt     = isDomEvent(key),
+      actionType = domEvt ? ACTION_EVENT : ACTION_BEHAVIOR;
 
   if (domEvt || BEHAVIORS.includes(key)) {
     acc.push({
@@ -25,6 +25,13 @@ export const mapActions = props => Object.keys(props).reduce((acc, key) => {
   return acc;
 }, []);
 
+export const setEvents = (props = {}, element = null) => mapActions(props).forEach(evt => {
+  if (evt.type === ACTION_EVENT) {
+    evt.internalHandler = handleEventTrigger(evt, element);
+    element.addEventListener(evt.event, evt.internalHandler);
+  }
+});
+
 // TODO implement options and useCapture? https://developer.mozilla.org/en-US/docs/Web/API/EventTarget/addEventListener
 export const applyActions = (component, element) => component.actionMap.forEach(evt => {
   if (evt.type === ACTION_EVENT) {
@@ -34,8 +41,8 @@ export const applyActions = (component, element) => component.actionMap.forEach(
 });
 
 export const createEventObject = (e, src = null) => ({
-  event    : e,
-  component: src
+  event : e,
+  target: src
 });
 
 export const handleEventTrigger = (evt, src) => e => evt.externalHandler(createEventObject(e, src));

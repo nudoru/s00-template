@@ -9,6 +9,11 @@ Taking a break from React and playing around with the new Vanilla JS framework f
 - more easily support animations than React
 - more stuff
 
+## Attribution
+
+Large parts of the JSX, VDOM processing based on
+- https://medium.com/@deathmood/how-to-write-your-own-virtual-dom-ee74acc13060
+
 ## Component
 
 The component class abstracts the creation and basic management of a DOM node in a "Reactish" kinda-sorta way. Because the goal is to get DOM elements on the screen, no virtual DOM is used - just plain old appendChild. Snabbdom may be implemented in the future.

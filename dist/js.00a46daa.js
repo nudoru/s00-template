@@ -1595,458 +1595,8 @@ function _taggedTemplateLiteral(strings, raw) { if (!raw) { raw = strings.slice(
 
 // normalize.css v8.0.0 | MIT License | github.com/necolas/normalize.css
 // + Customs
-(0, _emotion.injectGlobal)(_templateObject(), _Theme.modularScale.ms2, _Theme.theme.fontSizes[3]);
-},{"emotion":"../node_modules/emotion/dist/index.esm.js","./Theme":"js/theme/Theme.js"}],"js/nori/util/NumberUtils.js":[function(require,module,exports) {
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.distanceTL = exports.isBetween = exports.clamp = exports.rndNumber = exports.isInteger = void 0;
-
-var isInteger = function isInteger(str) {
-  return /^-?\d+$/.test(str);
-};
-
-exports.isInteger = isInteger;
-
-var rndNumber = function rndNumber(min, max) {
-  return Math.floor(Math.random() * (max - min + 1)) + min;
-};
-
-exports.rndNumber = rndNumber;
-
-var clamp = function clamp(val, min, max) {
-  return Math.max(min, Math.min(max, val));
-};
-
-exports.clamp = clamp;
-
-var isBetween = function isBetween(val, min, max) {
-  return val > min && val < max;
-};
-
-exports.isBetween = isBetween;
-
-var distanceTL = function distanceTL(point1, point2) {
-  var xd = point2.left - point1.left,
-      yd = point2.top - point1.top;
-  return Math.sqrt(xd * xd + yd * yd);
-};
-
-exports.distanceTL = distanceTL;
-},{}],"js/nori/util/StringUtils.js":[function(require,module,exports) {
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.unslugify = exports.slugify = exports.removeWhiteSpace = exports.DOMtoCSSStyle = exports.dasherize = exports.underscore = exports.capitalize = exports.unescapeHTML = exports.removeEntities = exports.removeTags = exports.ellipses = exports.toTitleCase = exports.capitalizeFirstLetter = void 0;
-
-var _this = void 0;
-
-var capitalizeFirstLetter = function capitalizeFirstLetter(str) {
-  return str.charAt(0).toUpperCase() + str.substring(1);
-};
-
-exports.capitalizeFirstLetter = capitalizeFirstLetter;
-
-var toTitleCase = function toTitleCase(str) {
-  return str.replace(/\w\S*/g, function (txt) {
-    return txt.charAt(0).toUpperCase() + txt.substr(1);
-  });
-};
-
-exports.toTitleCase = toTitleCase;
-
-var ellipses = function ellipses(len) {
-  return _this.length > len ? _this.substr(0, len) + "..." : _this;
-}; // From https://github.com/sstephenson/prototype/blob/d9411e5/src/prototype/lang/string.js#L426
-// export const removeTags2 = (str) => {
-//   return str.replace(/<\w+(\s+("[^"]*"|'[^']*'|[^>])+)?>|<\/\w+>/gi, '');
-// };
-
-
-exports.ellipses = ellipses;
-
-var removeTags = function removeTags(str) {
-  return str.replace(/(<([^>]+)>)/ig, '');
-};
-
-exports.removeTags = removeTags;
-
-var removeEntities = function removeEntities(str) {
-  return str.replace(/(&(#?)(?:[a-z\d]+|#\d+|#x[a-f\d]+);)/ig, '');
-}; // From https://github.com/sstephenson/prototype/blob/d9411e5/src/prototype/lang/string.js#L426
-
-
-exports.removeEntities = removeEntities;
-
-var unescapeHTML = function unescapeHTML(str) {
-  // Warning: In 1.7 String#unescapeHTML will no longer call String#stripTags.
-  return removeTags(str).replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&');
-};
-
-exports.unescapeHTML = unescapeHTML;
-
-var capitalize = function capitalize(str) {
-  return str.charAt(0).toUpperCase() + _this.substring(1).toLowerCase();
-};
-
-exports.capitalize = capitalize;
-
-var underscore = function underscore(str) {
-  return str.replace(/::/g, '/').replace(/([A-Z]+)([A-Z][a-z])/g, '$1_$2').replace(/([a-z\d])([A-Z])/g, '$1_$2').replace(/-/g, '_').toLowerCase();
-};
-
-exports.underscore = underscore;
-
-var dasherize = function dasherize(str) {
-  return str.replace(/_/g, '-');
-};
-
-exports.dasherize = dasherize;
-
-var DOMtoCSSStyle = function DOMtoCSSStyle(str) {
-  return dasherize(underscore(str));
-};
-
-exports.DOMtoCSSStyle = DOMtoCSSStyle;
-
-var removeWhiteSpace = function removeWhiteSpace(str) {
-  return str.replace(/(\r\n|\n|\r|\t|\s)/gm, '').replace(/>\s+</g, '><');
-};
-
-exports.removeWhiteSpace = removeWhiteSpace;
-
-var slugify = function slugify(str) {
-  return str.split(' ').map(function (s) {
-    return s.toLowerCase();
-  }).join('_');
-};
-
-exports.slugify = slugify;
-
-var unslugify = function unslugify(str) {
-  return str.split('_').map(function (s) {
-    return s.charAt(0).toUpperCase() + s.substring(1);
-  }).join(' ');
-};
-
-exports.unslugify = unslugify;
-},{}],"js/nori/util/ArrayUtils.js":[function(require,module,exports) {
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.flatten = exports.range = exports.shuffleArray = exports.arryArryToArryObj = exports.getDifferences = exports.getRandomSetOfElements = exports.rndElement = exports.removeItem = exports.removeIndex = exports.unique = exports.mergeAll = exports.arrify = void 0;
-
-var _NumberUtils = require("./NumberUtils");
-
-var _this = void 0;
-
-function _toConsumableArray(arr) { return _arrayWithoutHoles(arr) || _iterableToArray(arr) || _nonIterableSpread(); }
-
-function _nonIterableSpread() { throw new TypeError("Invalid attempt to spread non-iterable instance"); }
-
-function _iterableToArray(iter) { if (Symbol.iterator in Object(iter) || Object.prototype.toString.call(iter) === "[object Arguments]") return Array.from(iter); }
-
-function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = new Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } }
-
-var arrify = function arrify(a) {
-  return Array.prototype.slice.call(a, 0);
-}; // Reference: http://jhusain.github.io/learnrx/index.html
-
-
-exports.arrify = arrify;
-
-var mergeAll = function mergeAll() {
-  var results = [];
-
-  _this.forEach(function (subArr) {
-    subArr.forEach(function (elm) {
-      results.push(elm);
-    });
-  });
-
-  return results;
-}; // http://www.shamasis.net/2009/09/fast-algorithm-to-find-unique-items-in-javascript-array/
-
-
-exports.mergeAll = mergeAll;
-
-var unique = function unique(arry) {
-  var o = {},
-      i,
-      l = arry.length,
-      r = [];
-
-  for (i = 0; i < l; i += 1) {
-    o[arry[i]] = arry[i];
-  }
-
-  for (i in o) {
-    r.push(o[i]);
-  }
-
-  return r;
-};
-
-exports.unique = unique;
-
-var removeIndex = function removeIndex(arr, idx) {
-  return arr.splice(idx, 1);
-};
-
-exports.removeIndex = removeIndex;
-
-var removeItem = function removeItem(arr, item) {
-  var idx = arr.indexOf(item);
-
-  if (idx > -1) {
-    arr.splice(idx, 1);
-  }
-};
-
-exports.removeItem = removeItem;
-
-var rndElement = function rndElement(arry) {
-  return arry[(0, _NumberUtils.rndNumber)(0, arry.length - 1)];
-};
-
-exports.rndElement = rndElement;
-
-var getRandomSetOfElements = function getRandomSetOfElements(srcarry, max) {
-  var arry = [],
-      i = 0,
-      len = (0, _NumberUtils.rndNumber)(1, max);
-
-  for (; i < len; i++) {
-    arry.push(_this.rndElement(srcarry));
-  }
-
-  return arry;
-};
-
-exports.getRandomSetOfElements = getRandomSetOfElements;
-
-var getDifferences = function getDifferences(arr1, arr2) {
-  var dif = [];
-  arr1.forEach(function (value) {
-    var present = false,
-        i = 0,
-        len = arr2.length;
-
-    for (; i < len; i++) {
-      if (value === arr2[i]) {
-        present = true;
-        break;
-      }
-    }
-
-    if (!present) {
-      dif.push(value);
-    }
-  });
-  return dif;
-};
-
-exports.getDifferences = getDifferences;
-
-var arryArryToArryObj = function arryArryToArryObj(src, keys) {
-  return src.reduce(function (p, c) {
-    var row = {};
-    keys.forEach(function (col, i) {
-      row[col] = c[i];
-    });
-    p.push(row);
-    return p;
-  }, []);
-}; //https://stackoverflow.com/questions/2450954/how-to-randomize-shuffle-a-javascript-array
-
-
-exports.arryArryToArryObj = arryArryToArryObj;
-
-var shuffleArray = function shuffleArray(array) {
-  for (var i = array.length - 1; i > 0; i--) {
-    var j = Math.floor(Math.random() * (i + 1));
-    // eslint-disable-line no-param-reassign
-    var _ref = [array[j], array[i]];
-    array[i] = _ref[0];
-    array[j] = _ref[1];
-  }
-
-  return array;
-};
-
-exports.shuffleArray = shuffleArray;
-
-var range = function range(len) {
-  return _toConsumableArray(Array(len).keys());
-};
-
-exports.range = range;
-
-var flatten = function flatten(arry) {
-  return [].concat.apply([], arry);
-};
-
-exports.flatten = flatten;
-},{"./NumberUtils":"js/nori/util/NumberUtils.js"}],"js/nori/util/Lorem.js":[function(require,module,exports) {
-"use strict";
-
-var _NumberUtils = require("./NumberUtils");
-
-var _StringUtils = require("./StringUtils");
-
-var _ArrayUtils = require("./ArrayUtils");
-
-var _currentText = [],
-    _defaultTextSet,
-    _maleFirstNames = [],
-    _femaleFirstNames = [],
-    _lastNames = [],
-    _punctuation = [],
-    _months,
-    _days;
-
-_defaultTextSet = 'Perhaps a re-engineering of your current world view will re-energize your online nomenclature to enable a new holistic interactive enterprise internet communication solution Upscaling the resurgent networking exchange solutions achieving a breakaway systemic electronic data interchange system synchronization thereby exploiting technical environments for mission critical broad based capacity constrained systems Fundamentally transforming well designed actionable information whose semantic content is virtually null To more fully clarify the current exchange a few aggregate issues will require addressing to facilitate this distributed communication venue In integrating non-aligned structures into existing legacy systems a holistic gateway blueprint is a backward compatible packaging tangible';
-_lastNames = 'Smith Johnson Williams Jones Brown Davis Miller Wilson Moore Taylor Anderson Thomas Jackson White Harris Martin Thompson Garcia Martinez Robinson Clark Rodriguez Lewis Lee Walker Hall Allen Young Hernandez King Wright Lopez Hill Scott Green Adams Baker Gonzalez Nelson Carter Mitchell Perez Roberts Turner Phillips Campbell Parker Evans Edwards Collins Stewart Sanchez Morris Rogers Reed Cook Morgan Bell Murphy'.split(' ');
-_maleFirstNames = 'Thomas Arthur Lewis Clarence Leonard Albert Paul Carl Ralph Roy Earl Samuel Howard Richard Francis Laurence Herbert Elmer Ernest Theodore David Alfred Donald Russell Eugene Andrew Kenneth Herman Jesse Lester Floyd Michael Edwin Clifford Benjamin Clyde Glen Oscar Daniel'.split(' ');
-_femaleFirstNames = 'Elizabeth Ann Helen Margaret Ellen Catherine Lily Florence Ada Lou Ethel Emily Ruth Rose Frances Alice Bertha Clara Mabel Minnie Grace Jane Evelyn Gertrude Edna Pearl Laura Hazel Edith Esther Harriet Sarah May Matilda Martha Myrtle Josephine Maud Agnes Keri Julia Irene Mildred Cora'.split(' ');
-_punctuation = ['.', '.', '.', '.', '?', '!'];
-_months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-_days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
-_currentText = _defaultTextSet.toLowerCase().split(' ');
-
-function rNumber(min, max) {
-  return (0, _NumberUtils.rndNumber)(min, max);
-}
-
-function oneOf(arry) {
-  return arry[rNumber(0, arry.length - 1)];
-}
-
-function severalOf(num, arry) {
-  if (num >= arry.length) {
-    return arry;
-  }
-
-  var res = [];
-
-  for (var i = 0; i < num; i++) {
-    res.push(oneOf(arry));
-  }
-
-  return res;
-}
-
-function sentence(min, max) {
-  return (0, _StringUtils.capitalizeFirstLetter)(text(min, max)) + oneOf(_punctuation);
-}
-
-function title(min, max) {
-  return (0, _StringUtils.toTitleCase)(text(min, max));
-}
-
-function paragraph(min, max) {
-  var str = '',
-      delim = ' ',
-      len = rNumber(min, max),
-      i = 0;
-
-  for (; i < len; i++) {
-    if (i === len - 1) {
-      delim = '';
-    }
-
-    str += sentence(1, 10) + delim;
-  }
-
-  return str;
-}
-
-function text(min, max) {
-  var str = '',
-      delim = ' ',
-      len = rNumber(min, max),
-      i = 0;
-
-  for (; i < len; i++) {
-    if (i === len - 1) {
-      delim = '';
-    }
-
-    str += oneOf(_currentText) + delim;
-  }
-
-  return str;
-}
-
-function getFirstName() {
-  return rNumber(0, 1) ? oneOf(_maleFirstNames) : oneOf(_femaleFirstNames);
-}
-
-function getLastName() {
-  return oneOf(_lastNames);
-}
-
-function firstLastName() {
-  return getFirstName() + ' ' + getLastName();
-}
-
-function lastFirstName() {
-  return getLastName() + ', ' + getFirstName();
-}
-/**
- * Better implementation http://stackoverflow.com/questions/9035627/elegant-method-to-generate-array-of-random-dates-within-two-dates
- * @returns {{monthNumber: *, monthName: *, monthDay, weekDayNumber: *, weekDay: *, year}}
- */
-
-
-function date() {
-  var month = rNumber(0, 11),
-      wkday = rNumber(0, 4),
-      date = {
-    monthNumber: month + 1,
-    monthName: _months[month],
-    monthDay: rNumber(1, 28),
-    weekDayNumber: wkday + 1,
-    weekDay: _days[wkday],
-    year: oneOf(['2018', '2019', '2020'])
-  };
-  date.string = date.monthName + ' ' + date.monthDay + ', ' + date.year;
-  return date;
-}
-/**
- * http://stackoverflow.com/questions/105034/create-guid-uuid-in-javascript
- * @returns {string}
- */
-
-
-function guid() {
-  function s4() {
-    return Math.floor((1 + Math.random()) * 0x10000).toString(16).substring(1);
-  }
-
-  return s4() + s4() + '-' + s4() + '-' + s4() + '-' + s4() + '-' + s4() + s4() + s4();
-}
-
-module.exports = {
-  rNumber: rNumber,
-  oneOf: oneOf,
-  severalOf: severalOf,
-  text: text,
-  sentence: sentence,
-  title: title,
-  paragraph: paragraph,
-  firstLastName: firstLastName,
-  lastFirstName: lastFirstName,
-  date: date,
-  guid: guid
-};
-},{"./NumberUtils":"js/nori/util/NumberUtils.js","./StringUtils":"js/nori/util/StringUtils.js","./ArrayUtils":"js/nori/util/ArrayUtils.js"}],"../node_modules/ramda/es/internal/_isPlaceholder.js":[function(require,module,exports) {
+(0, _emotion.injectGlobal)(_templateObject(), _Theme.modularScale.ms2, _Theme.theme.fontSizes[2]);
+},{"emotion":"../node_modules/emotion/dist/index.esm.js","./Theme":"js/theme/Theme.js"}],"../node_modules/ramda/es/internal/_isPlaceholder.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -18932,63 +18482,7 @@ var _zipObj = _interopRequireDefault(require("./zipObj"));
 var _zipWith = _interopRequireDefault(require("./zipWith"));
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-},{"./F":"../node_modules/ramda/es/F.js","./T":"../node_modules/ramda/es/T.js","./__":"../node_modules/ramda/es/__.js","./add":"../node_modules/ramda/es/add.js","./addIndex":"../node_modules/ramda/es/addIndex.js","./adjust":"../node_modules/ramda/es/adjust.js","./all":"../node_modules/ramda/es/all.js","./allPass":"../node_modules/ramda/es/allPass.js","./always":"../node_modules/ramda/es/always.js","./and":"../node_modules/ramda/es/and.js","./any":"../node_modules/ramda/es/any.js","./anyPass":"../node_modules/ramda/es/anyPass.js","./ap":"../node_modules/ramda/es/ap.js","./aperture":"../node_modules/ramda/es/aperture.js","./append":"../node_modules/ramda/es/append.js","./apply":"../node_modules/ramda/es/apply.js","./applySpec":"../node_modules/ramda/es/applySpec.js","./applyTo":"../node_modules/ramda/es/applyTo.js","./ascend":"../node_modules/ramda/es/ascend.js","./assoc":"../node_modules/ramda/es/assoc.js","./assocPath":"../node_modules/ramda/es/assocPath.js","./binary":"../node_modules/ramda/es/binary.js","./bind":"../node_modules/ramda/es/bind.js","./both":"../node_modules/ramda/es/both.js","./call":"../node_modules/ramda/es/call.js","./chain":"../node_modules/ramda/es/chain.js","./clamp":"../node_modules/ramda/es/clamp.js","./clone":"../node_modules/ramda/es/clone.js","./comparator":"../node_modules/ramda/es/comparator.js","./complement":"../node_modules/ramda/es/complement.js","./compose":"../node_modules/ramda/es/compose.js","./composeK":"../node_modules/ramda/es/composeK.js","./composeP":"../node_modules/ramda/es/composeP.js","./concat":"../node_modules/ramda/es/concat.js","./cond":"../node_modules/ramda/es/cond.js","./construct":"../node_modules/ramda/es/construct.js","./constructN":"../node_modules/ramda/es/constructN.js","./contains":"../node_modules/ramda/es/contains.js","./converge":"../node_modules/ramda/es/converge.js","./countBy":"../node_modules/ramda/es/countBy.js","./curry":"../node_modules/ramda/es/curry.js","./curryN":"../node_modules/ramda/es/curryN.js","./dec":"../node_modules/ramda/es/dec.js","./defaultTo":"../node_modules/ramda/es/defaultTo.js","./descend":"../node_modules/ramda/es/descend.js","./difference":"../node_modules/ramda/es/difference.js","./differenceWith":"../node_modules/ramda/es/differenceWith.js","./dissoc":"../node_modules/ramda/es/dissoc.js","./dissocPath":"../node_modules/ramda/es/dissocPath.js","./divide":"../node_modules/ramda/es/divide.js","./drop":"../node_modules/ramda/es/drop.js","./dropLast":"../node_modules/ramda/es/dropLast.js","./dropLastWhile":"../node_modules/ramda/es/dropLastWhile.js","./dropRepeats":"../node_modules/ramda/es/dropRepeats.js","./dropRepeatsWith":"../node_modules/ramda/es/dropRepeatsWith.js","./dropWhile":"../node_modules/ramda/es/dropWhile.js","./either":"../node_modules/ramda/es/either.js","./empty":"../node_modules/ramda/es/empty.js","./endsWith":"../node_modules/ramda/es/endsWith.js","./eqBy":"../node_modules/ramda/es/eqBy.js","./eqProps":"../node_modules/ramda/es/eqProps.js","./equals":"../node_modules/ramda/es/equals.js","./evolve":"../node_modules/ramda/es/evolve.js","./filter":"../node_modules/ramda/es/filter.js","./find":"../node_modules/ramda/es/find.js","./findIndex":"../node_modules/ramda/es/findIndex.js","./findLast":"../node_modules/ramda/es/findLast.js","./findLastIndex":"../node_modules/ramda/es/findLastIndex.js","./flatten":"../node_modules/ramda/es/flatten.js","./flip":"../node_modules/ramda/es/flip.js","./forEach":"../node_modules/ramda/es/forEach.js","./forEachObjIndexed":"../node_modules/ramda/es/forEachObjIndexed.js","./fromPairs":"../node_modules/ramda/es/fromPairs.js","./groupBy":"../node_modules/ramda/es/groupBy.js","./groupWith":"../node_modules/ramda/es/groupWith.js","./gt":"../node_modules/ramda/es/gt.js","./gte":"../node_modules/ramda/es/gte.js","./has":"../node_modules/ramda/es/has.js","./hasIn":"../node_modules/ramda/es/hasIn.js","./head":"../node_modules/ramda/es/head.js","./identical":"../node_modules/ramda/es/identical.js","./identity":"../node_modules/ramda/es/identity.js","./ifElse":"../node_modules/ramda/es/ifElse.js","./inc":"../node_modules/ramda/es/inc.js","./indexBy":"../node_modules/ramda/es/indexBy.js","./indexOf":"../node_modules/ramda/es/indexOf.js","./init":"../node_modules/ramda/es/init.js","./innerJoin":"../node_modules/ramda/es/innerJoin.js","./insert":"../node_modules/ramda/es/insert.js","./insertAll":"../node_modules/ramda/es/insertAll.js","./intersection":"../node_modules/ramda/es/intersection.js","./intersperse":"../node_modules/ramda/es/intersperse.js","./into":"../node_modules/ramda/es/into.js","./invert":"../node_modules/ramda/es/invert.js","./invertObj":"../node_modules/ramda/es/invertObj.js","./invoker":"../node_modules/ramda/es/invoker.js","./is":"../node_modules/ramda/es/is.js","./isEmpty":"../node_modules/ramda/es/isEmpty.js","./isNil":"../node_modules/ramda/es/isNil.js","./join":"../node_modules/ramda/es/join.js","./juxt":"../node_modules/ramda/es/juxt.js","./keys":"../node_modules/ramda/es/keys.js","./keysIn":"../node_modules/ramda/es/keysIn.js","./last":"../node_modules/ramda/es/last.js","./lastIndexOf":"../node_modules/ramda/es/lastIndexOf.js","./length":"../node_modules/ramda/es/length.js","./lens":"../node_modules/ramda/es/lens.js","./lensIndex":"../node_modules/ramda/es/lensIndex.js","./lensPath":"../node_modules/ramda/es/lensPath.js","./lensProp":"../node_modules/ramda/es/lensProp.js","./lift":"../node_modules/ramda/es/lift.js","./liftN":"../node_modules/ramda/es/liftN.js","./lt":"../node_modules/ramda/es/lt.js","./lte":"../node_modules/ramda/es/lte.js","./map":"../node_modules/ramda/es/map.js","./mapAccum":"../node_modules/ramda/es/mapAccum.js","./mapAccumRight":"../node_modules/ramda/es/mapAccumRight.js","./mapObjIndexed":"../node_modules/ramda/es/mapObjIndexed.js","./match":"../node_modules/ramda/es/match.js","./mathMod":"../node_modules/ramda/es/mathMod.js","./max":"../node_modules/ramda/es/max.js","./maxBy":"../node_modules/ramda/es/maxBy.js","./mean":"../node_modules/ramda/es/mean.js","./median":"../node_modules/ramda/es/median.js","./memoize":"../node_modules/ramda/es/memoize.js","./memoizeWith":"../node_modules/ramda/es/memoizeWith.js","./merge":"../node_modules/ramda/es/merge.js","./mergeAll":"../node_modules/ramda/es/mergeAll.js","./mergeDeepLeft":"../node_modules/ramda/es/mergeDeepLeft.js","./mergeDeepRight":"../node_modules/ramda/es/mergeDeepRight.js","./mergeDeepWith":"../node_modules/ramda/es/mergeDeepWith.js","./mergeDeepWithKey":"../node_modules/ramda/es/mergeDeepWithKey.js","./mergeWith":"../node_modules/ramda/es/mergeWith.js","./mergeWithKey":"../node_modules/ramda/es/mergeWithKey.js","./min":"../node_modules/ramda/es/min.js","./minBy":"../node_modules/ramda/es/minBy.js","./modulo":"../node_modules/ramda/es/modulo.js","./multiply":"../node_modules/ramda/es/multiply.js","./nAry":"../node_modules/ramda/es/nAry.js","./negate":"../node_modules/ramda/es/negate.js","./none":"../node_modules/ramda/es/none.js","./not":"../node_modules/ramda/es/not.js","./nth":"../node_modules/ramda/es/nth.js","./nthArg":"../node_modules/ramda/es/nthArg.js","./o":"../node_modules/ramda/es/o.js","./objOf":"../node_modules/ramda/es/objOf.js","./of":"../node_modules/ramda/es/of.js","./omit":"../node_modules/ramda/es/omit.js","./once":"../node_modules/ramda/es/once.js","./or":"../node_modules/ramda/es/or.js","./over":"../node_modules/ramda/es/over.js","./pair":"../node_modules/ramda/es/pair.js","./partial":"../node_modules/ramda/es/partial.js","./partialRight":"../node_modules/ramda/es/partialRight.js","./partition":"../node_modules/ramda/es/partition.js","./path":"../node_modules/ramda/es/path.js","./pathEq":"../node_modules/ramda/es/pathEq.js","./pathOr":"../node_modules/ramda/es/pathOr.js","./pathSatisfies":"../node_modules/ramda/es/pathSatisfies.js","./pick":"../node_modules/ramda/es/pick.js","./pickAll":"../node_modules/ramda/es/pickAll.js","./pickBy":"../node_modules/ramda/es/pickBy.js","./pipe":"../node_modules/ramda/es/pipe.js","./pipeK":"../node_modules/ramda/es/pipeK.js","./pipeP":"../node_modules/ramda/es/pipeP.js","./pluck":"../node_modules/ramda/es/pluck.js","./prepend":"../node_modules/ramda/es/prepend.js","./product":"../node_modules/ramda/es/product.js","./project":"../node_modules/ramda/es/project.js","./prop":"../node_modules/ramda/es/prop.js","./propEq":"../node_modules/ramda/es/propEq.js","./propIs":"../node_modules/ramda/es/propIs.js","./propOr":"../node_modules/ramda/es/propOr.js","./propSatisfies":"../node_modules/ramda/es/propSatisfies.js","./props":"../node_modules/ramda/es/props.js","./range":"../node_modules/ramda/es/range.js","./reduce":"../node_modules/ramda/es/reduce.js","./reduceBy":"../node_modules/ramda/es/reduceBy.js","./reduceRight":"../node_modules/ramda/es/reduceRight.js","./reduceWhile":"../node_modules/ramda/es/reduceWhile.js","./reduced":"../node_modules/ramda/es/reduced.js","./reject":"../node_modules/ramda/es/reject.js","./remove":"../node_modules/ramda/es/remove.js","./repeat":"../node_modules/ramda/es/repeat.js","./replace":"../node_modules/ramda/es/replace.js","./reverse":"../node_modules/ramda/es/reverse.js","./scan":"../node_modules/ramda/es/scan.js","./sequence":"../node_modules/ramda/es/sequence.js","./set":"../node_modules/ramda/es/set.js","./slice":"../node_modules/ramda/es/slice.js","./sort":"../node_modules/ramda/es/sort.js","./sortBy":"../node_modules/ramda/es/sortBy.js","./sortWith":"../node_modules/ramda/es/sortWith.js","./split":"../node_modules/ramda/es/split.js","./splitAt":"../node_modules/ramda/es/splitAt.js","./splitEvery":"../node_modules/ramda/es/splitEvery.js","./splitWhen":"../node_modules/ramda/es/splitWhen.js","./startsWith":"../node_modules/ramda/es/startsWith.js","./subtract":"../node_modules/ramda/es/subtract.js","./sum":"../node_modules/ramda/es/sum.js","./symmetricDifference":"../node_modules/ramda/es/symmetricDifference.js","./symmetricDifferenceWith":"../node_modules/ramda/es/symmetricDifferenceWith.js","./tail":"../node_modules/ramda/es/tail.js","./take":"../node_modules/ramda/es/take.js","./takeLast":"../node_modules/ramda/es/takeLast.js","./takeLastWhile":"../node_modules/ramda/es/takeLastWhile.js","./takeWhile":"../node_modules/ramda/es/takeWhile.js","./tap":"../node_modules/ramda/es/tap.js","./test":"../node_modules/ramda/es/test.js","./times":"../node_modules/ramda/es/times.js","./toLower":"../node_modules/ramda/es/toLower.js","./toPairs":"../node_modules/ramda/es/toPairs.js","./toPairsIn":"../node_modules/ramda/es/toPairsIn.js","./toString":"../node_modules/ramda/es/toString.js","./toUpper":"../node_modules/ramda/es/toUpper.js","./transduce":"../node_modules/ramda/es/transduce.js","./transpose":"../node_modules/ramda/es/transpose.js","./traverse":"../node_modules/ramda/es/traverse.js","./trim":"../node_modules/ramda/es/trim.js","./tryCatch":"../node_modules/ramda/es/tryCatch.js","./type":"../node_modules/ramda/es/type.js","./unapply":"../node_modules/ramda/es/unapply.js","./unary":"../node_modules/ramda/es/unary.js","./uncurryN":"../node_modules/ramda/es/uncurryN.js","./unfold":"../node_modules/ramda/es/unfold.js","./union":"../node_modules/ramda/es/union.js","./unionWith":"../node_modules/ramda/es/unionWith.js","./uniq":"../node_modules/ramda/es/uniq.js","./uniqBy":"../node_modules/ramda/es/uniqBy.js","./uniqWith":"../node_modules/ramda/es/uniqWith.js","./unless":"../node_modules/ramda/es/unless.js","./unnest":"../node_modules/ramda/es/unnest.js","./until":"../node_modules/ramda/es/until.js","./update":"../node_modules/ramda/es/update.js","./useWith":"../node_modules/ramda/es/useWith.js","./values":"../node_modules/ramda/es/values.js","./valuesIn":"../node_modules/ramda/es/valuesIn.js","./view":"../node_modules/ramda/es/view.js","./when":"../node_modules/ramda/es/when.js","./where":"../node_modules/ramda/es/where.js","./whereEq":"../node_modules/ramda/es/whereEq.js","./without":"../node_modules/ramda/es/without.js","./xprod":"../node_modules/ramda/es/xprod.js","./zip":"../node_modules/ramda/es/zip.js","./zipObj":"../node_modules/ramda/es/zipObj.js","./zipWith":"../node_modules/ramda/es/zipWith.js"}],"js/nori/util/is.js":[function(require,module,exports) {
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.default = void 0;
-
-function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
-
-var _default = {
-  existy: function existy(x) {
-    return x !== null;
-  },
-  truthy: function truthy(x) {
-    return x !== false && this.existy(x);
-  },
-  falsey: function falsey(x) {
-    return !this.truthy(x);
-  },
-  func: function func(object) {
-    return typeof object === "function";
-  },
-  object: function object(_object) {
-    return Object.prototype.toString.call(_object) === "[object Object]";
-  },
-  objectEmpty: function objectEmpty(object) {
-    for (var key in object) {
-      if (object.hasOwnProperty(key)) {
-        return false;
-      }
-    }
-
-    return true;
-  },
-  string: function string(object) {
-    return Object.prototype.toString.call(object) === "[object String]";
-  },
-  array: function array(object) {
-    return Array.isArray(object); //return Object.prototype.toString.call(object) === '[object Array]';
-  },
-  promise: function promise(_promise) {
-    return _promise && typeof _promise.then === 'function';
-  },
-  observable: function observable(_observable) {
-    return _observable && typeof _observable.subscribe === 'function';
-  },
-  element: function element(obj) {
-    return (typeof HTMLElement === "undefined" ? "undefined" : _typeof(HTMLElement)) === 'object' ? obj instanceof HTMLElement || obj instanceof DocumentFragment : //DOM2
-    obj && _typeof(obj) === 'object' && obj !== null && (obj.nodeType === 1 || obj.nodeType === 11) && typeof obj.nodeName === 'string';
-  },
-  integer: function integer(str) {
-    return /^-?\d+$/.test(str);
-  }
-};
-exports.default = _default;
-},{}],"js/nori/browser/DOMToolbox.js":[function(require,module,exports) {
+},{"./F":"../node_modules/ramda/es/F.js","./T":"../node_modules/ramda/es/T.js","./__":"../node_modules/ramda/es/__.js","./add":"../node_modules/ramda/es/add.js","./addIndex":"../node_modules/ramda/es/addIndex.js","./adjust":"../node_modules/ramda/es/adjust.js","./all":"../node_modules/ramda/es/all.js","./allPass":"../node_modules/ramda/es/allPass.js","./always":"../node_modules/ramda/es/always.js","./and":"../node_modules/ramda/es/and.js","./any":"../node_modules/ramda/es/any.js","./anyPass":"../node_modules/ramda/es/anyPass.js","./ap":"../node_modules/ramda/es/ap.js","./aperture":"../node_modules/ramda/es/aperture.js","./append":"../node_modules/ramda/es/append.js","./apply":"../node_modules/ramda/es/apply.js","./applySpec":"../node_modules/ramda/es/applySpec.js","./applyTo":"../node_modules/ramda/es/applyTo.js","./ascend":"../node_modules/ramda/es/ascend.js","./assoc":"../node_modules/ramda/es/assoc.js","./assocPath":"../node_modules/ramda/es/assocPath.js","./binary":"../node_modules/ramda/es/binary.js","./bind":"../node_modules/ramda/es/bind.js","./both":"../node_modules/ramda/es/both.js","./call":"../node_modules/ramda/es/call.js","./chain":"../node_modules/ramda/es/chain.js","./clamp":"../node_modules/ramda/es/clamp.js","./clone":"../node_modules/ramda/es/clone.js","./comparator":"../node_modules/ramda/es/comparator.js","./complement":"../node_modules/ramda/es/complement.js","./compose":"../node_modules/ramda/es/compose.js","./composeK":"../node_modules/ramda/es/composeK.js","./composeP":"../node_modules/ramda/es/composeP.js","./concat":"../node_modules/ramda/es/concat.js","./cond":"../node_modules/ramda/es/cond.js","./construct":"../node_modules/ramda/es/construct.js","./constructN":"../node_modules/ramda/es/constructN.js","./contains":"../node_modules/ramda/es/contains.js","./converge":"../node_modules/ramda/es/converge.js","./countBy":"../node_modules/ramda/es/countBy.js","./curry":"../node_modules/ramda/es/curry.js","./curryN":"../node_modules/ramda/es/curryN.js","./dec":"../node_modules/ramda/es/dec.js","./defaultTo":"../node_modules/ramda/es/defaultTo.js","./descend":"../node_modules/ramda/es/descend.js","./difference":"../node_modules/ramda/es/difference.js","./differenceWith":"../node_modules/ramda/es/differenceWith.js","./dissoc":"../node_modules/ramda/es/dissoc.js","./dissocPath":"../node_modules/ramda/es/dissocPath.js","./divide":"../node_modules/ramda/es/divide.js","./drop":"../node_modules/ramda/es/drop.js","./dropLast":"../node_modules/ramda/es/dropLast.js","./dropLastWhile":"../node_modules/ramda/es/dropLastWhile.js","./dropRepeats":"../node_modules/ramda/es/dropRepeats.js","./dropRepeatsWith":"../node_modules/ramda/es/dropRepeatsWith.js","./dropWhile":"../node_modules/ramda/es/dropWhile.js","./either":"../node_modules/ramda/es/either.js","./empty":"../node_modules/ramda/es/empty.js","./endsWith":"../node_modules/ramda/es/endsWith.js","./eqBy":"../node_modules/ramda/es/eqBy.js","./eqProps":"../node_modules/ramda/es/eqProps.js","./equals":"../node_modules/ramda/es/equals.js","./evolve":"../node_modules/ramda/es/evolve.js","./filter":"../node_modules/ramda/es/filter.js","./find":"../node_modules/ramda/es/find.js","./findIndex":"../node_modules/ramda/es/findIndex.js","./findLast":"../node_modules/ramda/es/findLast.js","./findLastIndex":"../node_modules/ramda/es/findLastIndex.js","./flatten":"../node_modules/ramda/es/flatten.js","./flip":"../node_modules/ramda/es/flip.js","./forEach":"../node_modules/ramda/es/forEach.js","./forEachObjIndexed":"../node_modules/ramda/es/forEachObjIndexed.js","./fromPairs":"../node_modules/ramda/es/fromPairs.js","./groupBy":"../node_modules/ramda/es/groupBy.js","./groupWith":"../node_modules/ramda/es/groupWith.js","./gt":"../node_modules/ramda/es/gt.js","./gte":"../node_modules/ramda/es/gte.js","./has":"../node_modules/ramda/es/has.js","./hasIn":"../node_modules/ramda/es/hasIn.js","./head":"../node_modules/ramda/es/head.js","./identical":"../node_modules/ramda/es/identical.js","./identity":"../node_modules/ramda/es/identity.js","./ifElse":"../node_modules/ramda/es/ifElse.js","./inc":"../node_modules/ramda/es/inc.js","./indexBy":"../node_modules/ramda/es/indexBy.js","./indexOf":"../node_modules/ramda/es/indexOf.js","./init":"../node_modules/ramda/es/init.js","./innerJoin":"../node_modules/ramda/es/innerJoin.js","./insert":"../node_modules/ramda/es/insert.js","./insertAll":"../node_modules/ramda/es/insertAll.js","./intersection":"../node_modules/ramda/es/intersection.js","./intersperse":"../node_modules/ramda/es/intersperse.js","./into":"../node_modules/ramda/es/into.js","./invert":"../node_modules/ramda/es/invert.js","./invertObj":"../node_modules/ramda/es/invertObj.js","./invoker":"../node_modules/ramda/es/invoker.js","./is":"../node_modules/ramda/es/is.js","./isEmpty":"../node_modules/ramda/es/isEmpty.js","./isNil":"../node_modules/ramda/es/isNil.js","./join":"../node_modules/ramda/es/join.js","./juxt":"../node_modules/ramda/es/juxt.js","./keys":"../node_modules/ramda/es/keys.js","./keysIn":"../node_modules/ramda/es/keysIn.js","./last":"../node_modules/ramda/es/last.js","./lastIndexOf":"../node_modules/ramda/es/lastIndexOf.js","./length":"../node_modules/ramda/es/length.js","./lens":"../node_modules/ramda/es/lens.js","./lensIndex":"../node_modules/ramda/es/lensIndex.js","./lensPath":"../node_modules/ramda/es/lensPath.js","./lensProp":"../node_modules/ramda/es/lensProp.js","./lift":"../node_modules/ramda/es/lift.js","./liftN":"../node_modules/ramda/es/liftN.js","./lt":"../node_modules/ramda/es/lt.js","./lte":"../node_modules/ramda/es/lte.js","./map":"../node_modules/ramda/es/map.js","./mapAccum":"../node_modules/ramda/es/mapAccum.js","./mapAccumRight":"../node_modules/ramda/es/mapAccumRight.js","./mapObjIndexed":"../node_modules/ramda/es/mapObjIndexed.js","./match":"../node_modules/ramda/es/match.js","./mathMod":"../node_modules/ramda/es/mathMod.js","./max":"../node_modules/ramda/es/max.js","./maxBy":"../node_modules/ramda/es/maxBy.js","./mean":"../node_modules/ramda/es/mean.js","./median":"../node_modules/ramda/es/median.js","./memoize":"../node_modules/ramda/es/memoize.js","./memoizeWith":"../node_modules/ramda/es/memoizeWith.js","./merge":"../node_modules/ramda/es/merge.js","./mergeAll":"../node_modules/ramda/es/mergeAll.js","./mergeDeepLeft":"../node_modules/ramda/es/mergeDeepLeft.js","./mergeDeepRight":"../node_modules/ramda/es/mergeDeepRight.js","./mergeDeepWith":"../node_modules/ramda/es/mergeDeepWith.js","./mergeDeepWithKey":"../node_modules/ramda/es/mergeDeepWithKey.js","./mergeWith":"../node_modules/ramda/es/mergeWith.js","./mergeWithKey":"../node_modules/ramda/es/mergeWithKey.js","./min":"../node_modules/ramda/es/min.js","./minBy":"../node_modules/ramda/es/minBy.js","./modulo":"../node_modules/ramda/es/modulo.js","./multiply":"../node_modules/ramda/es/multiply.js","./nAry":"../node_modules/ramda/es/nAry.js","./negate":"../node_modules/ramda/es/negate.js","./none":"../node_modules/ramda/es/none.js","./not":"../node_modules/ramda/es/not.js","./nth":"../node_modules/ramda/es/nth.js","./nthArg":"../node_modules/ramda/es/nthArg.js","./o":"../node_modules/ramda/es/o.js","./objOf":"../node_modules/ramda/es/objOf.js","./of":"../node_modules/ramda/es/of.js","./omit":"../node_modules/ramda/es/omit.js","./once":"../node_modules/ramda/es/once.js","./or":"../node_modules/ramda/es/or.js","./over":"../node_modules/ramda/es/over.js","./pair":"../node_modules/ramda/es/pair.js","./partial":"../node_modules/ramda/es/partial.js","./partialRight":"../node_modules/ramda/es/partialRight.js","./partition":"../node_modules/ramda/es/partition.js","./path":"../node_modules/ramda/es/path.js","./pathEq":"../node_modules/ramda/es/pathEq.js","./pathOr":"../node_modules/ramda/es/pathOr.js","./pathSatisfies":"../node_modules/ramda/es/pathSatisfies.js","./pick":"../node_modules/ramda/es/pick.js","./pickAll":"../node_modules/ramda/es/pickAll.js","./pickBy":"../node_modules/ramda/es/pickBy.js","./pipe":"../node_modules/ramda/es/pipe.js","./pipeK":"../node_modules/ramda/es/pipeK.js","./pipeP":"../node_modules/ramda/es/pipeP.js","./pluck":"../node_modules/ramda/es/pluck.js","./prepend":"../node_modules/ramda/es/prepend.js","./product":"../node_modules/ramda/es/product.js","./project":"../node_modules/ramda/es/project.js","./prop":"../node_modules/ramda/es/prop.js","./propEq":"../node_modules/ramda/es/propEq.js","./propIs":"../node_modules/ramda/es/propIs.js","./propOr":"../node_modules/ramda/es/propOr.js","./propSatisfies":"../node_modules/ramda/es/propSatisfies.js","./props":"../node_modules/ramda/es/props.js","./range":"../node_modules/ramda/es/range.js","./reduce":"../node_modules/ramda/es/reduce.js","./reduceBy":"../node_modules/ramda/es/reduceBy.js","./reduceRight":"../node_modules/ramda/es/reduceRight.js","./reduceWhile":"../node_modules/ramda/es/reduceWhile.js","./reduced":"../node_modules/ramda/es/reduced.js","./reject":"../node_modules/ramda/es/reject.js","./remove":"../node_modules/ramda/es/remove.js","./repeat":"../node_modules/ramda/es/repeat.js","./replace":"../node_modules/ramda/es/replace.js","./reverse":"../node_modules/ramda/es/reverse.js","./scan":"../node_modules/ramda/es/scan.js","./sequence":"../node_modules/ramda/es/sequence.js","./set":"../node_modules/ramda/es/set.js","./slice":"../node_modules/ramda/es/slice.js","./sort":"../node_modules/ramda/es/sort.js","./sortBy":"../node_modules/ramda/es/sortBy.js","./sortWith":"../node_modules/ramda/es/sortWith.js","./split":"../node_modules/ramda/es/split.js","./splitAt":"../node_modules/ramda/es/splitAt.js","./splitEvery":"../node_modules/ramda/es/splitEvery.js","./splitWhen":"../node_modules/ramda/es/splitWhen.js","./startsWith":"../node_modules/ramda/es/startsWith.js","./subtract":"../node_modules/ramda/es/subtract.js","./sum":"../node_modules/ramda/es/sum.js","./symmetricDifference":"../node_modules/ramda/es/symmetricDifference.js","./symmetricDifferenceWith":"../node_modules/ramda/es/symmetricDifferenceWith.js","./tail":"../node_modules/ramda/es/tail.js","./take":"../node_modules/ramda/es/take.js","./takeLast":"../node_modules/ramda/es/takeLast.js","./takeLastWhile":"../node_modules/ramda/es/takeLastWhile.js","./takeWhile":"../node_modules/ramda/es/takeWhile.js","./tap":"../node_modules/ramda/es/tap.js","./test":"../node_modules/ramda/es/test.js","./times":"../node_modules/ramda/es/times.js","./toLower":"../node_modules/ramda/es/toLower.js","./toPairs":"../node_modules/ramda/es/toPairs.js","./toPairsIn":"../node_modules/ramda/es/toPairsIn.js","./toString":"../node_modules/ramda/es/toString.js","./toUpper":"../node_modules/ramda/es/toUpper.js","./transduce":"../node_modules/ramda/es/transduce.js","./transpose":"../node_modules/ramda/es/transpose.js","./traverse":"../node_modules/ramda/es/traverse.js","./trim":"../node_modules/ramda/es/trim.js","./tryCatch":"../node_modules/ramda/es/tryCatch.js","./type":"../node_modules/ramda/es/type.js","./unapply":"../node_modules/ramda/es/unapply.js","./unary":"../node_modules/ramda/es/unary.js","./uncurryN":"../node_modules/ramda/es/uncurryN.js","./unfold":"../node_modules/ramda/es/unfold.js","./union":"../node_modules/ramda/es/union.js","./unionWith":"../node_modules/ramda/es/unionWith.js","./uniq":"../node_modules/ramda/es/uniq.js","./uniqBy":"../node_modules/ramda/es/uniqBy.js","./uniqWith":"../node_modules/ramda/es/uniqWith.js","./unless":"../node_modules/ramda/es/unless.js","./unnest":"../node_modules/ramda/es/unnest.js","./until":"../node_modules/ramda/es/until.js","./update":"../node_modules/ramda/es/update.js","./useWith":"../node_modules/ramda/es/useWith.js","./values":"../node_modules/ramda/es/values.js","./valuesIn":"../node_modules/ramda/es/valuesIn.js","./view":"../node_modules/ramda/es/view.js","./when":"../node_modules/ramda/es/when.js","./where":"../node_modules/ramda/es/where.js","./whereEq":"../node_modules/ramda/es/whereEq.js","./without":"../node_modules/ramda/es/without.js","./xprod":"../node_modules/ramda/es/xprod.js","./zip":"../node_modules/ramda/es/zip.js","./zipObj":"../node_modules/ramda/es/zipObj.js","./zipWith":"../node_modules/ramda/es/zipWith.js"}],"js/nori/browser/DOMToolbox.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -19285,28 +18779,205 @@ var centerElementInViewPort = function centerElementInViewPort(el) {
 };
 
 exports.centerElementInViewPort = centerElementInViewPort;
-},{"ramda":"../node_modules/ramda/es/index.js"}],"js/nori/util/ElementIDCreator.js":[function(require,module,exports) {
+},{"ramda":"../node_modules/ramda/es/index.js"}],"js/nori/util/NumberUtils.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.getNextId = exports.resetId = void 0;
-//https://gist.githubusercontent.com/davidgilbertson/0377b00b31afc4ac7c9bbb9b8706cca7/raw/ff81c7332d8ec6725ec6749d7459268b82a821b6/elementIdCreator.js
-var count = 1;
+exports.distanceTL = exports.isBetween = exports.clamp = exports.rndNumber = exports.isInteger = void 0;
 
-var resetId = function resetId() {
-  count = 1;
+var isInteger = function isInteger(str) {
+  return /^-?\d+$/.test(str);
 };
 
-exports.resetId = resetId;
+exports.isInteger = isInteger;
 
-var getNextId = function getNextId() {
-  return "element-id-".concat(count++);
+var rndNumber = function rndNumber(min, max) {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
 };
 
-exports.getNextId = getNextId;
-},{}],"js/nori/events/DomEvents.js":[function(require,module,exports) {
+exports.rndNumber = rndNumber;
+
+var clamp = function clamp(val, min, max) {
+  return Math.max(min, Math.min(max, val));
+};
+
+exports.clamp = clamp;
+
+var isBetween = function isBetween(val, min, max) {
+  return val > min && val < max;
+};
+
+exports.isBetween = isBetween;
+
+var distanceTL = function distanceTL(point1, point2) {
+  var xd = point2.left - point1.left,
+      yd = point2.top - point1.top;
+  return Math.sqrt(xd * xd + yd * yd);
+};
+
+exports.distanceTL = distanceTL;
+},{}],"js/nori/util/ArrayUtils.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.flatten = exports.range = exports.shuffleArray = exports.arryArryToArryObj = exports.getDifferences = exports.getRandomSetOfElements = exports.rndElement = exports.removeItem = exports.removeIndex = exports.unique = exports.mergeAll = exports.arrify = void 0;
+
+var _NumberUtils = require("./NumberUtils");
+
+var _this = void 0;
+
+function _toConsumableArray(arr) { return _arrayWithoutHoles(arr) || _iterableToArray(arr) || _nonIterableSpread(); }
+
+function _nonIterableSpread() { throw new TypeError("Invalid attempt to spread non-iterable instance"); }
+
+function _iterableToArray(iter) { if (Symbol.iterator in Object(iter) || Object.prototype.toString.call(iter) === "[object Arguments]") return Array.from(iter); }
+
+function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = new Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } }
+
+var arrify = function arrify(a) {
+  return Array.prototype.slice.call(a, 0);
+}; // Reference: http://jhusain.github.io/learnrx/index.html
+
+
+exports.arrify = arrify;
+
+var mergeAll = function mergeAll() {
+  var results = [];
+
+  _this.forEach(function (subArr) {
+    subArr.forEach(function (elm) {
+      results.push(elm);
+    });
+  });
+
+  return results;
+}; // http://www.shamasis.net/2009/09/fast-algorithm-to-find-unique-items-in-javascript-array/
+
+
+exports.mergeAll = mergeAll;
+
+var unique = function unique(arry) {
+  var o = {},
+      i,
+      l = arry.length,
+      r = [];
+
+  for (i = 0; i < l; i += 1) {
+    o[arry[i]] = arry[i];
+  }
+
+  for (i in o) {
+    r.push(o[i]);
+  }
+
+  return r;
+};
+
+exports.unique = unique;
+
+var removeIndex = function removeIndex(arr, idx) {
+  return arr.splice(idx, 1);
+};
+
+exports.removeIndex = removeIndex;
+
+var removeItem = function removeItem(arr, item) {
+  var idx = arr.indexOf(item);
+
+  if (idx > -1) {
+    arr.splice(idx, 1);
+  }
+};
+
+exports.removeItem = removeItem;
+
+var rndElement = function rndElement(arry) {
+  return arry[(0, _NumberUtils.rndNumber)(0, arry.length - 1)];
+};
+
+exports.rndElement = rndElement;
+
+var getRandomSetOfElements = function getRandomSetOfElements(srcarry, max) {
+  var arry = [],
+      i = 0,
+      len = (0, _NumberUtils.rndNumber)(1, max);
+
+  for (; i < len; i++) {
+    arry.push(_this.rndElement(srcarry));
+  }
+
+  return arry;
+};
+
+exports.getRandomSetOfElements = getRandomSetOfElements;
+
+var getDifferences = function getDifferences(arr1, arr2) {
+  var dif = [];
+  arr1.forEach(function (value) {
+    var present = false,
+        i = 0,
+        len = arr2.length;
+
+    for (; i < len; i++) {
+      if (value === arr2[i]) {
+        present = true;
+        break;
+      }
+    }
+
+    if (!present) {
+      dif.push(value);
+    }
+  });
+  return dif;
+};
+
+exports.getDifferences = getDifferences;
+
+var arryArryToArryObj = function arryArryToArryObj(src, keys) {
+  return src.reduce(function (p, c) {
+    var row = {};
+    keys.forEach(function (col, i) {
+      row[col] = c[i];
+    });
+    p.push(row);
+    return p;
+  }, []);
+}; //https://stackoverflow.com/questions/2450954/how-to-randomize-shuffle-a-javascript-array
+
+
+exports.arryArryToArryObj = arryArryToArryObj;
+
+var shuffleArray = function shuffleArray(array) {
+  for (var i = array.length - 1; i > 0; i--) {
+    var j = Math.floor(Math.random() * (i + 1));
+    // eslint-disable-line no-param-reassign
+    var _ref = [array[j], array[i]];
+    array[i] = _ref[0];
+    array[j] = _ref[1];
+  }
+
+  return array;
+};
+
+exports.shuffleArray = shuffleArray;
+
+var range = function range(len) {
+  return _toConsumableArray(Array(len).keys());
+};
+
+exports.range = range;
+
+var flatten = function flatten(arry) {
+  return [].concat.apply([], arry);
+};
+
+exports.flatten = flatten;
+},{"./NumberUtils":"js/nori/util/NumberUtils.js"}],"js/nori/events/DomEvents.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -19322,131 +18993,13 @@ var isDomEvent = function isDomEvent(e) {
 };
 
 exports.isDomEvent = isDomEvent;
-},{}],"js/nori/Eventing.js":[function(require,module,exports) {
+},{}],"js/nori/DOMing.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.removeActions = exports.performBehavior = exports.handleEventTrigger = exports.createEventObject = exports.applyActions = exports.mapActions = void 0;
-
-var _DomEvents = require("./events/DomEvents");
-
-var _this = void 0;
-
-var ACTION_EVENT = 'event';
-var ACTION_BEHAVIOR = 'behavior';
-var BEHAVIORS = [];
-
-var mapActions = function mapActions(props) {
-  return Object.keys(props).reduce(function (acc, key) {
-    var value = props[key],
-        domEvt = (0, _DomEvents.isDomEvent)(key),
-        actionType = domEvt ? ACTION_EVENT : ACTION_BEHAVIOR;
-
-    if (domEvt || BEHAVIORS.includes(key)) {
-      acc.push({
-        type: actionType,
-        event: key,
-        externalHandler: value,
-        internalHandler: null
-      });
-    }
-
-    return acc;
-  }, []);
-}; // TODO implement options and useCapture? https://developer.mozilla.org/en-US/docs/Web/API/EventTarget/addEventListener
-
-
-exports.mapActions = mapActions;
-
-var applyActions = function applyActions(component, element) {
-  return component.actionMap.forEach(function (evt) {
-    if (evt.type === ACTION_EVENT) {
-      evt.internalHandler = handleEventTrigger(evt, component);
-      element.addEventListener(evt.event, evt.internalHandler);
-    }
-  });
-};
-
-exports.applyActions = applyActions;
-
-var createEventObject = function createEventObject(e) {
-  var src = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : null;
-  return {
-    event: e,
-    component: src
-  };
-};
-
-exports.createEventObject = createEventObject;
-
-var handleEventTrigger = function handleEventTrigger(evt, src) {
-  return function (e) {
-    return evt.externalHandler(createEventObject(e, src));
-  };
-};
-
-exports.handleEventTrigger = handleEventTrigger;
-
-var performBehavior = function performBehavior(component, behavior, e) {
-  return component.actionMap.forEach(function (evt) {
-    if (evt.type === ACTION_BEHAVIOR && evt.event === behavior) {
-      var event = e || {
-        type: behavior,
-        target: _this
-      };
-      evt.externalHandler(createEventObject(event, component));
-    }
-  });
-}; // behaviors don't have listeners
-
-
-exports.performBehavior = performBehavior;
-
-var removeActions = function removeActions(actionMap, element) {
-  return actionMap.forEach(function (evt) {
-    if (evt.type === ACTION_EVENT) {
-      element.removeEventListener(evt.event, evt.internalHandler);
-    }
-  });
-};
-/*
-Don't want to loose this ...
-
-// export const BEHAVIOR_SCOLLIN     = 'scrollIn';
-// export const BEHAVIOR_SCROLLOUT   = 'scrollOut';
-// export const BEHAVIOR_MOUSENEAR   = 'mouseNear';
-
-// also touch
-  // getDistanceFromCursor(mevt) {
-  //
-  //   const offset = this.offset;
-  // }
-  //
-  // also touch
-  // getCursorPositionOnElement(mevt) {
-  //
-  // }
-  //
-  // $onScroll = e => {
-  //   // TEST for in to view?
-  // };
-  //
-  // $onMouseMove = e => {
-  //   // test for proximity
-  // };
- */
-
-
-exports.removeActions = removeActions;
-},{"./events/DomEvents":"js/nori/events/DomEvents.js"}],"js/nori/DOMing.js":[function(require,module,exports) {
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.removeChildren = exports.removeChild = exports.isNoriComponent = exports.removeBooleanProp = exports.removeProp = exports.setBooleanProp = exports.setProp = exports.setProps = exports.createElement = exports.createElementTree = exports.createDOM = void 0;
+exports.removeChildren = exports.removeChild = exports.isNoriComponent = exports.removeBooleanProp = exports.removeProp = exports.setBooleanProp = exports.setProp = exports.setProps = exports.updateProps = void 0;
 
 var _DOMToolbox = require("./browser/DOMToolbox");
 
@@ -19464,35 +19017,6 @@ var $isSpecialProp = function $isSpecialProp(test) {
   return specialProps.includes(test);
 };
 
-var createDOM = function createDOM(type, props, children) {
-  var element = document.createElement(type);
-  setProps(element, props);
-  createElementTree(element, children);
-  return element;
-};
-
-exports.createDOM = createDOM;
-
-var createElementTree = function createElementTree(hostNode, children) {
-  return (0, _ArrayUtils.arrify)(children).map(function (el) {
-    return createElement(el);
-  }).forEach(function (child) {
-    return hostNode.appendChild(child);
-  });
-};
-
-exports.createElementTree = createElementTree;
-
-var createElement = function createElement(child) {
-  if (isNoriComponent(child)) {
-    return child.$createVDOM();
-  }
-
-  return (0, _DOMToolbox.HTMLStrToNode)(child);
-};
-
-exports.createElement = createElement;
-
 var updateProp = function updateProp(element, key, newValue, oldVaue) {
   if (!newValue) {
     removeProp(element, key, oldVaue);
@@ -19508,6 +19032,8 @@ var updateProps = function updateProps(element, newProps) {
     updateProp(element, key, newProps[key], oldProps[key]);
   });
 };
+
+exports.updateProps = updateProps;
 
 var setProps = function setProps(element, props) {
   return Object.keys(props).forEach(function (key) {
@@ -19592,7 +19118,391 @@ var removeChildren = function removeChildren(children) {
 };
 
 exports.removeChildren = removeChildren;
-},{"./browser/DOMToolbox":"js/nori/browser/DOMToolbox.js","./util/ArrayUtils":"js/nori/util/ArrayUtils.js","./events/DomEvents":"js/nori/events/DomEvents.js"}],"js/nori/DOMComponent.js":[function(require,module,exports) {
+},{"./browser/DOMToolbox":"js/nori/browser/DOMToolbox.js","./util/ArrayUtils":"js/nori/util/ArrayUtils.js","./events/DomEvents":"js/nori/events/DomEvents.js"}],"js/nori/Eventing.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.removeActions = exports.performBehavior = exports.handleEventTrigger = exports.createEventObject = exports.applyActions = exports.setEvents = exports.mapActions = void 0;
+
+var _DomEvents = require("./events/DomEvents");
+
+var _this = void 0;
+
+var ACTION_EVENT = 'event';
+var ACTION_BEHAVIOR = 'behavior';
+var BEHAVIORS = [];
+
+var mapActions = function mapActions(props) {
+  return Object.keys(props).reduce(function (acc, key) {
+    var value = props[key],
+        domEvt = (0, _DomEvents.isDomEvent)(key),
+        actionType = domEvt ? ACTION_EVENT : ACTION_BEHAVIOR;
+
+    if (domEvt || BEHAVIORS.includes(key)) {
+      acc.push({
+        type: actionType,
+        event: key,
+        externalHandler: value,
+        internalHandler: null
+      });
+    }
+
+    return acc;
+  }, []);
+};
+
+exports.mapActions = mapActions;
+
+var setEvents = function setEvents() {
+  var props = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+  var element = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : null;
+  return mapActions(props).forEach(function (evt) {
+    if (evt.type === ACTION_EVENT) {
+      evt.internalHandler = handleEventTrigger(evt, element);
+      element.addEventListener(evt.event, evt.internalHandler);
+    }
+  });
+}; // TODO implement options and useCapture? https://developer.mozilla.org/en-US/docs/Web/API/EventTarget/addEventListener
+
+
+exports.setEvents = setEvents;
+
+var applyActions = function applyActions(component, element) {
+  return component.actionMap.forEach(function (evt) {
+    if (evt.type === ACTION_EVENT) {
+      evt.internalHandler = handleEventTrigger(evt, component);
+      element.addEventListener(evt.event, evt.internalHandler);
+    }
+  });
+};
+
+exports.applyActions = applyActions;
+
+var createEventObject = function createEventObject(e) {
+  var src = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : null;
+  return {
+    event: e,
+    target: src
+  };
+};
+
+exports.createEventObject = createEventObject;
+
+var handleEventTrigger = function handleEventTrigger(evt, src) {
+  return function (e) {
+    return evt.externalHandler(createEventObject(e, src));
+  };
+};
+
+exports.handleEventTrigger = handleEventTrigger;
+
+var performBehavior = function performBehavior(component, behavior, e) {
+  return component.actionMap.forEach(function (evt) {
+    if (evt.type === ACTION_BEHAVIOR && evt.event === behavior) {
+      var event = e || {
+        type: behavior,
+        target: _this
+      };
+      evt.externalHandler(createEventObject(event, component));
+    }
+  });
+}; // behaviors don't have listeners
+
+
+exports.performBehavior = performBehavior;
+
+var removeActions = function removeActions(actionMap, element) {
+  return actionMap.forEach(function (evt) {
+    if (evt.type === ACTION_EVENT) {
+      element.removeEventListener(evt.event, evt.internalHandler);
+    }
+  });
+};
+/*
+Don't want to loose this ...
+
+// export const BEHAVIOR_SCOLLIN     = 'scrollIn';
+// export const BEHAVIOR_SCROLLOUT   = 'scrollOut';
+// export const BEHAVIOR_MOUSENEAR   = 'mouseNear';
+
+// also touch
+  // getDistanceFromCursor(mevt) {
+  //
+  //   const offset = this.offset;
+  // }
+  //
+  // also touch
+  // getCursorPositionOnElement(mevt) {
+  //
+  // }
+  //
+  // $onScroll = e => {
+  //   // TEST for in to view?
+  // };
+  //
+  // $onMouseMove = e => {
+  //   // test for proximity
+  // };
+ */
+
+
+exports.removeActions = removeActions;
+},{"./events/DomEvents":"js/nori/events/DomEvents.js"}],"js/nori/util/ElementIDCreator.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.getNextId = exports.resetId = void 0;
+//https://gist.githubusercontent.com/davidgilbertson/0377b00b31afc4ac7c9bbb9b8706cca7/raw/ff81c7332d8ec6725ec6749d7459268b82a821b6/elementIdCreator.js
+var count = 1;
+
+var resetId = function resetId() {
+  count = 1;
+};
+
+exports.resetId = resetId;
+
+var getNextId = function getNextId() {
+  return "element-id-".concat(count++);
+};
+
+exports.getNextId = getNextId;
+},{}],"js/nori/Nori.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.enqueueUpdate = exports.render = exports.h = void 0;
+
+var _DOMToolbox = require("./browser/DOMToolbox");
+
+var _ArrayUtils = require("./util/ArrayUtils");
+
+var _DOMing = require("./DOMing");
+
+var _Eventing = require("./Eventing");
+
+var _ElementIDCreator = require("./util/ElementIDCreator");
+
+function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
+
+//https://jasonformat.com/wtf-is-jsx/
+//https://medium.com/@bluepnume/jsx-is-a-stellar-invention-even-with-react-out-of-the-picture-c597187134b7
+var lastHostTree,
+    $hostNode,
+    componentInstanceMap = {},
+    didMountQueue = []; // Convenience method to create new components. Used by the Babel/JSX transpiler
+
+var h = function h(type, props) {
+  props = props || {};
+  props.id = props.key || (0, _ElementIDCreator.getNextId)();
+
+  for (var _len = arguments.length, args = new Array(_len > 2 ? _len - 2 : 0), _key = 2; _key < _len; _key++) {
+    args[_key - 2] = arguments[_key];
+  }
+
+  return {
+    type: type,
+    props: props,
+    children: args.length ? (0, _ArrayUtils.flatten)(args) : [],
+    forceUpdate: false
+  };
+};
+
+exports.h = h;
+
+var createElement = function createElement(node) {
+  var $el;
+
+  if (typeof node === 'string' || typeof node === 'number') {
+    // Plain value of a tag
+    $el = document.createTextNode(node);
+  } else if (typeof node.type === 'function') {
+    var instance,
+        existingInstance = false; // If the instance has been flagged as updated (new prop on the map entry) rerender?
+
+    if (componentInstanceMap.hasOwnProperty(node.props.id)) {
+      instance = componentInstanceMap[node.props.id];
+      existingInstance = true;
+    } else {
+      instance = new node.type(node.props, node.children);
+      componentInstanceMap[node.props.id] = instance;
+    }
+
+    if (typeof instance.render === 'function') {
+      // Component
+      // TODO set a reference in the component to the DOM node created here
+      $el = createElement(instance.render());
+      instance.current = $el;
+    } else {
+      // Stateless functional component
+      $el = createElement(instance);
+    }
+
+    if (typeof instance.componentDidMount === 'function' && !existingInstance) {
+      didMountQueue.push(instance.componentDidMount.bind(instance));
+    }
+  } else if (_typeof(node) === 'object' && typeof node.type === 'string') {
+    // Normal tag
+    $el = document.createElement(node.type);
+    node.children.map(createElement).forEach($el.appendChild.bind($el));
+  } else {
+    console.warn("Unknown node type ".concat(node, " : ").concat(node.type));
+  }
+
+  (0, _DOMing.setProps)($el, node.props || {});
+  (0, _Eventing.setEvents)(node.props, $el);
+  return $el;
+};
+
+var changed = function changed(newNode, oldNode) {
+  if (newNode.forceUpdate) {
+    return true;
+  }
+
+  return _typeof(newNode) !== _typeof(oldNode) || typeof newNode === 'string' && newNode !== oldNode || newNode.type !== oldNode.type;
+}; // TODO need to call willUpdate and didUpdate
+
+
+var updateElement = function updateElement($hostNode, newNode, oldNode) {
+  var index = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : 0;
+
+  if (!oldNode) {
+    $hostNode.appendChild(createElement(newNode));
+  } else if (!newNode) {
+    // TODO need to remove events
+    $hostNode.removeChild($hostNode.childNodes[index]);
+  } else if (changed(newNode, oldNode)) {
+    $hostNode.replaceChild(createElement(newNode), $hostNode.childNodes[index]);
+  } else if (newNode.type) {
+    (0, _DOMing.updateProps)($hostNode.childNodes[index], newNode.props, oldNode.props);
+    var newLength = newNode.children.length;
+    var oldLength = oldNode.children.length;
+
+    for (var i = 0; i < newLength || i < oldLength; i++) {
+      updateElement($hostNode.childNodes[index], newNode.children[i], oldNode.children[i], i);
+    }
+  }
+}; // Render a component to a dom node
+
+
+var render = function render(component, hostNode) {
+  var removeExisting = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : true;
+
+  if (removeExisting) {
+    (0, _DOMToolbox.removeAllElements)(hostNode);
+  }
+
+  lastHostTree = component;
+  $hostNode = hostNode;
+  updateElement(hostNode, component); // hostNode.appendChild(createElement(component));
+
+  didMountQueue.forEach(function (fn) {
+    return fn();
+  });
+  didMountQueue = [];
+}; // TODO Store updates and do all at once on an interval? 1ms?
+
+
+exports.render = render;
+
+var enqueueUpdate = function enqueueUpdate(id) {
+  // console.log(`component update on ${id}`);
+  var newHostTree = markForceUpdateVDOMInTree(lastHostTree, id);
+  updateElement($hostNode, newHostTree, lastHostTree);
+  clearForceUpdateVDOMInTree(newHostTree);
+  lastHostTree = newHostTree;
+};
+
+exports.enqueueUpdate = enqueueUpdate;
+
+var markForceUpdateVDOMInTree = function markForceUpdateVDOMInTree(vdom, id) {
+  if (_typeof(vdom) === 'object') {
+    if (vdom.props.id === id) {
+      vdom.forceUpdate = true;
+    } else if (vdom.props.children) {
+      vdom.props.children.forEach(function (child) {
+        return markForceUpdateVDOMInTree(child, id);
+      });
+    }
+  }
+
+  return vdom;
+};
+
+var clearForceUpdateVDOMInTree = function clearForceUpdateVDOMInTree(vdom) {
+  if (_typeof(vdom) === 'object') {
+    if (vdom.props.children) {
+      vdom.forceUpdate = false;
+      vdom.props.children.forEach(function (child) {
+        return clearForceUpdateVDOMInTree(child);
+      });
+    }
+  }
+
+  return vdom;
+};
+},{"./browser/DOMToolbox":"js/nori/browser/DOMToolbox.js","./util/ArrayUtils":"js/nori/util/ArrayUtils.js","./DOMing":"js/nori/DOMing.js","./Eventing":"js/nori/Eventing.js","./util/ElementIDCreator":"js/nori/util/ElementIDCreator.js"}],"js/nori/util/is.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = void 0;
+
+function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
+
+var _default = {
+  existy: function existy(x) {
+    return x !== null;
+  },
+  truthy: function truthy(x) {
+    return x !== false && this.existy(x);
+  },
+  falsey: function falsey(x) {
+    return !this.truthy(x);
+  },
+  func: function func(object) {
+    return typeof object === "function";
+  },
+  object: function object(_object) {
+    return Object.prototype.toString.call(_object) === "[object Object]";
+  },
+  objectEmpty: function objectEmpty(object) {
+    for (var key in object) {
+      if (object.hasOwnProperty(key)) {
+        return false;
+      }
+    }
+
+    return true;
+  },
+  string: function string(object) {
+    return Object.prototype.toString.call(object) === "[object String]";
+  },
+  array: function array(object) {
+    return Array.isArray(object); //return Object.prototype.toString.call(object) === '[object Array]';
+  },
+  promise: function promise(_promise) {
+    return _promise && typeof _promise.then === 'function';
+  },
+  observable: function observable(_observable) {
+    return _observable && typeof _observable.subscribe === 'function';
+  },
+  element: function element(obj) {
+    return (typeof HTMLElement === "undefined" ? "undefined" : _typeof(HTMLElement)) === 'object' ? obj instanceof HTMLElement || obj instanceof DocumentFragment : //DOM2
+    obj && _typeof(obj) === 'object' && obj !== null && (obj.nodeType === 1 || obj.nodeType === 11) && typeof obj.nodeName === 'string';
+  },
+  integer: function integer(str) {
+    return /^-?\d+$/.test(str);
+  }
+};
+exports.default = _default;
+},{}],"js/nori/DOMComponent.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -19604,13 +19514,11 @@ var _ramda = require("ramda");
 
 var _is = _interopRequireDefault(require("./util/is"));
 
-var _DOMToolbox = require("./browser/DOMToolbox");
-
 var _ElementIDCreator = require("./util/ElementIDCreator");
 
 var _Eventing = require("./Eventing");
 
-var _DOMing = require("./DOMing");
+var _Nori = require("./Nori");
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -19619,10 +19527,6 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
 
 function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
-
-var STAGE_NOINIT = 'stage_noinit';
-var STAGE_RENDERED = 'stage_rendered';
-var STAGE_UPDATING = 'stage_updating';
 
 var DOMComponent =
 /*#__PURE__*/
@@ -19638,81 +19542,24 @@ function () {
 
     this.componentDidUpdate = function () {};
 
-    this.stage = STAGE_NOINIT;
     this.type = type;
     this.props = props || {};
     this.props.id = props.key || (0, _ElementIDCreator.getNextId)();
     this.props.children = _is.default.array(children) ? children : [children];
     this.tweens = props.hasOwnProperty('tweens') ? props.tweens : {};
     this.internalState = props.hasOwnProperty('state') ? props.state : {};
-    this.current = null;
-    this.actionMap = (0, _Eventing.mapActions)(this.props);
+    this.internalCurrent = null;
     this.$$typeof = Symbol.for('nori.component');
   }
 
   _createClass(DOMComponent, [{
-    key: "$createVDOM",
-    value: function $createVDOM() {
-      var resultTree = this.render(),
-          element;
-
-      if ((0, _DOMing.isNoriComponent)(resultTree)) {
-        element = resultTree.$createVDOM();
-      } else {
-        element = (0, _DOMing.createDOM)(this.type, this.props, resultTree);
-      }
-
-      (0, _Eventing.applyActions)(this, element);
-      this.current = element;
-
-      if (this.stage === STAGE_NOINIT) {
-        this.componentDidMount();
-      }
-
-      this.stage = STAGE_RENDERED;
-      return element;
-    }
-  }, {
     key: "forceUpdate",
     value: function forceUpdate() {
-      this.$update();
-    }
-  }, {
-    key: "$update",
-    value: function $update() {
-      var prevEl, newEl;
-
-      if (this.stage === STAGE_NOINIT) {
-        console.warn("Can't update ".concat(this.props.id, " because it hasn't been rendered first"));
-        return;
-      }
-
-      this.stage = STAGE_UPDATING;
-      prevEl = this.current;
-      this.remove();
-      newEl = this.$createVDOM();
-      (0, _DOMToolbox.replaceElementWith)(prevEl, newEl);
-      this.componentDidUpdate();
-    }
-  }, {
-    key: "remove",
-    value: function remove() {
-      if (this.stage !== STAGE_UPDATING) {
-        this.componentWillUnmount();
-      }
-
-      (0, _Eventing.removeActions)(this.actionMap, this.current);
-      (0, _DOMing.removeChildren)(this.props.children);
-      this.current = null;
+      (0, _Nori.enqueueUpdate)(this.props.id);
     } //--------------------------------------------------------------------------------
     // Stub "lifecycle" methods. Override in subclass.
     //--------------------------------------------------------------------------------
 
-  }, {
-    key: "render",
-    value: function render() {
-      return this.props.children;
-    }
   }, {
     key: "state",
     set: function set(nextState) {
@@ -19727,10 +19574,18 @@ function () {
 
       this.internalState = Object.assign({}, this.internalState, nextState);
       this.componentWillUpdate();
-      this.$update();
+      (0, _Nori.enqueueUpdate)(this.props.id);
     },
     get: function get() {
       return Object.assign({}, this.internalState);
+    }
+  }, {
+    key: "current",
+    set: function set(el) {
+      this.internalCurrent = el;
+    },
+    get: function get() {
+      return this.internalCurrent;
     }
   }]);
 
@@ -19738,112 +19593,15 @@ function () {
 }();
 
 exports.default = DOMComponent;
-},{"ramda":"../node_modules/ramda/es/index.js","./util/is":"js/nori/util/is.js","./browser/DOMToolbox":"js/nori/browser/DOMToolbox.js","./util/ElementIDCreator":"js/nori/util/ElementIDCreator.js","./Eventing":"js/nori/Eventing.js","./DOMing":"js/nori/DOMing.js"}],"js/nori/Nori.js":[function(require,module,exports) {
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.useState = useState;
-exports.renderDOM = exports.h = void 0;
-
-var _DOMComponent = _interopRequireDefault(require("./DOMComponent"));
-
-var _is = _interopRequireDefault(require("./util/is"));
-
-var _DOMToolbox = require("./browser/DOMToolbox");
-
-var _ArrayUtils = require("./util/ArrayUtils");
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-//https://jasonformat.com/wtf-is-jsx/
-//https://medium.com/@bluepnume/jsx-is-a-stellar-invention-even-with-react-out-of-the-picture-c597187134b7
-// Convenience method to create new components. Used by the Babel/JSX transpiler
-var h = function h(type, props) {
-  props = props || {};
-
-  for (var _len = arguments.length, args = new Array(_len > 2 ? _len - 2 : 0), _key = 2; _key < _len; _key++) {
-    args[_key - 2] = arguments[_key];
-  }
-
-  var children = args.length ? (0, _ArrayUtils.flatten)(args) : null;
-
-  if (_is.default.string(type)) {
-    // "regular" html tag
-    return new _DOMComponent.default(type, props, children);
-  } else {
-    // another component
-    return new type(props, children);
-  }
-}; // Render a component to a dom node
-
-
-exports.h = h;
-
-var renderDOM = function renderDOM(component, hostNode) {
-  var removeExisting = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : true;
-
-  if (removeExisting) {
-    (0, _DOMToolbox.removeAllElements)(hostNode);
-  }
-
-  hostNode.appendChild(component.$createVDOM());
-}; // Simple implementation of React's useState hook, similar API totes different impl
-// https://reactjs.org/docs/hooks-state.html
-
-/*
-Merge fn for updater
-prevState => ({...prevState, ...updatedValues});
-}
-
-//for(let i=0; i<5; i++) {
-  //   let [foo, setFoo] = useState('foo');
-  //   console.log('foo is',foo);
-  //   foo = setFoo(ps => ps + 'BAZ!');
-  //   console.log('foo is',foo);
-  //   foo = setFoo(ps => ps + 'BAZ!');
-  //   console.log('foo is',foo);
-  //   foo = setFoo(ps => ps + 'BAZ!');
-  //   console.log('foo is',foo);
-  //}
-
- */
-
-
-exports.renderDOM = renderDOM;
-var __stateValueMap = [];
-
-function useState(initial) {
-  var stateIdx = __stateValueMap.length;
-
-  if (!__stateValueMap[stateIdx]) {
-    __stateValueMap[stateIdx] = initial;
-  } else {} // console.log('useState', __stateValueMap);
-
-
-  var setState = function setState(newState) {
-    var currentValue = __stateValueMap[stateIdx]; // console.log('updating the index at ', stateIdx, 'current value', currentValue);
-
-    if (typeof newState === "function") {
-      currentValue = newState(currentValue);
-    } else {
-      currentValue = newState;
-    }
-
-    __stateValueMap[stateIdx] = currentValue;
-    return currentValue;
-  };
-
-  return [initial, setState];
-}
-},{"./DOMComponent":"js/nori/DOMComponent.js","./util/is":"js/nori/util/is.js","./browser/DOMToolbox":"js/nori/browser/DOMToolbox.js","./util/ArrayUtils":"js/nori/util/ArrayUtils.js"}],"js/components/Box.js":[function(require,module,exports) {
+},{"ramda":"../node_modules/ramda/es/index.js","./util/is":"js/nori/util/is.js","./util/ElementIDCreator":"js/nori/util/ElementIDCreator.js","./Eventing":"js/nori/Eventing.js","./Nori":"js/nori/Nori.js"}],"js/components/Box.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.default = void 0;
+
+var _Nori = require("../nori/Nori");
 
 var _DOMComponent2 = _interopRequireDefault(require("../nori/DOMComponent"));
 
@@ -19852,6 +19610,10 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
+
+function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
 
 function _possibleConstructorReturn(self, call) { if (call && (_typeof(call) === "object" || typeof call === "function")) { return call; } return _assertThisInitialized(self); }
 
@@ -19863,6 +19625,8 @@ function _inherits(subClass, superClass) { if (typeof superClass !== "function" 
 
 function _setPrototypeOf(o, p) { _setPrototypeOf = Object.setPrototypeOf || function _setPrototypeOf(o, p) { o.__proto__ = p; return o; }; return _setPrototypeOf(o, p); }
 
+function _objectWithoutProperties(obj, keys) { var target = {}; for (var i in obj) { if (keys.indexOf(i) >= 0) continue; if (!Object.prototype.hasOwnProperty.call(obj, i)) continue; target[i] = obj[i]; } return target; }
+
 var Box =
 /*#__PURE__*/
 function (_DOMComponent) {
@@ -19871,21 +19635,286 @@ function (_DOMComponent) {
   function Box(props, children) {
     _classCallCheck(this, Box);
 
-    var baseElement = props.element || 'div';
-    return _possibleConstructorReturn(this, _getPrototypeOf(Box).call(this, baseElement, props, children));
+    return _possibleConstructorReturn(this, _getPrototypeOf(Box).call(this, 'div', props, children));
   }
+
+  _createClass(Box, [{
+    key: "render",
+    value: function render() {
+      var _props = this.props;
+
+      var children = _props.children,
+          rest = _objectWithoutProperties(_props, ["children"]);
+
+      return (0, _Nori.h)("div", rest, children);
+    }
+  }]);
 
   return Box;
 }(_DOMComponent2.default);
 
 exports.default = Box;
-},{"../nori/DOMComponent":"js/nori/DOMComponent.js"}],"js/components/Lorem.js":[function(require,module,exports) {
+},{"../nori/Nori":"js/nori/Nori.js","../nori/DOMComponent":"js/nori/DOMComponent.js"}],"js/nori/util/StringUtils.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.unslugify = exports.slugify = exports.removeWhiteSpace = exports.DOMtoCSSStyle = exports.dasherize = exports.underscore = exports.capitalize = exports.unescapeHTML = exports.removeEntities = exports.removeTags = exports.ellipses = exports.toTitleCase = exports.capitalizeFirstLetter = void 0;
+
+var _this = void 0;
+
+var capitalizeFirstLetter = function capitalizeFirstLetter(str) {
+  return str.charAt(0).toUpperCase() + str.substring(1);
+};
+
+exports.capitalizeFirstLetter = capitalizeFirstLetter;
+
+var toTitleCase = function toTitleCase(str) {
+  return str.replace(/\w\S*/g, function (txt) {
+    return txt.charAt(0).toUpperCase() + txt.substr(1);
+  });
+};
+
+exports.toTitleCase = toTitleCase;
+
+var ellipses = function ellipses(len) {
+  return _this.length > len ? _this.substr(0, len) + "..." : _this;
+}; // From https://github.com/sstephenson/prototype/blob/d9411e5/src/prototype/lang/string.js#L426
+// export const removeTags2 = (str) => {
+//   return str.replace(/<\w+(\s+("[^"]*"|'[^']*'|[^>])+)?>|<\/\w+>/gi, '');
+// };
+
+
+exports.ellipses = ellipses;
+
+var removeTags = function removeTags(str) {
+  return str.replace(/(<([^>]+)>)/ig, '');
+};
+
+exports.removeTags = removeTags;
+
+var removeEntities = function removeEntities(str) {
+  return str.replace(/(&(#?)(?:[a-z\d]+|#\d+|#x[a-f\d]+);)/ig, '');
+}; // From https://github.com/sstephenson/prototype/blob/d9411e5/src/prototype/lang/string.js#L426
+
+
+exports.removeEntities = removeEntities;
+
+var unescapeHTML = function unescapeHTML(str) {
+  // Warning: In 1.7 String#unescapeHTML will no longer call String#stripTags.
+  return removeTags(str).replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&');
+};
+
+exports.unescapeHTML = unescapeHTML;
+
+var capitalize = function capitalize(str) {
+  return str.charAt(0).toUpperCase() + _this.substring(1).toLowerCase();
+};
+
+exports.capitalize = capitalize;
+
+var underscore = function underscore(str) {
+  return str.replace(/::/g, '/').replace(/([A-Z]+)([A-Z][a-z])/g, '$1_$2').replace(/([a-z\d])([A-Z])/g, '$1_$2').replace(/-/g, '_').toLowerCase();
+};
+
+exports.underscore = underscore;
+
+var dasherize = function dasherize(str) {
+  return str.replace(/_/g, '-');
+};
+
+exports.dasherize = dasherize;
+
+var DOMtoCSSStyle = function DOMtoCSSStyle(str) {
+  return dasherize(underscore(str));
+};
+
+exports.DOMtoCSSStyle = DOMtoCSSStyle;
+
+var removeWhiteSpace = function removeWhiteSpace(str) {
+  return str.replace(/(\r\n|\n|\r|\t|\s)/gm, '').replace(/>\s+</g, '><');
+};
+
+exports.removeWhiteSpace = removeWhiteSpace;
+
+var slugify = function slugify(str) {
+  return str.split(' ').map(function (s) {
+    return s.toLowerCase();
+  }).join('_');
+};
+
+exports.slugify = slugify;
+
+var unslugify = function unslugify(str) {
+  return str.split('_').map(function (s) {
+    return s.charAt(0).toUpperCase() + s.substring(1);
+  }).join(' ');
+};
+
+exports.unslugify = unslugify;
+},{}],"js/nori/util/Lorem.js":[function(require,module,exports) {
+"use strict";
+
+var _NumberUtils = require("./NumberUtils");
+
+var _StringUtils = require("./StringUtils");
+
+var _ArrayUtils = require("./ArrayUtils");
+
+var _currentText = [],
+    _defaultTextSet,
+    _maleFirstNames = [],
+    _femaleFirstNames = [],
+    _lastNames = [],
+    _punctuation = [],
+    _months,
+    _days;
+
+_defaultTextSet = 'Perhaps a re-engineering of your current world view will re-energize your online nomenclature to enable a new holistic interactive enterprise internet communication solution Upscaling the resurgent networking exchange solutions achieving a breakaway systemic electronic data interchange system synchronization thereby exploiting technical environments for mission critical broad based capacity constrained systems Fundamentally transforming well designed actionable information whose semantic content is virtually null To more fully clarify the current exchange a few aggregate issues will require addressing to facilitate this distributed communication venue In integrating non-aligned structures into existing legacy systems a holistic gateway blueprint is a backward compatible packaging tangible';
+_lastNames = 'Smith Johnson Williams Jones Brown Davis Miller Wilson Moore Taylor Anderson Thomas Jackson White Harris Martin Thompson Garcia Martinez Robinson Clark Rodriguez Lewis Lee Walker Hall Allen Young Hernandez King Wright Lopez Hill Scott Green Adams Baker Gonzalez Nelson Carter Mitchell Perez Roberts Turner Phillips Campbell Parker Evans Edwards Collins Stewart Sanchez Morris Rogers Reed Cook Morgan Bell Murphy'.split(' ');
+_maleFirstNames = 'Thomas Arthur Lewis Clarence Leonard Albert Paul Carl Ralph Roy Earl Samuel Howard Richard Francis Laurence Herbert Elmer Ernest Theodore David Alfred Donald Russell Eugene Andrew Kenneth Herman Jesse Lester Floyd Michael Edwin Clifford Benjamin Clyde Glen Oscar Daniel'.split(' ');
+_femaleFirstNames = 'Elizabeth Ann Helen Margaret Ellen Catherine Lily Florence Ada Lou Ethel Emily Ruth Rose Frances Alice Bertha Clara Mabel Minnie Grace Jane Evelyn Gertrude Edna Pearl Laura Hazel Edith Esther Harriet Sarah May Matilda Martha Myrtle Josephine Maud Agnes Keri Julia Irene Mildred Cora'.split(' ');
+_punctuation = ['.', '.', '.', '.', '?', '!'];
+_months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+_days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
+_currentText = _defaultTextSet.toLowerCase().split(' ');
+
+function rNumber(min, max) {
+  return (0, _NumberUtils.rndNumber)(min, max);
+}
+
+function oneOf(arry) {
+  return arry[rNumber(0, arry.length - 1)];
+}
+
+function severalOf(num, arry) {
+  if (num >= arry.length) {
+    return arry;
+  }
+
+  var res = [];
+
+  for (var i = 0; i < num; i++) {
+    res.push(oneOf(arry));
+  }
+
+  return res;
+}
+
+function sentence(min, max) {
+  return (0, _StringUtils.capitalizeFirstLetter)(text(min, max)) + oneOf(_punctuation);
+}
+
+function title(min, max) {
+  return (0, _StringUtils.toTitleCase)(text(min, max));
+}
+
+function paragraph(min, max) {
+  var str = '',
+      delim = ' ',
+      len = rNumber(min, max),
+      i = 0;
+
+  for (; i < len; i++) {
+    if (i === len - 1) {
+      delim = '';
+    }
+
+    str += sentence(1, 10) + delim;
+  }
+
+  return str;
+}
+
+function text(min, max) {
+  var str = '',
+      delim = ' ',
+      len = rNumber(min, max),
+      i = 0;
+
+  for (; i < len; i++) {
+    if (i === len - 1) {
+      delim = '';
+    }
+
+    str += oneOf(_currentText) + delim;
+  }
+
+  return str;
+}
+
+function getFirstName() {
+  return rNumber(0, 1) ? oneOf(_maleFirstNames) : oneOf(_femaleFirstNames);
+}
+
+function getLastName() {
+  return oneOf(_lastNames);
+}
+
+function firstLastName() {
+  return getFirstName() + ' ' + getLastName();
+}
+
+function lastFirstName() {
+  return getLastName() + ', ' + getFirstName();
+}
+/**
+ * Better implementation http://stackoverflow.com/questions/9035627/elegant-method-to-generate-array-of-random-dates-within-two-dates
+ * @returns {{monthNumber: *, monthName: *, monthDay, weekDayNumber: *, weekDay: *, year}}
+ */
+
+
+function date() {
+  var month = rNumber(0, 11),
+      wkday = rNumber(0, 4),
+      date = {
+    monthNumber: month + 1,
+    monthName: _months[month],
+    monthDay: rNumber(1, 28),
+    weekDayNumber: wkday + 1,
+    weekDay: _days[wkday],
+    year: oneOf(['2018', '2019', '2020'])
+  };
+  date.string = date.monthName + ' ' + date.monthDay + ', ' + date.year;
+  return date;
+}
+/**
+ * http://stackoverflow.com/questions/105034/create-guid-uuid-in-javascript
+ * @returns {string}
+ */
+
+
+function guid() {
+  function s4() {
+    return Math.floor((1 + Math.random()) * 0x10000).toString(16).substring(1);
+  }
+
+  return s4() + s4() + '-' + s4() + '-' + s4() + '-' + s4() + '-' + s4() + s4() + s4();
+}
+
+module.exports = {
+  rNumber: rNumber,
+  oneOf: oneOf,
+  severalOf: severalOf,
+  text: text,
+  sentence: sentence,
+  title: title,
+  paragraph: paragraph,
+  firstLastName: firstLastName,
+  lastFirstName: lastFirstName,
+  date: date,
+  guid: guid
+};
+},{"./NumberUtils":"js/nori/util/NumberUtils.js","./StringUtils":"js/nori/util/StringUtils.js","./ArrayUtils":"js/nori/util/ArrayUtils.js"}],"js/components/Lorem.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.default = void 0;
+
+var _Nori = require("../nori/Nori");
 
 var L = _interopRequireWildcard(require("../nori/util/Lorem"));
 
@@ -19926,44 +19955,75 @@ function (_DOMComponent) {
     _classCallCheck(this, Lorem);
 
     var baseElement = props.element || 'span';
-    _this = _possibleConstructorReturn(this, _getPrototypeOf(Lorem).call(this, baseElement, props, []));
+    var min = props.min || 3;
+    var max = props.max || 5;
+    var mode = props.mode || 'text';
+    var lorem = L.text(min, max);
+
+    switch (mode) {
+      case 'paragraph':
+        lorem = L.paragraph(min, max);
+        break;
+
+      case 'title':
+        lorem = L.title(min, max);
+        break;
+
+      case 'sentence':
+        lorem = L.sentence(min, max);
+        break;
+
+      case 'date':
+        lorem = L.date().string;
+        break;
+
+      case 'fullNameFL':
+        lorem = L.firstLastName();
+        break;
+    }
+
+    _this = _possibleConstructorReturn(this, _getPrototypeOf(Lorem).call(this, baseElement, props, [])); // have to call super first
+
     _this.TEXT = 'text';
+    _this.internalState = {
+      lorem: 'Lorem ipsum dolor sit amet ...'
+    };
+    _this.internalState = {
+      lorem: lorem
+    };
     return _this;
-  }
+  } // Default state
+
 
   _createClass(Lorem, [{
     key: "render",
     value: function render() {
-      var min = this.props.min || 3;
-      var max = this.props.max || 5;
-      var mode = this.props.mode || 'text';
-      var lorem = L.text(min, max);
-
-      switch (mode) {
-        case 'paragraph':
-          lorem = L.paragraph(min, max);
-          break;
-
-        case 'title':
-          lorem = L.title(min, max);
-          break;
-
-        case 'sentence':
-          lorem = L.sentence(min, max);
-          break;
-
-        case 'date':
-          lorem = L.date().string;
-          break;
-
-        case 'fullNameFL':
-          lorem = L.firstLastName();
-          break;
-      } // Return an array or each letter will be created as an individual element
+      // const min = this.props.min || 3;
+      // const max = this.props.max || 5;
+      // const mode = this.props.mode || 'text';
+      //
+      // let lorem = L.text(min, max);
+      //
+      // switch (mode) {
+      //   case 'paragraph':
+      //     lorem = L.paragraph(min, max);
+      //     break;
+      //   case 'title':
+      //     lorem = L.title(min, max);
+      //     break;
+      //   case 'sentence':
+      //     lorem = L.sentence(min, max);
+      //     break;
+      //   case 'date':
+      //     lorem = L.date().string;
+      //     break;
+      //   case 'fullNameFL':
+      //     lorem = L.firstLastName();
+      //     break;
+      // }
+      // Return an array or each letter will be created as an individual element
       // The base element in the constructor determines what dom element it gets wrapped in
-
-
-      return [lorem];
+      return (0, _Nori.h)("span", null, this.state.lorem);
     }
   }]);
 
@@ -19977,7 +20037,103 @@ Lorem.TITLE = 'title';
 Lorem.SENTENCE = 'sentence';
 Lorem.DATE = 'date';
 Lorem.FULLNAMEFL = 'fullNameFL';
-},{"../nori/util/Lorem":"js/nori/util/Lorem.js","../nori/DOMComponent":"js/nori/DOMComponent.js"}],"js/components/Greeter.js":[function(require,module,exports) {
+},{"../nori/Nori":"js/nori/Nori.js","../nori/util/Lorem":"js/nori/util/Lorem.js","../nori/DOMComponent":"js/nori/DOMComponent.js"}],"js/components/Ticker.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = void 0;
+
+var _DOMComponent2 = _interopRequireDefault(require("../nori/DOMComponent"));
+
+var _Nori = require("../nori/Nori");
+
+var _emotion = require("emotion");
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
+
+function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
+
+function _possibleConstructorReturn(self, call) { if (call && (_typeof(call) === "object" || typeof call === "function")) { return call; } return _assertThisInitialized(self); }
+
+function _assertThisInitialized(self) { if (self === void 0) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return self; }
+
+function _getPrototypeOf(o) { _getPrototypeOf = Object.setPrototypeOf ? Object.getPrototypeOf : function _getPrototypeOf(o) { return o.__proto__ || Object.getPrototypeOf(o); }; return _getPrototypeOf(o); }
+
+function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function"); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, writable: true, configurable: true } }); if (superClass) _setPrototypeOf(subClass, superClass); }
+
+function _setPrototypeOf(o, p) { _setPrototypeOf = Object.setPrototypeOf || function _setPrototypeOf(o, p) { o.__proto__ = p; return o; }; return _setPrototypeOf(o, p); }
+
+function _templateObject() {
+  var data = _taggedTemplateLiteral(["color: red;"]);
+
+  _templateObject = function _templateObject() {
+    return data;
+  };
+
+  return data;
+}
+
+function _taggedTemplateLiteral(strings, raw) { if (!raw) { raw = strings.slice(0); } return Object.freeze(Object.defineProperties(strings, { raw: { value: Object.freeze(raw) } })); }
+
+var red = (0, _emotion.css)(_templateObject());
+
+var Ticker =
+/*#__PURE__*/
+function (_DOMComponent) {
+  _inherits(Ticker, _DOMComponent);
+
+  // Subclasses should only take passed props and children
+  function Ticker(props, children) {
+    var _this;
+
+    _classCallCheck(this, Ticker);
+
+    _this = _possibleConstructorReturn(this, _getPrototypeOf(Ticker).call(this, 'h1', props, []));
+    _this.internalState = {
+      counter: 0
+    };
+
+    _this.componentDidMount = function () {
+      console.log('Ticker rendered!');
+      setInterval(function (_) {
+        _this.state = {
+          counter: ++_this.state.counter
+        };
+      }, 1000);
+    };
+
+    _this.componentDidUpdate = function () {//console.log('Ticker update', this.state);
+    };
+
+    _this.componentWillUnmount = function () {//console.log('Ticker will umount');
+    };
+
+    return _this;
+  } // Default state
+
+
+  _createClass(Ticker, [{
+    key: "render",
+    value: function render() {
+      return (0, _Nori.h)("h6", null, "The count is ", (0, _Nori.h)("strong", {
+        className: red
+      }, this.internalState.counter), " seconds.");
+    }
+  }]);
+
+  return Ticker;
+}(_DOMComponent2.default);
+
+exports.default = Ticker;
+},{"../nori/DOMComponent":"js/nori/DOMComponent.js","../nori/Nori":"js/nori/Nori.js","emotion":"../node_modules/emotion/dist/index.esm.js"}],"js/components/Greeter.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -20075,11 +20231,12 @@ function (_DOMComponent) {
   _createClass(Greeter, [{
     key: "render",
     value: function render() {
+      console.log('Greeter rendering');
       return (0, _Nori.h)("h1", {
         click: this.$onClick
       }, "Hello, ", (0, _Nori.h)("em", {
         className: blue
-      }, this.internalState.name));
+      }, this.state.name));
     }
   }]);
 
@@ -20087,128 +20244,28 @@ function (_DOMComponent) {
 }(_DOMComponent2.default);
 
 exports.default = Greeter;
-},{"../nori/DOMComponent":"js/nori/DOMComponent.js","../nori/Nori":"js/nori/Nori.js","../nori/util/Lorem":"js/nori/util/Lorem.js","emotion":"../node_modules/emotion/dist/index.esm.js"}],"js/components/Ticker.js":[function(require,module,exports) {
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.default = void 0;
-
-var _DOMComponent2 = _interopRequireDefault(require("../nori/DOMComponent"));
-
-var _Nori = require("../nori/Nori");
-
-var _emotion = require("emotion");
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
-
-function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
-
-function _possibleConstructorReturn(self, call) { if (call && (_typeof(call) === "object" || typeof call === "function")) { return call; } return _assertThisInitialized(self); }
-
-function _assertThisInitialized(self) { if (self === void 0) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return self; }
-
-function _getPrototypeOf(o) { _getPrototypeOf = Object.setPrototypeOf ? Object.getPrototypeOf : function _getPrototypeOf(o) { return o.__proto__ || Object.getPrototypeOf(o); }; return _getPrototypeOf(o); }
-
-function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function"); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, writable: true, configurable: true } }); if (superClass) _setPrototypeOf(subClass, superClass); }
-
-function _setPrototypeOf(o, p) { _setPrototypeOf = Object.setPrototypeOf || function _setPrototypeOf(o, p) { o.__proto__ = p; return o; }; return _setPrototypeOf(o, p); }
-
-function _templateObject() {
-  var data = _taggedTemplateLiteral(["color: red;"]);
-
-  _templateObject = function _templateObject() {
-    return data;
-  };
-
-  return data;
-}
-
-function _taggedTemplateLiteral(strings, raw) { if (!raw) { raw = strings.slice(0); } return Object.freeze(Object.defineProperties(strings, { raw: { value: Object.freeze(raw) } })); }
-
-var red = (0, _emotion.css)(_templateObject());
-
-var Ticker =
-/*#__PURE__*/
-function (_DOMComponent) {
-  _inherits(Ticker, _DOMComponent);
-
-  // Subclasses should only take passed props and children
-  function Ticker(props, children) {
-    var _this;
-
-    _classCallCheck(this, Ticker);
-
-    _this = _possibleConstructorReturn(this, _getPrototypeOf(Ticker).call(this, 'h1', props, []));
-    _this.internalState = {
-      counter: 0
-    };
-
-    _this.componentDidMount = function () {
-      console.log('Ticker rendered!');
-      setInterval(function (_) {
-        _this.state = {
-          counter: ++_this.state.counter
-        };
-      }, 5000);
-    };
-
-    _this.componentDidUpdate = function () {//console.log('Ticker update', this.state);
-    };
-
-    _this.componentWillUnmount = function () {//console.log('Ticker will umount');
-    };
-
-    return _this;
-  } // Default state
-
-
-  _createClass(Ticker, [{
-    key: "render",
-    value: function render() {
-      return (0, _Nori.h)("h6", null, "The count is ", (0, _Nori.h)("strong", {
-        className: red
-      }, this.internalState.counter), " seconds.");
-    }
-  }]);
-
-  return Ticker;
-}(_DOMComponent2.default);
-
-exports.default = Ticker;
-},{"../nori/DOMComponent":"js/nori/DOMComponent.js","../nori/Nori":"js/nori/Nori.js","emotion":"../node_modules/emotion/dist/index.esm.js"}],"img/pattern/shattered.png":[function(require,module,exports) {
+},{"../nori/DOMComponent":"js/nori/DOMComponent.js","../nori/Nori":"js/nori/Nori.js","../nori/util/Lorem":"js/nori/util/Lorem.js","emotion":"../node_modules/emotion/dist/index.esm.js"}],"img/pattern/shattered.png":[function(require,module,exports) {
 module.exports = "/shattered.a446e091.png";
 },{}],"js/index.js":[function(require,module,exports) {
 "use strict";
 
-var GlobalCSS = _interopRequireWildcard(require("./theme/Global"));
+var _Global = require("./theme/Global");
 
 var _Theme = require("./theme/Theme");
 
 var _emotion = require("emotion");
 
-var L = _interopRequireWildcard(require("./nori/util/Lorem"));
-
 var _Nori = require("./nori/Nori");
 
 var _Box = _interopRequireDefault(require("./components/Box"));
 
-var _Lorem2 = _interopRequireDefault(require("./components/Lorem"));
-
-var _Greeter = _interopRequireDefault(require("./components/Greeter"));
+var _Lorem = _interopRequireDefault(require("./components/Lorem"));
 
 var _Ticker = _interopRequireDefault(require("./components/Ticker"));
 
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+var _Greeter = _interopRequireDefault(require("./components/Greeter"));
 
-function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) { var desc = Object.defineProperty && Object.getOwnPropertyDescriptor ? Object.getOwnPropertyDescriptor(obj, key) : {}; if (desc.get || desc.set) { Object.defineProperty(newObj, key, desc); } else { newObj[key] = obj[key]; } } } } newObj.default = obj; return newObj; } }
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 function _templateObject3() {
   var data = _taggedTemplateLiteral(["\n  display: block;\n  padding: 1rem;\n  color: #fff;\n  overflow: hidden;\n  background-image: ", ";\n  box-shadow: ", ";\n"]);
@@ -20254,26 +20311,23 @@ var Sfc = function Sfc(_) {
   return (0, _Nori.h)("h1", null, "I'm a stateless functional component");
 };
 
+var testHTML = (0, _Nori.h)("div", null, (0, _Nori.h)("h1", null, "Heading 1"), (0, _Nori.h)("div", null, (0, _Nori.h)("h1", null, "1"), (0, _Nori.h)(_Lorem.default, {
+  mode: _Lorem.default.TITLE
+}), (0, _Nori.h)("h3", null, "3"), (0, _Nori.h)("p", null, "Para", (0, _Nori.h)("strong", null, "BOLD", (0, _Nori.h)("em", null, "EM!"))), (0, _Nori.h)(_Box.default, {
+  className: whiteBox
+}, (0, _Nori.h)(Sfc, null))));
 var testBox = (0, _Nori.h)(_Box.default, {
   key: "main",
   className: appContainer
 }, (0, _Nori.h)(_Box.default, {
   className: blackBox
-}, (0, _Nori.h)(_Lorem2.default, {
-  mode: _Lorem2.default.TITLE
+}, (0, _Nori.h)(_Lorem.default, {
+  mode: _Lorem.default.TITLE
 }), (0, _Nori.h)(_Box.default, {
   className: whiteBox
-}, (0, _Nori.h)(_Lorem2.default, {
-  mode: _Lorem2.default.TITLE
-}), (0, _Nori.h)(_Box.default, {
-  className: blackBox
-}, (0, _Nori.h)(_Lorem2.default, {
-  mode: _Lorem2.default.TITLE
-}), (0, _Nori.h)(_Box.default, {
-  className: whiteBox
-}, (0, _Nori.h)(Sfc, null), (0, _Nori.h)(_Ticker.default, null), (0, _Nori.h)(_Greeter.default, null), (0, _Nori.h)("p", null, "Oh, look. Another one ..."), (0, _Nori.h)(_Greeter.default, null))))));
-(0, _Nori.renderDOM)(testBox, applicationRoot);
-},{"./theme/Global":"js/theme/Global.js","./theme/Theme":"js/theme/Theme.js","emotion":"../node_modules/emotion/dist/index.esm.js","./nori/util/Lorem":"js/nori/util/Lorem.js","./nori/Nori":"js/nori/Nori.js","./components/Box":"js/components/Box.js","./components/Lorem":"js/components/Lorem.js","./components/Greeter":"js/components/Greeter.js","./components/Ticker":"js/components/Ticker.js","../img/pattern/shattered.png":"img/pattern/shattered.png"}],"../node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
+}, (0, _Nori.h)(Sfc, null), (0, _Nori.h)(_Ticker.default, null), (0, _Nori.h)(_Greeter.default, null), (0, _Nori.h)("p", null, "Oh, look. Another one ..."), (0, _Nori.h)(_Greeter.default, null))));
+(0, _Nori.render)(testBox, applicationRoot);
+},{"./theme/Global":"js/theme/Global.js","./theme/Theme":"js/theme/Theme.js","emotion":"../node_modules/emotion/dist/index.esm.js","./nori/Nori":"js/nori/Nori.js","./components/Box":"js/components/Box.js","./components/Lorem":"js/components/Lorem.js","./components/Ticker":"js/components/Ticker.js","./components/Greeter":"js/components/Greeter.js","../img/pattern/shattered.png":"img/pattern/shattered.png"}],"../node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
 var global = arguments[3];
 var OVERLAY_ID = '__parcel__error__overlay__';
 var OldModule = module.bundle.Module;
