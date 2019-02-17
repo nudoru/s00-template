@@ -18993,132 +18993,7 @@ var isDomEvent = function isDomEvent(e) {
 };
 
 exports.isDomEvent = isDomEvent;
-},{}],"js/nori/DOMing.js":[function(require,module,exports) {
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.removeChildren = exports.removeChild = exports.isNoriComponent = exports.removeBooleanProp = exports.removeProp = exports.setBooleanProp = exports.setProp = exports.setProps = exports.updateProps = void 0;
-
-var _DOMToolbox = require("./browser/DOMToolbox");
-
-var _ArrayUtils = require("./util/ArrayUtils");
-
-var _DomEvents = require("./events/DomEvents");
-
-/**
- * DOM functionality for Nori Components
- */
-// "Special props should be updated as new props are added to components. This is a bad design
-var specialProps = _DomEvents.domEventsList.concat(['tweens', 'state', 'actions', 'children', 'element', 'min', 'max', 'mode']);
-
-var $isSpecialProp = function $isSpecialProp(test) {
-  return specialProps.includes(test);
-};
-
-var updateProp = function updateProp(element, key, newValue, oldVaue) {
-  if (!newValue) {
-    removeProp(element, key, oldVaue);
-  } else if (!oldVaue || newValue !== oldVaue) {
-    setProp(element, key, newValue);
-  }
-};
-
-var updateProps = function updateProps(element, newProps) {
-  var oldProps = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
-  var props = Object.assign({}, newProps, oldProps);
-  Object.keys(props).forEach(function (key) {
-    updateProp(element, key, newProps[key], oldProps[key]);
-  });
-};
-
-exports.updateProps = updateProps;
-
-var setProps = function setProps(element, props) {
-  return Object.keys(props).forEach(function (key) {
-    var value = props[key];
-    setProp(element, key, value);
-    return element;
-  });
-};
-
-exports.setProps = setProps;
-
-var setProp = function setProp(element, key, value) {
-  if (!$isSpecialProp(key)) {
-    if (key === 'className') {
-      key = 'class';
-    } else if (key === 'id') {
-      key = 'data-nid';
-    }
-
-    if (typeof value === 'boolean') {
-      setBooleanProp(element, key, value);
-    } else {
-      element.setAttribute(key, value);
-    }
-  }
-};
-
-exports.setProp = setProp;
-
-var setBooleanProp = function setBooleanProp(element, key, value) {
-  if (value) {
-    element.setAttribute(key, value);
-    element[key] = true;
-  } else {
-    element[key] = false;
-  }
-};
-
-exports.setBooleanProp = setBooleanProp;
-
-var removeProp = function removeProp(element, key, value) {
-  if (!$isSpecialProp(key)) {
-    if (key === 'className') {
-      key = 'class';
-    } else if (key === 'id') {
-      key = 'data-nid';
-    }
-
-    if (typeof value === 'boolean') {
-      removeBooleanProp(element, key);
-    } else {
-      element.removeAttribute(key);
-    }
-  }
-};
-
-exports.removeProp = removeProp;
-
-var removeBooleanProp = function removeBooleanProp(element, key) {
-  element.removeAttribute(key);
-  element[key] = false;
-};
-
-exports.removeBooleanProp = removeBooleanProp;
-
-var isNoriComponent = function isNoriComponent(test) {
-  return test.$$typeof && Symbol.keyFor(test.$$typeof) === 'nori.component';
-};
-
-exports.isNoriComponent = isNoriComponent;
-
-var removeChild = function removeChild(child) {
-  if (isNoriComponent(child)) {
-    child.remove();
-  }
-};
-
-exports.removeChild = removeChild;
-
-var removeChildren = function removeChildren(children) {
-  return children.forEach(removeChild);
-};
-
-exports.removeChildren = removeChildren;
-},{"./browser/DOMToolbox":"js/nori/browser/DOMToolbox.js","./util/ArrayUtils":"js/nori/util/ArrayUtils.js","./events/DomEvents":"js/nori/events/DomEvents.js"}],"js/nori/Eventing.js":[function(require,module,exports) {
+},{}],"js/nori/Eventing.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -19276,17 +19151,17 @@ exports.getNextId = getNextId;
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.enqueueUpdate = exports.render = exports.h = void 0;
+exports.isNoriComponent = exports.performUpdates = exports.enqueueUpdate = exports.render = exports.removeBooleanProp = exports.removeProp = exports.setBooleanProp = exports.setProp = exports.setProps = exports.updateProps = exports.h = void 0;
 
 var _DOMToolbox = require("./browser/DOMToolbox");
 
 var _ArrayUtils = require("./util/ArrayUtils");
 
-var _DOMing = require("./DOMing");
-
 var _Eventing = require("./Eventing");
 
 var _ElementIDCreator = require("./util/ElementIDCreator");
+
+var _DomEvents = require("./events/DomEvents");
 
 function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
 
@@ -19294,8 +19169,11 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
 //https://medium.com/@bluepnume/jsx-is-a-stellar-invention-even-with-react-out-of-the-picture-c597187134b7
 var lastHostTree,
     $hostNode,
+    updatingHostTree,
     componentInstanceMap = {},
-    didMountQueue = []; // Convenience method to create new components. Used by the Babel/JSX transpiler
+    didMountQueue = [],
+    didUpdateQueue = [],
+    updateTimeOut; // Convenience method to create new components. Used by the Babel/JSX transpiler
 
 var h = function h(type, props) {
   props = props || {};
@@ -19311,7 +19189,10 @@ var h = function h(type, props) {
     children: args.length ? (0, _ArrayUtils.flatten)(args) : [],
     forceUpdate: false
   };
-};
+}; //------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+
 
 exports.h = h;
 
@@ -19354,7 +19235,7 @@ var createElement = function createElement(node) {
     console.warn("Unknown node type ".concat(node, " : ").concat(node.type));
   }
 
-  (0, _DOMing.setProps)($el, node.props || {});
+  setProps($el, node.props || {});
   (0, _Eventing.setEvents)(node.props, $el);
   return $el;
 };
@@ -19365,8 +19246,7 @@ var changed = function changed(newNode, oldNode) {
   }
 
   return _typeof(newNode) !== _typeof(oldNode) || typeof newNode === 'string' && newNode !== oldNode || newNode.type !== oldNode.type;
-}; // TODO need to call willUpdate and didUpdate
-
+};
 
 var updateElement = function updateElement($hostNode, newNode, oldNode) {
   var index = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : 0;
@@ -19379,7 +19259,7 @@ var updateElement = function updateElement($hostNode, newNode, oldNode) {
   } else if (changed(newNode, oldNode)) {
     $hostNode.replaceChild(createElement(newNode), $hostNode.childNodes[index]);
   } else if (newNode.type) {
-    (0, _DOMing.updateProps)($hostNode.childNodes[index], newNode.props, oldNode.props);
+    updateProps($hostNode.childNodes[index], newNode.props, oldNode.props);
     var newLength = newNode.children.length;
     var oldLength = oldNode.children.length;
 
@@ -19387,8 +19267,103 @@ var updateElement = function updateElement($hostNode, newNode, oldNode) {
       updateElement($hostNode.childNodes[index], newNode.children[i], oldNode.children[i], i);
     }
   }
-}; // Render a component to a dom node
+}; //------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+// "Special props should be updated as new props are added to components. This is a bad design
 
+
+var specialProps = _DomEvents.domEventsList.concat(['tweens', 'state', 'actions', 'children', 'element', 'min', 'max', 'mode']);
+
+var $isSpecialProp = function $isSpecialProp(test) {
+  return specialProps.includes(test);
+};
+
+var updateProp = function updateProp(element, key, newValue, oldVaue) {
+  if (!newValue) {
+    removeProp(element, key, oldVaue);
+  } else if (!oldVaue || newValue !== oldVaue) {
+    setProp(element, key, newValue);
+  }
+};
+
+var updateProps = function updateProps(element, newProps) {
+  var oldProps = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
+  var props = Object.assign({}, newProps, oldProps);
+  Object.keys(props).forEach(function (key) {
+    updateProp(element, key, newProps[key], oldProps[key]);
+  });
+};
+
+exports.updateProps = updateProps;
+
+var setProps = function setProps(element, props) {
+  return Object.keys(props).forEach(function (key) {
+    var value = props[key];
+    setProp(element, key, value);
+    return element;
+  });
+};
+
+exports.setProps = setProps;
+
+var setProp = function setProp(element, key, value) {
+  if (!$isSpecialProp(key)) {
+    if (key === 'className') {
+      key = 'class';
+    } else if (key === 'id') {
+      key = 'data-nid';
+    }
+
+    if (typeof value === 'boolean') {
+      setBooleanProp(element, key, value);
+    } else {
+      element.setAttribute(key, value);
+    }
+  }
+};
+
+exports.setProp = setProp;
+
+var setBooleanProp = function setBooleanProp(element, key, value) {
+  if (value) {
+    element.setAttribute(key, value);
+    element[key] = true;
+  } else {
+    element[key] = false;
+  }
+};
+
+exports.setBooleanProp = setBooleanProp;
+
+var removeProp = function removeProp(element, key, value) {
+  if (!$isSpecialProp(key)) {
+    if (key === 'className') {
+      key = 'class';
+    } else if (key === 'id') {
+      key = 'data-nid';
+    }
+
+    if (typeof value === 'boolean') {
+      removeBooleanProp(element, key);
+    } else {
+      element.removeAttribute(key);
+    }
+  }
+};
+
+exports.removeProp = removeProp;
+
+var removeBooleanProp = function removeBooleanProp(element, key) {
+  element.removeAttribute(key);
+  element[key] = false;
+}; //------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+// Render a component to a dom node
+
+
+exports.removeBooleanProp = removeBooleanProp;
 
 var render = function render(component, hostNode) {
   var removeExisting = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : true;
@@ -19399,26 +19374,45 @@ var render = function render(component, hostNode) {
 
   lastHostTree = component;
   $hostNode = hostNode;
-  updateElement(hostNode, component); // hostNode.appendChild(createElement(component));
-
+  updateElement(hostNode, component);
   didMountQueue.forEach(function (fn) {
     return fn();
   });
   didMountQueue = [];
-}; // TODO Store updates and do all at once on an interval? 1ms?
+}; //------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 
 exports.render = render;
 
 var enqueueUpdate = function enqueueUpdate(id) {
-  // console.log(`component update on ${id}`);
-  var newHostTree = markForceUpdateVDOMInTree(lastHostTree, id);
-  updateElement($hostNode, newHostTree, lastHostTree);
-  clearForceUpdateVDOMInTree(newHostTree);
-  lastHostTree = newHostTree;
+  didUpdateQueue.push(id);
+  updatingHostTree = markForceUpdateVDOMInTree(lastHostTree, id);
+
+  if (!updateTimeOut) {
+    updateTimeOut = setTimeout(performUpdates, 10);
+  }
 };
 
 exports.enqueueUpdate = enqueueUpdate;
+
+var performUpdates = function performUpdates() {
+  clearTimeout(updateTimeOut);
+  updateTimeOut = null;
+  updateElement($hostNode, updatingHostTree, lastHostTree);
+  clearForceUpdateVDOMInTree(updatingHostTree);
+  lastHostTree = updatingHostTree;
+  didUpdateQueue.forEach(function (id) {
+    // try catch in case the comp had been removed
+    try {
+      componentInstanceMap[id].componentDidUpdate();
+    } catch (e) {}
+  });
+  didUpdateQueue = [];
+};
+
+exports.performUpdates = performUpdates;
 
 var markForceUpdateVDOMInTree = function markForceUpdateVDOMInTree(vdom, id) {
   if (_typeof(vdom) === 'object') {
@@ -19446,7 +19440,20 @@ var clearForceUpdateVDOMInTree = function clearForceUpdateVDOMInTree(vdom) {
 
   return vdom;
 };
-},{"./browser/DOMToolbox":"js/nori/browser/DOMToolbox.js","./util/ArrayUtils":"js/nori/util/ArrayUtils.js","./DOMing":"js/nori/DOMing.js","./Eventing":"js/nori/Eventing.js","./util/ElementIDCreator":"js/nori/util/ElementIDCreator.js"}],"js/nori/util/is.js":[function(require,module,exports) {
+
+var isNoriComponent = function isNoriComponent(test) {
+  return test.$$typeof && Symbol.keyFor(test.$$typeof) === 'nori.component';
+}; // export const removeChild = child => {
+//   if (isNoriComponent(child)) {
+//     child.remove();
+//   }
+// };
+//
+// export const removeChildren = children => children.forEach(removeChild);
+
+
+exports.isNoriComponent = isNoriComponent;
+},{"./browser/DOMToolbox":"js/nori/browser/DOMToolbox.js","./util/ArrayUtils":"js/nori/util/ArrayUtils.js","./Eventing":"js/nori/Eventing.js","./util/ElementIDCreator":"js/nori/util/ElementIDCreator.js","./events/DomEvents":"js/nori/events/DomEvents.js"}],"js/nori/util/is.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -20125,7 +20132,7 @@ function (_DOMComponent) {
     value: function render() {
       return (0, _Nori.h)("h6", null, "The count is ", (0, _Nori.h)("strong", {
         className: red
-      }, this.internalState.counter), " seconds.");
+      }, this.internalState.counter), " ticks.");
     }
   }]);
 

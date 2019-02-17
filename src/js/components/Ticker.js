@@ -34,6 +34,6 @@ export default class Ticker extends DOMComponent {
   };
 
   render() {
-    return <h6>The count is <strong className={red}>{this.internalState.counter}</strong> seconds.</h6>;
+    return <h6>The count is <strong className={red}>{this.internalState.counter}</strong> ticks.</h6>;
   }
 }
