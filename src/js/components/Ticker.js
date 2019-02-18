@@ -21,7 +21,7 @@ export default class Ticker extends DOMComponent {
   }
 
   componentDidMount = () => {
-    console.log('Ticker rendered!');
+    //console.log('Ticker rendered!');
     setInterval(_ => {this.state = {counter: ++this.state.counter}}, 1000)
   };
 

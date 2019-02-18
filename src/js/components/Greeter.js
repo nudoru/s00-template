@@ -22,28 +22,27 @@ export default class Greeter extends DOMComponent {
   }
 
   $onClick = evt => {
-    console.log('Greet click!',evt);
+    //console.log('Greet click!',evt);
     this.state = {name:L.firstLastName()};
   };
 
   $onRender = evt => {
-    console.log('Greet rendered!', evt);
+    //console.log('Greet rendered!', evt);
   };
 
   componentWillUnmount = () => {
-    console.log('Greet will remove');
+    //console.log('Greet will remove');
   };
 
   componentWillUpdate  = () => {
-    console.log('Greet will update');
+    //console.log('Greet will update');
   };
 
   componentDidUpdate   = () => {
-    console.log('Greet did update');
+    //console.log('Greet did update');
   };
 
   render() {
-    console.log('Greeter rendering');
     return <h1 click={this.$onClick}>Hello, <em className={blue}>{this.state.name}</em></h1>;
   }
 }

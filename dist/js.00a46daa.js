@@ -19183,12 +19183,14 @@ var h = function h(type, props) {
     args[_key - 2] = arguments[_key];
   }
 
-  return {
+  var vdomnode = {
     type: type,
     props: props,
     children: args.length ? (0, _ArrayUtils.flatten)(args) : [],
     forceUpdate: false
-  };
+  }; //console.log('h', vdomnode);
+
+  return vdomnode;
 }; //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
@@ -19197,7 +19199,13 @@ var h = function h(type, props) {
 exports.h = h;
 
 var createElement = function createElement(node) {
-  var $el;
+  var $el; // console.log('creating',node);
+  // This shouldn't happen ... but just in case ...
+
+  if (node == null || node == undefined) {
+    console.warn("createElement: Error, ".concat(node, " was undefined"));
+    return document.createTextNode("createElement: Error, ".concat(node, " was undefined"));
+  }
 
   if (typeof node === 'string' || typeof node === 'number') {
     // Plain value of a tag
@@ -19216,7 +19224,12 @@ var createElement = function createElement(node) {
 
     if (typeof instance.render === 'function') {
       // Component
-      // TODO set a reference in the component to the DOM node created here
+      if (existingInstance) {
+        // TODO FIX!
+        // Since the whole component is rerendered, need to let it remove any listeners
+        instance.componentWillUnmount();
+      }
+
       $el = createElement(instance.render());
       instance.current = $el;
     } else {
@@ -19231,8 +19244,12 @@ var createElement = function createElement(node) {
     // Normal tag
     $el = document.createElement(node.type);
     node.children.map(createElement).forEach($el.appendChild.bind($el));
+  } else if (typeof node === 'function') {
+    console.log('Function!');
+    console.log(node());
+    return;
   } else {
-    console.warn("Unknown node type ".concat(node, " : ").concat(node.type));
+    return document.createTextNode("createElement: Unknown node type ".concat(node, " : ").concat(node.type));
   }
 
   setProps($el, node.props || {});
@@ -20109,7 +20126,7 @@ function (_DOMComponent) {
     };
 
     _this.componentDidMount = function () {
-      console.log('Ticker rendered!');
+      //console.log('Ticker rendered!');
       setInterval(function (_) {
         _this.state = {
           counter: ++_this.state.counter
@@ -20209,26 +20226,22 @@ function (_DOMComponent) {
     };
 
     _this.$onClick = function (evt) {
-      console.log('Greet click!', evt);
+      //console.log('Greet click!',evt);
       _this.state = {
         name: L.firstLastName()
       };
     };
 
-    _this.$onRender = function (evt) {
-      console.log('Greet rendered!', evt);
+    _this.$onRender = function (evt) {//console.log('Greet rendered!', evt);
     };
 
-    _this.componentWillUnmount = function () {
-      console.log('Greet will remove');
+    _this.componentWillUnmount = function () {//console.log('Greet will remove');
     };
 
-    _this.componentWillUpdate = function () {
-      console.log('Greet will update');
+    _this.componentWillUpdate = function () {//console.log('Greet will update');
     };
 
-    _this.componentDidUpdate = function () {
-      console.log('Greet did update');
+    _this.componentDidUpdate = function () {//console.log('Greet did update');
     };
 
     return _this;
@@ -20238,7 +20251,6 @@ function (_DOMComponent) {
   _createClass(Greeter, [{
     key: "render",
     value: function render() {
-      console.log('Greeter rendering');
       return (0, _Nori.h)("h1", {
         click: this.$onClick
       }, "Hello, ", (0, _Nori.h)("em", {
@@ -20251,7 +20263,127 @@ function (_DOMComponent) {
 }(_DOMComponent2.default);
 
 exports.default = Greeter;
-},{"../nori/DOMComponent":"js/nori/DOMComponent.js","../nori/Nori":"js/nori/Nori.js","../nori/util/Lorem":"js/nori/util/Lorem.js","emotion":"../node_modules/emotion/dist/index.esm.js"}],"img/pattern/shattered.png":[function(require,module,exports) {
+},{"../nori/DOMComponent":"js/nori/DOMComponent.js","../nori/Nori":"js/nori/Nori.js","../nori/util/Lorem":"js/nori/util/Lorem.js","emotion":"../node_modules/emotion/dist/index.esm.js"}],"js/components/Lister.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = void 0;
+
+var _DOMComponent2 = _interopRequireDefault(require("../nori/DOMComponent"));
+
+var _Nori = require("../nori/Nori");
+
+var _emotion = require("emotion");
+
+var _Theme = require("../theme/Theme");
+
+var _ArrayUtils = require("../nori/util/ArrayUtils");
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
+
+function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
+
+function _possibleConstructorReturn(self, call) { if (call && (_typeof(call) === "object" || typeof call === "function")) { return call; } return _assertThisInitialized(self); }
+
+function _assertThisInitialized(self) { if (self === void 0) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return self; }
+
+function _getPrototypeOf(o) { _getPrototypeOf = Object.setPrototypeOf ? Object.getPrototypeOf : function _getPrototypeOf(o) { return o.__proto__ || Object.getPrototypeOf(o); }; return _getPrototypeOf(o); }
+
+function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function"); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, writable: true, configurable: true } }); if (superClass) _setPrototypeOf(subClass, superClass); }
+
+function _setPrototypeOf(o, p) { _setPrototypeOf = Object.setPrototypeOf || function _setPrototypeOf(o, p) { o.__proto__ = p; return o; }; return _setPrototypeOf(o, p); }
+
+function _templateObject() {
+  var data = _taggedTemplateLiteral(["\nborder: 1px solid #ccc;\nbackground-color: #eee;\npadding: ", "\n"]);
+
+  _templateObject = function _templateObject() {
+    return data;
+  };
+
+  return data;
+}
+
+function _taggedTemplateLiteral(strings, raw) { if (!raw) { raw = strings.slice(0); } return Object.freeze(Object.defineProperties(strings, { raw: { value: Object.freeze(raw) } })); }
+
+var bordered = (0, _emotion.css)(_templateObject(), _Theme.modularScale.ms0);
+
+var Lister =
+/*#__PURE__*/
+function (_DOMComponent) {
+  _inherits(Lister, _DOMComponent);
+
+  // Subclasses should only take passed props and children
+  function Lister(props, children) {
+    var _this;
+
+    _classCallCheck(this, Lister);
+
+    _this = _possibleConstructorReturn(this, _getPrototypeOf(Lister).call(this, 'h1', props, []));
+    _this.internalState = {
+      counter: 1
+    };
+
+    _this.componentDidMount = function () {//console.log('Ticker did mount');
+    };
+
+    _this.componentDidUpdate = function () {//console.log('Lister update', this.state);
+    };
+
+    _this.componentWillUnmount = function () {//console.log('Lister will unmount');
+    };
+
+    _this.$onAddClick = function (e) {
+      _this.state = {
+        counter: ++_this.state.counter
+      };
+    };
+
+    _this.$onRemoveClick = function (e) {
+      var current = _this.state.counter;
+
+      if (current < 2) {
+        return;
+      }
+
+      _this.state = {
+        counter: --current
+      };
+    };
+
+    return _this;
+  } // Default state
+
+
+  _createClass(Lister, [{
+    key: "render",
+    //{range(this.state.counter).forEach(i => <li>Item</li>)}
+    value: function render() {
+      //console.log('render lister');
+      return (0, _Nori.h)("div", {
+        className: bordered
+      }, (0, _Nori.h)("button", {
+        click: this.$onAddClick
+      }, "Add"), (0, _Nori.h)("button", {
+        click: this.$onRemoveClick
+      }, "Remove"), (0, _Nori.h)("hr", null), (0, _Nori.h)("ul", null, (0, _ArrayUtils.range)(this.state.counter).map(function (i) {
+        return (0, _Nori.h)("li", null, "Item ", i + 1);
+      })));
+    }
+  }]);
+
+  return Lister;
+}(_DOMComponent2.default);
+
+exports.default = Lister;
+},{"../nori/DOMComponent":"js/nori/DOMComponent.js","../nori/Nori":"js/nori/Nori.js","emotion":"../node_modules/emotion/dist/index.esm.js","../theme/Theme":"js/theme/Theme.js","../nori/util/ArrayUtils":"js/nori/util/ArrayUtils.js"}],"img/pattern/shattered.png":[function(require,module,exports) {
 module.exports = "/shattered.a446e091.png";
 },{}],"js/index.js":[function(require,module,exports) {
 "use strict";
@@ -20271,6 +20403,8 @@ var _Lorem = _interopRequireDefault(require("./components/Lorem"));
 var _Ticker = _interopRequireDefault(require("./components/Ticker"));
 
 var _Greeter = _interopRequireDefault(require("./components/Greeter"));
+
+var _Lister = _interopRequireDefault(require("./components/Lister"));
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -20312,29 +20446,34 @@ var appContainerBG = require('../img/pattern/shattered.png');
 var appContainer = (0, _emotion.css)(_templateObject(), appContainerBG);
 var whiteBox = (0, _emotion.css)(_templateObject2(), _Theme.theme.gradients['premium-white'], _Theme.theme.shadows.dropShadow.bigsoft);
 var blackBox = (0, _emotion.css)(_templateObject3(), _Theme.theme.gradients['premium-dark'], _Theme.theme.shadows.dropShadow.bigsoft);
-var applicationRoot = document.querySelector('#js-application');
+var applicationRoot = document.querySelector('#js-application'); // const Sfc = _ => <h1>I'm a stateless functional component</h1>;
+//
+// let testHTML = <div><h1>Heading 1</h1>
+//   <div>
+//     <h1>1</h1>
+//     <Lorem mode={Lorem.TITLE}/>
+//     <h3>3</h3>
+//     <p>Para<strong>BOLD<em>EM!</em></strong></p>
+//     <Box className={whiteBox}>
+//       <Sfc/>
+//     </Box>
+//   </div>
+// </div>;
+//
+// let testBox = <Box key='main' className={appContainer}>
+//   <Box className={blackBox}>
+//     <Lorem mode={Lorem.TITLE}/>
+//     <Box className={whiteBox}>
+//       <Sfc/>
+//       <Ticker/>
+//       <Greeter/>
+//       <Lister/>
+//     </Box>
+//   </Box>
+// </Box>;
 
-var Sfc = function Sfc(_) {
-  return (0, _Nori.h)("h1", null, "I'm a stateless functional component");
-};
-
-var testHTML = (0, _Nori.h)("div", null, (0, _Nori.h)("h1", null, "Heading 1"), (0, _Nori.h)("div", null, (0, _Nori.h)("h1", null, "1"), (0, _Nori.h)(_Lorem.default, {
-  mode: _Lorem.default.TITLE
-}), (0, _Nori.h)("h3", null, "3"), (0, _Nori.h)("p", null, "Para", (0, _Nori.h)("strong", null, "BOLD", (0, _Nori.h)("em", null, "EM!"))), (0, _Nori.h)(_Box.default, {
-  className: whiteBox
-}, (0, _Nori.h)(Sfc, null))));
-var testBox = (0, _Nori.h)(_Box.default, {
-  key: "main",
-  className: appContainer
-}, (0, _Nori.h)(_Box.default, {
-  className: blackBox
-}, (0, _Nori.h)(_Lorem.default, {
-  mode: _Lorem.default.TITLE
-}), (0, _Nori.h)(_Box.default, {
-  className: whiteBox
-}, (0, _Nori.h)(Sfc, null), (0, _Nori.h)(_Ticker.default, null), (0, _Nori.h)(_Greeter.default, null), (0, _Nori.h)("p", null, "Oh, look. Another one ..."), (0, _Nori.h)(_Greeter.default, null))));
-(0, _Nori.render)(testBox, applicationRoot);
-},{"./theme/Global":"js/theme/Global.js","./theme/Theme":"js/theme/Theme.js","emotion":"../node_modules/emotion/dist/index.esm.js","./nori/Nori":"js/nori/Nori.js","./components/Box":"js/components/Box.js","./components/Lorem":"js/components/Lorem.js","./components/Ticker":"js/components/Ticker.js","./components/Greeter":"js/components/Greeter.js","../img/pattern/shattered.png":"img/pattern/shattered.png"}],"../node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
+(0, _Nori.render)((0, _Nori.h)(_Lister.default, null), applicationRoot);
+},{"./theme/Global":"js/theme/Global.js","./theme/Theme":"js/theme/Theme.js","emotion":"../node_modules/emotion/dist/index.esm.js","./nori/Nori":"js/nori/Nori.js","./components/Box":"js/components/Box.js","./components/Lorem":"js/components/Lorem.js","./components/Ticker":"js/components/Ticker.js","./components/Greeter":"js/components/Greeter.js","./components/Lister":"js/components/Lister.js","../img/pattern/shattered.png":"img/pattern/shattered.png"}],"../node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
 var global = arguments[3];
 var OVERLAY_ID = '__parcel__error__overlay__';
 var OldModule = module.bundle.Module;

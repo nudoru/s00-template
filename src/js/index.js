@@ -8,6 +8,7 @@ import Box from './components/Box';
 import Lorem from './components/Lorem';
 import Ticker from './components/Ticker';
 import Greeter from './components/Greeter';
+import Lister from './components/Lister';
 
 // ${tme.gradients['premium-white']};
 const appContainerBG = require('../img/pattern/shattered.png');
@@ -45,31 +46,30 @@ const blackBox = css`
 
 const applicationRoot = document.querySelector('#js-application');
 
-const Sfc = _ => <h1>I'm a stateless functional component</h1>;
+// const Sfc = _ => <h1>I'm a stateless functional component</h1>;
+//
+// let testHTML = <div><h1>Heading 1</h1>
+//   <div>
+//     <h1>1</h1>
+//     <Lorem mode={Lorem.TITLE}/>
+//     <h3>3</h3>
+//     <p>Para<strong>BOLD<em>EM!</em></strong></p>
+//     <Box className={whiteBox}>
+//       <Sfc/>
+//     </Box>
+//   </div>
+// </div>;
+//
+// let testBox = <Box key='main' className={appContainer}>
+//   <Box className={blackBox}>
+//     <Lorem mode={Lorem.TITLE}/>
+//     <Box className={whiteBox}>
+//       <Sfc/>
+//       <Ticker/>
+//       <Greeter/>
+//       <Lister/>
+//     </Box>
+//   </Box>
+// </Box>;
 
-let testHTML = <div><h1>Heading 1</h1>
-  <div>
-    <h1>1</h1>
-    <Lorem mode={Lorem.TITLE}/>
-    <h3>3</h3>
-    <p>Para<strong>BOLD<em>EM!</em></strong></p>
-    <Box className={whiteBox}>
-      <Sfc/>
-    </Box>
-  </div>
-</div>;
-
-let testBox = <Box key='main' className={appContainer}>
-  <Box className={blackBox}>
-    <Lorem mode={Lorem.TITLE}/>
-    <Box className={whiteBox}>
-      <Sfc/>
-      <Ticker/>
-      <Greeter/>
-      <p>Oh, look. Another one ...</p>
-      <Greeter/>
-    </Box>
-  </Box>
-</Box>;
-
-render(testBox, applicationRoot);
+render(<Lister/>, applicationRoot);

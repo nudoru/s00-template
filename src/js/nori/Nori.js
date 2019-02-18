@@ -12,7 +12,7 @@ let lastHostTree,
     updatingHostTree,
     componentInstanceMap = {},
     didMountQueue        = [],
-    didUpdateQueue    = [],
+    didUpdateQueue       = [],
     updateTimeOut;
 
 // Convenience method to create new components. Used by the Babel/JSX transpiler
@@ -20,9 +20,13 @@ export const h = (type, props, ...args) => {
   props    = props || {};
   props.id = props.key || getNextId();
 
-  return {
+  let vdomnode = {
     type, props, children: args.length ? flatten(args) : [], forceUpdate: false
   };
+
+  //console.log('h', vdomnode);
+
+  return vdomnode;
 };
 
 //------------------------------------------------------------------------------
@@ -31,6 +35,15 @@ export const h = (type, props, ...args) => {
 
 const createElement = node => {
   let $el;
+
+  // console.log('creating',node);
+
+  // This shouldn't happen ... but just in case ...
+  if (node == null || node == undefined) {
+    console.warn(`createElement: Error, ${node} was undefined`);
+    return document.createTextNode(`createElement: Error, ${node} was undefined`);
+  }
+
   if (typeof node === 'string' || typeof node === 'number') {
     // Plain value of a tag
     $el = document.createTextNode(node);
@@ -49,7 +62,11 @@ const createElement = node => {
 
     if (typeof instance.render === 'function') {
       // Component
-      // TODO set a reference in the component to the DOM node created here
+      if (existingInstance) {
+        // TODO FIX!
+        // Since the whole component is rerendered, need to let it remove any listeners
+        instance.componentWillUnmount();
+      }
       $el              = createElement(instance.render());
       instance.current = $el;
     } else {
@@ -66,8 +83,12 @@ const createElement = node => {
     node.children
       .map(createElement)
       .forEach($el.appendChild.bind($el));
+  } else if (typeof node === 'function') {
+    console.log('Function!');
+    console.log(node());
+    return;
   } else {
-    console.warn(`Unknown node type ${node} : ${node.type}`);
+    return document.createTextNode(`createElement: Unknown node type ${node} : ${node.type}`);
   }
 
   setProps($el, node.props || {});
@@ -240,7 +261,8 @@ export const performUpdates = () => {
     // try catch in case the comp had been removed
     try {
       componentInstanceMap[id].componentDidUpdate()
-    } catch (e) {}
+    } catch (e) {
+    }
   });
   didUpdateQueue = [];
 };
