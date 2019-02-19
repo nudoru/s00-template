@@ -18999,7 +18999,7 @@ exports.isDomEvent = isDomEvent;
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.removeActions = exports.performBehavior = exports.handleEventTrigger = exports.createEventObject = exports.applyActions = exports.setEvents = exports.mapActions = void 0;
+exports.removeActions = exports.performBehavior = exports.createEventObject = exports.handleEventTrigger = exports.setEvents = exports.mapActions = void 0;
 
 var _DomEvents = require("./events/DomEvents");
 
@@ -19039,31 +19039,9 @@ var setEvents = function setEvents() {
       element.addEventListener(evt.event, evt.internalHandler);
     }
   });
-}; // TODO implement options and useCapture? https://developer.mozilla.org/en-US/docs/Web/API/EventTarget/addEventListener
-
+};
 
 exports.setEvents = setEvents;
-
-var applyActions = function applyActions(component, element) {
-  return component.actionMap.forEach(function (evt) {
-    if (evt.type === ACTION_EVENT) {
-      evt.internalHandler = handleEventTrigger(evt, component);
-      element.addEventListener(evt.event, evt.internalHandler);
-    }
-  });
-};
-
-exports.applyActions = applyActions;
-
-var createEventObject = function createEventObject(e) {
-  var src = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : null;
-  return {
-    event: e,
-    target: src
-  };
-};
-
-exports.createEventObject = createEventObject;
 
 var handleEventTrigger = function handleEventTrigger(evt, src) {
   return function (e) {
@@ -19072,6 +19050,23 @@ var handleEventTrigger = function handleEventTrigger(evt, src) {
 };
 
 exports.handleEventTrigger = handleEventTrigger;
+
+var createEventObject = function createEventObject(e) {
+  var src = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : null;
+  return {
+    event: e,
+    target: src
+  };
+}; // TODO implement options and useCapture? https://developer.mozilla.org/en-US/docs/Web/API/EventTarget/addEventListener
+// export const applyActions = (component, element) => component.actionMap.forEach(evt => {
+//   if (evt.type === ACTION_EVENT) {
+//     evt.internalHandler = handleEventTrigger(evt, component);
+//     element.addEventListener(evt.event, evt.internalHandler);
+//   }
+// });
+
+
+exports.createEventObject = createEventObject;
 
 var performBehavior = function performBehavior(component, behavior, e) {
   return component.actionMap.forEach(function (evt) {
@@ -19169,11 +19164,10 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
 //https://medium.com/@bluepnume/jsx-is-a-stellar-invention-even-with-react-out-of-the-picture-c597187134b7
 var lastHostTree,
     $hostNode,
-    updatingHostTree,
     componentInstanceMap = {},
     didMountQueue = [],
     didUpdateQueue = [],
-    updateTimeOut; // Convenience method to create new components. Used by the Babel/JSX transpiler
+    updateTimeOut; // Create VDOM from JSX. Used by the Babel/JSX transpiler
 
 var h = function h(type, props) {
   props = props || {};
@@ -19183,24 +19177,52 @@ var h = function h(type, props) {
     args[_key - 2] = arguments[_key];
   }
 
-  var vdomnode = {
+  var vdomNode = {
     type: type,
     props: props,
     children: args.length ? (0, _ArrayUtils.flatten)(args) : [],
-    forceUpdate: false
-  }; //console.log('h', vdomnode);
-
-  return vdomnode;
+    owner: null
+  };
+  return vdomNode;
 }; //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
 
+/*
+Renders out components to get a vdom tree of just html
+ */
+
 
 exports.h = h;
 
+var createComponentVDOM = function createComponentVDOM(node) {
+  if (_typeof(node) === 'object') {
+    node = Object.assign({}, node);
+  }
+
+  if (typeof node.type === 'function') {
+    var instance = new node.type(node.props, node.children);
+    componentInstanceMap[node.props.id] = instance;
+
+    if (typeof instance.render === 'function') {
+      node = instance.render();
+      node.owner = instance;
+    }
+  }
+
+  if (node.hasOwnProperty('children')) {
+    node.children = node.children.map(function (child) {
+      var res = createComponentVDOM(child);
+      return res;
+    });
+  }
+
+  return node;
+};
+
 var createElement = function createElement(node) {
-  var $el; // console.log('creating',node);
-  // This shouldn't happen ... but just in case ...
+  var $el,
+      ownerComp = node.owner !== null && node.owner !== undefined ? node.owner : null; // This shouldn't happen ... but just in case ...
 
   if (node == null || node == undefined) {
     console.warn("createElement: Error, ".concat(node, " was undefined"));
@@ -19211,45 +19233,21 @@ var createElement = function createElement(node) {
     // Plain value of a tag
     $el = document.createTextNode(node);
   } else if (typeof node.type === 'function') {
-    var instance,
-        existingInstance = false; // If the instance has been flagged as updated (new prop on the map entry) rerender?
-
-    if (componentInstanceMap.hasOwnProperty(node.props.id)) {
-      instance = componentInstanceMap[node.props.id];
-      existingInstance = true;
-    } else {
-      instance = new node.type(node.props, node.children);
-      componentInstanceMap[node.props.id] = instance;
-    }
-
-    if (typeof instance.render === 'function') {
-      // Component
-      if (existingInstance) {
-        // TODO FIX!
-        // Since the whole component is rerendered, need to let it remove any listeners
-        instance.componentWillUnmount();
-      }
-
-      $el = createElement(instance.render());
-      instance.current = $el;
-    } else {
-      // Stateless functional component
-      $el = createElement(instance);
-    }
-
-    if (typeof instance.componentDidMount === 'function' && !existingInstance) {
-      didMountQueue.push(instance.componentDidMount.bind(instance));
-    }
+    // Stateless functional component
+    $el = createElement(new node.type(node.props, node.children));
   } else if (_typeof(node) === 'object' && typeof node.type === 'string') {
-    // Normal tag
     $el = document.createElement(node.type);
     node.children.map(createElement).forEach($el.appendChild.bind($el));
   } else if (typeof node === 'function') {
-    console.log('Function!');
-    console.log(node());
+    console.log('node is a function', node);
     return;
   } else {
     return document.createTextNode("createElement: Unknown node type ".concat(node, " : ").concat(node.type));
+  }
+
+  if (ownerComp) {
+    ownerComp.current = $el;
+    didMountQueue.push(ownerComp.componentDidMount.bind(ownerComp));
   }
 
   setProps($el, node.props || {});
@@ -19258,24 +19256,26 @@ var createElement = function createElement(node) {
 };
 
 var changed = function changed(newNode, oldNode) {
-  if (newNode.forceUpdate) {
-    return true;
-  }
-
-  return _typeof(newNode) !== _typeof(oldNode) || typeof newNode === 'string' && newNode !== oldNode || newNode.type !== oldNode.type;
+  return _typeof(newNode) !== _typeof(oldNode) || (typeof newNode === 'string' || typeof newNode === 'number' || typeof newNode === 'boolean') && newNode !== oldNode || newNode.type !== oldNode.type;
 };
 
 var updateElement = function updateElement($hostNode, newNode, oldNode) {
   var index = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : 0;
 
-  if (!oldNode) {
+  if (oldNode !== 0 && !oldNode) {
     $hostNode.appendChild(createElement(newNode));
   } else if (!newNode) {
-    // TODO need to remove events
-    $hostNode.removeChild($hostNode.childNodes[index]);
+    var child = $hostNode.childNodes[index]; // TODO need to remove events
+    // instancemap[$hostnode['data-nid']].componentWillUnmount();
+
+    if (child) {
+      $hostNode.removeChild(child);
+    }
   } else if (changed(newNode, oldNode)) {
+    //console.log('Replacing', oldNode, 'with', newNode);
     $hostNode.replaceChild(createElement(newNode), $hostNode.childNodes[index]);
   } else if (newNode.type) {
+    //console.log('NO', oldNode, 'with', newNode);
     updateProps($hostNode.childNodes[index], newNode.props, oldNode.props);
     var newLength = newNode.children.length;
     var oldLength = oldNode.children.length;
@@ -19389,9 +19389,9 @@ var render = function render(component, hostNode) {
     (0, _DOMToolbox.removeAllElements)(hostNode);
   }
 
-  lastHostTree = component;
+  lastHostTree = createComponentVDOM(component);
+  updateElement(hostNode, lastHostTree);
   $hostNode = hostNode;
-  updateElement(hostNode, component);
   didMountQueue.forEach(function (fn) {
     return fn();
   });
@@ -19400,12 +19400,15 @@ var render = function render(component, hostNode) {
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
 
+/*
+Queue updates from components and batch update every so often
+ */
+
 
 exports.render = render;
 
 var enqueueUpdate = function enqueueUpdate(id) {
   didUpdateQueue.push(id);
-  updatingHostTree = markForceUpdateVDOMInTree(lastHostTree, id);
 
   if (!updateTimeOut) {
     updateTimeOut = setTimeout(performUpdates, 10);
@@ -19415,47 +19418,62 @@ var enqueueUpdate = function enqueueUpdate(id) {
 exports.enqueueUpdate = enqueueUpdate;
 
 var performUpdates = function performUpdates() {
+  var updatedVDOMTree;
   clearTimeout(updateTimeOut);
   updateTimeOut = null;
-  updateElement($hostNode, updatingHostTree, lastHostTree);
-  clearForceUpdateVDOMInTree(updatingHostTree);
-  lastHostTree = updatingHostTree;
+  didUpdateQueue.forEach(function (id) {
+    updatedVDOMTree = rerenderVDOMInTree(lastHostTree, componentInstanceMap, id);
+  });
+  updateElement($hostNode, updatedVDOMTree, lastHostTree);
+  lastHostTree = updatedVDOMTree;
   didUpdateQueue.forEach(function (id) {
     // try catch in case the comp had been removed
-    try {
-      componentInstanceMap[id].componentDidUpdate();
-    } catch (e) {}
+    // try {
+    componentInstanceMap[id].componentDidUpdate(); // } catch (e) {
+    //   console.warn(`performUpdates, cdu: WTF? ${e}`);
+    // }
   });
   didUpdateQueue = [];
 };
+/*
+Rerenders the components from id down to a vdom tree for diffing w/ the original
+TODO, reconcile any over laps with createComponentVDOM
+ */
+
 
 exports.performUpdates = performUpdates;
 
-var markForceUpdateVDOMInTree = function markForceUpdateVDOMInTree(vdom, id) {
-  if (_typeof(vdom) === 'object') {
-    if (vdom.props.id === id) {
-      vdom.forceUpdate = true;
-    } else if (vdom.props.children) {
-      vdom.props.children.forEach(function (child) {
-        return markForceUpdateVDOMInTree(child, id);
+var rerenderVDOMInTree = function rerenderVDOMInTree(node, componentInstanceMap, id) {
+  if (_typeof(node) === 'object') {
+    node = Object.assign({}, node);
+  }
+
+  if (node.owner !== null) {
+    if (node.hasOwnProperty('owner') && node.owner.props.id === id) {
+      var instance;
+
+      if (componentInstanceMap.hasOwnProperty(id)) {
+        instance = componentInstanceMap[id];
+      } else {
+        console.warn("rerenderVDOMInTree : ".concat(id, " isn't in the map!"));
+        return node;
+      }
+
+      if (typeof instance.render === 'function') {
+        node = instance.render();
+        node.owner = instance;
+      }
+    }
+
+    if (node.hasOwnProperty('children')) {
+      node.children = node.children.map(function (child) {
+        var res = rerenderVDOMInTree(child, componentInstanceMap, id);
+        return res;
       });
     }
   }
 
-  return vdom;
-};
-
-var clearForceUpdateVDOMInTree = function clearForceUpdateVDOMInTree(vdom) {
-  if (_typeof(vdom) === 'object') {
-    if (vdom.props.children) {
-      vdom.forceUpdate = false;
-      vdom.props.children.forEach(function (child) {
-        return clearForceUpdateVDOMInTree(child);
-      });
-    }
-  }
-
-  return vdom;
+  return node;
 };
 
 var isNoriComponent = function isNoriComponent(test) {
@@ -20125,13 +20143,8 @@ function (_DOMComponent) {
       counter: 0
     };
 
-    _this.componentDidMount = function () {
-      //console.log('Ticker rendered!');
-      setInterval(function (_) {
-        _this.state = {
-          counter: ++_this.state.counter
-        };
-      }, 1000);
+    _this.componentDidMount = function () {//console.log('Ticker rendered!');
+      //setInterval(_ => {this.state = {counter: ++this.state.counter}}, 1000)
     };
 
     _this.componentDidUpdate = function () {//console.log('Ticker update', this.state);
@@ -20147,7 +20160,7 @@ function (_DOMComponent) {
   _createClass(Ticker, [{
     key: "render",
     value: function render() {
-      return (0, _Nori.h)("h6", null, "The count is ", (0, _Nori.h)("strong", {
+      return (0, _Nori.h)("h3", null, "The count is ", (0, _Nori.h)("strong", {
         className: red
       }, this.internalState.counter), " ticks.");
     }
@@ -20226,7 +20239,7 @@ function (_DOMComponent) {
     };
 
     _this.$onClick = function (evt) {
-      //console.log('Greet click!',evt);
+      // console.log('Greet click!',evt, this);
       _this.state = {
         name: L.firstLastName()
       };
@@ -20238,10 +20251,11 @@ function (_DOMComponent) {
     _this.componentWillUnmount = function () {//console.log('Greet will remove');
     };
 
-    _this.componentWillUpdate = function () {//console.log('Greet will update');
+    _this.componentWillUpdate = function () {
+      console.log('Greet will update', _this.state.name);
     };
 
-    _this.componentDidUpdate = function () {//console.log('Greet did update');
+    _this.componentDidUpdate = function () {// console.log('Greet did update');
     };
 
     return _this;
@@ -20280,6 +20294,8 @@ var _emotion = require("emotion");
 var _Theme = require("../theme/Theme");
 
 var _ArrayUtils = require("../nori/util/ArrayUtils");
+
+var _Ticker = _interopRequireDefault(require("./Ticker"));
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -20334,7 +20350,7 @@ function (_DOMComponent) {
     _this.componentDidMount = function () {//console.log('Ticker did mount');
     };
 
-    _this.componentDidUpdate = function () {//console.log('Lister update', this.state);
+    _this.componentDidUpdate = function () {// console.log('Lister update', this.state);
     };
 
     _this.componentWillUnmount = function () {//console.log('Lister will unmount');
@@ -20365,17 +20381,21 @@ function (_DOMComponent) {
   _createClass(Lister, [{
     key: "render",
     //{range(this.state.counter).forEach(i => <li>Item</li>)}
+    // <ul>
+    // {range(this.state.counter).map(i => <li>Item {i+1}</li>)}
+    // </ul>
     value: function render() {
       //console.log('render lister');
       return (0, _Nori.h)("div", {
-        className: bordered
+        className: bordered,
+        key: this.props.id
       }, (0, _Nori.h)("button", {
         click: this.$onAddClick
       }, "Add"), (0, _Nori.h)("button", {
         click: this.$onRemoveClick
-      }, "Remove"), (0, _Nori.h)("hr", null), (0, _Nori.h)("ul", null, (0, _ArrayUtils.range)(this.state.counter).map(function (i) {
-        return (0, _Nori.h)("li", null, "Item ", i + 1);
-      })));
+      }, "Remove"), (0, _Nori.h)("hr", null), (0, _ArrayUtils.range)(this.state.counter).map(function (i) {
+        return (0, _Nori.h)(_Ticker.default, null);
+      }));
     }
   }]);
 
@@ -20383,7 +20403,7 @@ function (_DOMComponent) {
 }(_DOMComponent2.default);
 
 exports.default = Lister;
-},{"../nori/DOMComponent":"js/nori/DOMComponent.js","../nori/Nori":"js/nori/Nori.js","emotion":"../node_modules/emotion/dist/index.esm.js","../theme/Theme":"js/theme/Theme.js","../nori/util/ArrayUtils":"js/nori/util/ArrayUtils.js"}],"img/pattern/shattered.png":[function(require,module,exports) {
+},{"../nori/DOMComponent":"js/nori/DOMComponent.js","../nori/Nori":"js/nori/Nori.js","emotion":"../node_modules/emotion/dist/index.esm.js","../theme/Theme":"js/theme/Theme.js","../nori/util/ArrayUtils":"js/nori/util/ArrayUtils.js","./Ticker":"js/components/Ticker.js"}],"img/pattern/shattered.png":[function(require,module,exports) {
 module.exports = "/shattered.a446e091.png";
 },{}],"js/index.js":[function(require,module,exports) {
 "use strict";
@@ -20446,8 +20466,11 @@ var appContainerBG = require('../img/pattern/shattered.png');
 var appContainer = (0, _emotion.css)(_templateObject(), appContainerBG);
 var whiteBox = (0, _emotion.css)(_templateObject2(), _Theme.theme.gradients['premium-white'], _Theme.theme.shadows.dropShadow.bigsoft);
 var blackBox = (0, _emotion.css)(_templateObject3(), _Theme.theme.gradients['premium-dark'], _Theme.theme.shadows.dropShadow.bigsoft);
-var applicationRoot = document.querySelector('#js-application'); // const Sfc = _ => <h1>I'm a stateless functional component</h1>;
-//
+var applicationRoot = document.querySelector('#js-application');
+
+var Sfc = function Sfc(_) {
+  return (0, _Nori.h)("h1", null, "I'm a stateless functional component");
+}; //
 // let testHTML = <div><h1>Heading 1</h1>
 //   <div>
 //     <h1>1</h1>
@@ -20460,19 +20483,19 @@ var applicationRoot = document.querySelector('#js-application'); // const Sfc = 
 //   </div>
 // </div>;
 //
-// let testBox = <Box key='main' className={appContainer}>
-//   <Box className={blackBox}>
-//     <Lorem mode={Lorem.TITLE}/>
-//     <Box className={whiteBox}>
-//       <Sfc/>
-//       <Ticker/>
-//       <Greeter/>
-//       <Lister/>
-//     </Box>
-//   </Box>
-// </Box>;
 
-(0, _Nori.render)((0, _Nori.h)(_Lister.default, null), applicationRoot);
+
+var testBox = (0, _Nori.h)(_Box.default, {
+  key: "main",
+  className: appContainer
+}, (0, _Nori.h)(_Box.default, {
+  className: blackBox
+}, (0, _Nori.h)(_Lorem.default, {
+  mode: _Lorem.default.TITLE
+}), (0, _Nori.h)(_Box.default, {
+  className: whiteBox
+}, (0, _Nori.h)(Sfc, null), (0, _Nori.h)(_Ticker.default, null), (0, _Nori.h)(_Greeter.default, null), (0, _Nori.h)(_Greeter.default, null), (0, _Nori.h)(_Lister.default, null))));
+(0, _Nori.render)(testBox, applicationRoot);
 },{"./theme/Global":"js/theme/Global.js","./theme/Theme":"js/theme/Theme.js","emotion":"../node_modules/emotion/dist/index.esm.js","./nori/Nori":"js/nori/Nori.js","./components/Box":"js/components/Box.js","./components/Lorem":"js/components/Lorem.js","./components/Ticker":"js/components/Ticker.js","./components/Greeter":"js/components/Greeter.js","./components/Lister":"js/components/Lister.js","../img/pattern/shattered.png":"img/pattern/shattered.png"}],"../node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
 var global = arguments[3];
 var OVERLAY_ID = '__parcel__error__overlay__';

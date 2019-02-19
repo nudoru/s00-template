@@ -9,6 +9,7 @@ import {h} from "../nori/Nori";
 import {css} from 'emotion';
 import {modularScale} from "../theme/Theme";
 import {range} from "../nori/util/ArrayUtils";
+import Ticker from './Ticker';
 
 const bordered = css`
 border: 1px solid #ccc;
@@ -30,7 +31,7 @@ export default class Lister extends DOMComponent {
   };
 
   componentDidUpdate = () => {
-    //console.log('Lister update', this.state);
+    // console.log('Lister update', this.state);
   };
 
   componentWillUnmount = () => {
@@ -50,14 +51,16 @@ export default class Lister extends DOMComponent {
   };
 
   //{range(this.state.counter).forEach(i => <li>Item</li>)}
+// <ul>
+// {range(this.state.counter).map(i => <li>Item {i+1}</li>)}
+// </ul>
+
   render() {
     //console.log('render lister');
-    return <div className={bordered}>
+    return <div className={bordered} key={this.props.id}>
       <button click={this.$onAddClick}>Add</button><button click={this.$onRemoveClick}>Remove</button>
       <hr/>
-      <ul>
-        {range(this.state.counter).map(i => <li>Item {i+1}</li>)}
-      </ul>
+        {range(this.state.counter).map(i => <Ticker/>)}
 
     </div>;
   }

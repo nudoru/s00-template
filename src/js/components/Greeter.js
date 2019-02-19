@@ -22,7 +22,7 @@ export default class Greeter extends DOMComponent {
   }
 
   $onClick = evt => {
-    //console.log('Greet click!',evt);
+    // console.log('Greet click!',evt, this);
     this.state = {name:L.firstLastName()};
   };
 
@@ -35,11 +35,11 @@ export default class Greeter extends DOMComponent {
   };
 
   componentWillUpdate  = () => {
-    //console.log('Greet will update');
+    console.log('Greet will update', this.state.name);
   };
 
   componentDidUpdate   = () => {
-    //console.log('Greet did update');
+    // console.log('Greet did update');
   };
 
   render() {

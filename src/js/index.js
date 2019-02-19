@@ -46,7 +46,7 @@ const blackBox = css`
 
 const applicationRoot = document.querySelector('#js-application');
 
-// const Sfc = _ => <h1>I'm a stateless functional component</h1>;
+const Sfc = _ => <h1>I'm a stateless functional component</h1>;
 //
 // let testHTML = <div><h1>Heading 1</h1>
 //   <div>
@@ -60,16 +60,18 @@ const applicationRoot = document.querySelector('#js-application');
 //   </div>
 // </div>;
 //
-// let testBox = <Box key='main' className={appContainer}>
-//   <Box className={blackBox}>
-//     <Lorem mode={Lorem.TITLE}/>
-//     <Box className={whiteBox}>
-//       <Sfc/>
-//       <Ticker/>
-//       <Greeter/>
-//       <Lister/>
-//     </Box>
-//   </Box>
-// </Box>;
 
-render(<Lister/>, applicationRoot);
+let testBox = <Box key='main' className={appContainer}>
+  <Box className={blackBox}>
+    <Lorem mode={Lorem.TITLE}/>
+    <Box className={whiteBox}>
+      <Sfc/>
+      <Ticker/>
+      <Greeter/>
+      <Greeter/>
+      <Lister/>
+    </Box>
+  </Box>
+</Box>;
+
+render(testBox, applicationRoot);

@@ -22,7 +22,7 @@ export default class Ticker extends DOMComponent {
 
   componentDidMount = () => {
     //console.log('Ticker rendered!');
-    setInterval(_ => {this.state = {counter: ++this.state.counter}}, 1000)
+    //setInterval(_ => {this.state = {counter: ++this.state.counter}}, 1000)
   };
 
   componentDidUpdate = () => {
@@ -34,6 +34,6 @@ export default class Ticker extends DOMComponent {
   };
 
   render() {
-    return <h6>The count is <strong className={red}>{this.internalState.counter}</strong> ticks.</h6>;
+    return <h3>The count is <strong className={red}>{this.internalState.counter}</strong> ticks.</h3>;
   }
 }

@@ -9,34 +9,54 @@ import {domEventsList} from "./events/DomEvents";
 
 let lastHostTree,
     $hostNode,
-    updatingHostTree,
     componentInstanceMap = {},
     didMountQueue        = [],
     didUpdateQueue       = [],
     updateTimeOut;
 
-// Convenience method to create new components. Used by the Babel/JSX transpiler
+// Create VDOM from JSX. Used by the Babel/JSX transpiler
 export const h = (type, props, ...args) => {
   props    = props || {};
   props.id = props.key || getNextId();
 
-  let vdomnode = {
-    type, props, children: args.length ? flatten(args) : [], forceUpdate: false
+  let vdomNode = {
+    type, props, children: args.length ? flatten(args) : [], owner: null
   };
 
-  //console.log('h', vdomnode);
-
-  return vdomnode;
+  return vdomNode;
 };
 
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
 
-const createElement = node => {
-  let $el;
+/*
+Renders out components to get a vdom tree of just html
+ */
+const createComponentVDOM = node => {
+  if (typeof node === 'object') {
+    node = Object.assign({}, node);
+  }
+  if (typeof node.type === 'function') {
+    let instance                        = new node.type(node.props, node.children);
+    componentInstanceMap[node.props.id] = instance;
+    if (typeof instance.render === 'function') {
+      node       = instance.render();
+      node.owner = instance;
+    }
+  }
+  if (node.hasOwnProperty('children')) {
+    node.children = node.children.map(child => {
+      let res = createComponentVDOM(child);
+      return res;
+    });
+  }
+  return node;
+};
 
-  // console.log('creating',node);
+const createElement = node => {
+  let $el,
+      ownerComp = node.owner !== null && node.owner !== undefined ? node.owner : null;
 
   // This shouldn't happen ... but just in case ...
   if (node == null || node == undefined) {
@@ -48,47 +68,23 @@ const createElement = node => {
     // Plain value of a tag
     $el = document.createTextNode(node);
   } else if (typeof node.type === 'function') {
-    let instance,
-        existingInstance = false;
-
-    // If the instance has been flagged as updated (new prop on the map entry) rerender?
-    if (componentInstanceMap.hasOwnProperty(node.props.id)) {
-      instance         = componentInstanceMap[node.props.id];
-      existingInstance = true;
-    } else {
-      instance                            = new node.type(node.props, node.children);
-      componentInstanceMap[node.props.id] = instance;
-    }
-
-    if (typeof instance.render === 'function') {
-      // Component
-      if (existingInstance) {
-        // TODO FIX!
-        // Since the whole component is rerendered, need to let it remove any listeners
-        instance.componentWillUnmount();
-      }
-      $el              = createElement(instance.render());
-      instance.current = $el;
-    } else {
-      // Stateless functional component
-      $el = createElement(instance);
-    }
-
-    if (typeof instance.componentDidMount === 'function' && !existingInstance) {
-      didMountQueue.push(instance.componentDidMount.bind(instance));
-    }
+    // Stateless functional component
+    $el = createElement(new node.type(node.props, node.children));
   } else if (typeof node === 'object' && typeof node.type === 'string') {
-    // Normal tag
     $el = document.createElement(node.type);
     node.children
       .map(createElement)
       .forEach($el.appendChild.bind($el));
   } else if (typeof node === 'function') {
-    console.log('Function!');
-    console.log(node());
+    console.log('node is a function', node);
     return;
   } else {
     return document.createTextNode(`createElement: Unknown node type ${node} : ${node.type}`);
+  }
+
+  if (ownerComp) {
+    ownerComp.current = $el;
+    didMountQueue.push(ownerComp.componentDidMount.bind(ownerComp));
   }
 
   setProps($el, node.props || {});
@@ -98,31 +94,31 @@ const createElement = node => {
 };
 
 const changed = (newNode, oldNode) => {
-  if (newNode.forceUpdate) {
-    return true;
-  }
   return typeof newNode !== typeof oldNode ||
-    typeof newNode === 'string' && newNode !== oldNode ||
+    (typeof newNode === 'string' || typeof newNode === 'number' || typeof newNode === 'boolean') && newNode !== oldNode ||
     newNode.type !== oldNode.type
 };
 
 const updateElement = ($hostNode, newNode, oldNode, index = 0) => {
-
-  if (!oldNode) {
+  if (oldNode !== 0 && !oldNode) {
     $hostNode.appendChild(
       createElement(newNode)
     );
   } else if (!newNode) {
+    let child = $hostNode.childNodes[index];
     // TODO need to remove events
-    $hostNode.removeChild(
-      $hostNode.childNodes[index]
-    );
+    // instancemap[$hostnode['data-nid']].componentWillUnmount();
+    if(child) {
+      $hostNode.removeChild(child);
+    }
   } else if (changed(newNode, oldNode)) {
+    //console.log('Replacing', oldNode, 'with', newNode);
     $hostNode.replaceChild(
       createElement(newNode),
       $hostNode.childNodes[index]
     );
   } else if (newNode.type) {
+    //console.log('NO', oldNode, 'with', newNode);
     updateProps(
       $hostNode.childNodes[index],
       newNode.props,
@@ -228,10 +224,11 @@ export const render = (component, hostNode, removeExisting = true) => {
     removeAllElements(hostNode);
   }
 
-  lastHostTree = component;
-  $hostNode    = hostNode;
+  lastHostTree = createComponentVDOM(component);
 
-  updateElement(hostNode, component);
+  updateElement(hostNode, lastHostTree);
+
+  $hostNode = hostNode;
 
   didMountQueue.forEach(fn => fn());
   didMountQueue = [];
@@ -241,51 +238,72 @@ export const render = (component, hostNode, removeExisting = true) => {
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
 
+/*
+Queue updates from components and batch update every so often
+ */
 export const enqueueUpdate = (id) => {
   didUpdateQueue.push(id);
-  updatingHostTree = markForceUpdateVDOMInTree(lastHostTree, id);
+
   if (!updateTimeOut) {
     updateTimeOut = setTimeout(performUpdates, 10);
   }
 };
 
 export const performUpdates = () => {
+  let updatedVDOMTree;
+
   clearTimeout(updateTimeOut);
   updateTimeOut = null;
 
-  updateElement($hostNode, updatingHostTree, lastHostTree);
-  clearForceUpdateVDOMInTree(updatingHostTree);
-  lastHostTree = updatingHostTree;
+
+  didUpdateQueue.forEach(id => {
+    updatedVDOMTree = rerenderVDOMInTree(lastHostTree, componentInstanceMap, id);
+  });
+
+  updateElement($hostNode, updatedVDOMTree, lastHostTree);
+  lastHostTree = updatedVDOMTree;
 
   didUpdateQueue.forEach(id => {
     // try catch in case the comp had been removed
-    try {
+    // try {
       componentInstanceMap[id].componentDidUpdate()
-    } catch (e) {
-    }
+    // } catch (e) {
+    //   console.warn(`performUpdates, cdu: WTF? ${e}`);
+    // }
   });
   didUpdateQueue = [];
 };
 
-const markForceUpdateVDOMInTree = (vdom, id) => {
-  if (typeof vdom === 'object') {
-    if (vdom.props.id === id) {
-      vdom.forceUpdate = true;
-    } else if (vdom.props.children) {
-      vdom.props.children.forEach(child => markForceUpdateVDOMInTree(child, id));
+/*
+Rerenders the components from id down to a vdom tree for diffing w/ the original
+TODO, reconcile any over laps with createComponentVDOM
+ */
+const rerenderVDOMInTree = (node, componentInstanceMap, id) => {
+  if (typeof node === 'object') {
+    node = Object.assign({}, node);
+  }
+  if (node.owner !== null) {
+    if (node.hasOwnProperty('owner') && node.owner.props.id === id) {
+      let instance;
+      if (componentInstanceMap.hasOwnProperty(id)) {
+        instance = componentInstanceMap[id]
+      } else {
+        console.warn(`rerenderVDOMInTree : ${id} isn't in the map!`);
+        return node;
+      }
+      if (typeof instance.render === 'function') {
+        node       = instance.render();
+        node.owner = instance;
+      }
+    }
+    if (node.hasOwnProperty('children')) {
+      node.children = node.children.map(child => {
+        let res = rerenderVDOMInTree(child, componentInstanceMap, id);
+        return res;
+      });
     }
   }
-  return vdom;
-};
-
-const clearForceUpdateVDOMInTree = (vdom) => {
-  if (typeof vdom === 'object') {
-    if (vdom.props.children) {
-      vdom.forceUpdate = false;
-      vdom.props.children.forEach(child => clearForceUpdateVDOMInTree(child));
-    }
-  }
-  return vdom;
+  return node;
 };
 
 export const isNoriComponent = test => test.$$typeof && Symbol.keyFor(test.$$typeof) === 'nori.component';
