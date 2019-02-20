@@ -43,17 +43,7 @@ const createComponentVDOM = node => {
     node = Object.assign({}, node);
   }
   if (typeof node.type === 'function') {
-    let instance;
-    if (componentInstanceMap.hasOwnProperty(node.props.id)) {
-      instance = componentInstanceMap[node.props.id];
-    } else {
-      instance                            = new node.type(node.props, node.children);
-      componentInstanceMap[node.props.id] = instance;
-    }
-    if (typeof instance.render === 'function') {
-      node       = instance.render();
-      node.owner = instance;
-    }
+    node = renderComponentNode(instantiateNewComponent(node));
   }
   if (node.hasOwnProperty('children')) {
     node.children = node.children.map(child => {
@@ -61,6 +51,29 @@ const createComponentVDOM = node => {
     });
   }
   return node;
+};
+
+const instantiateNewComponent = node => {
+  let instance;
+  if (componentInstanceMap.hasOwnProperty(node.props.id)) {
+    instance = componentInstanceMap[node.props.id];
+  } else {
+    instance                            = new node.type(node.props, node.children);
+    componentInstanceMap[node.props.id] = instance;
+  }
+  return instance;
+};
+
+const renderComponentNode = instance => {
+  if (typeof instance.render === 'function') {
+    let node          = instance.render();
+    instance.vdom = node;
+    node.owner    = instance;
+    return node;
+  } else {
+    console.warn(`renderComponentNode : No render() on instance`)
+    return null;
+  }
 };
 
 const createElement = node => {
@@ -120,14 +133,14 @@ const updateElement = ($hostNode, newNode, oldNode, index = 0) => {
       createElement(newNode)
     );
   } else if (!newNode) {
-    let child = $hostNode.childNodes[index];
-    // TODO need to remove events
-    // instancemap[$hostnode['data-nid']].componentWillUnmount();
-    if (child) {
-      $hostNode.removeChild(child);
+    let $child = $hostNode.childNodes[index];
+    if ($child) {
+      removeComponentInstance(oldNode, $child);
+      $hostNode.removeChild($child);
     }
   } else if (changed(newNode, oldNode)) {
-    //console.log('Replacing', oldNode, 'with', newNode);
+    // TODO need to test for a component and fix this!
+    // console.log('Replacing', oldNode, 'with', newNode);
     $hostNode.replaceChild(
       createElement(newNode),
       $hostNode.childNodes[index]
@@ -139,9 +152,10 @@ const updateElement = ($hostNode, newNode, oldNode, index = 0) => {
       newNode.props,
       oldNode.props
     );
+
+    // TODO replace for loop
     const newLength = newNode.children.length;
     const oldLength = oldNode.children.length;
-
     for (let i = 0; i < newLength || i < oldLength; i++) {
       updateElement(
         $hostNode.childNodes[index],
@@ -272,22 +286,15 @@ export const enqueueUpdate = (id) => {
 
 export const performUpdates = () => {
   let updatedVDOMTree;
-
   clearTimeout(updateTimeOut);
   updateTimeOut = null;
-
   didUpdateQueue.forEach(id => {
     updatedVDOMTree = rerenderVDOMInTree(currentHostTree, id);
   });
-
-  // console.log(updatedVDOMTree);
-
   updateElement($hostNode, updatedVDOMTree, currentHostTree);
   currentHostTree = updatedVDOMTree;
-
   performDidMountQueue();
   performDidUpdateQueue();
-
 };
 
 /*
@@ -295,12 +302,10 @@ Rerenders the components from id down to a vdom tree for diffing w/ the original
 TODO, reconcile any over laps with createComponentVDOM
  */
 const rerenderVDOMInTree = (node, id) => {
-
   if (typeof node === 'object') {
     node = Object.assign({}, node);
   }
-
-  if (node.hasOwnProperty('owner') && node.owner !== null && node.owner.props.id === id) {
+  if (nodeHasOwnerComponent(node) && node.owner.props.id === id) {
     let instance;
     if (componentInstanceMap.hasOwnProperty(id)) {
       instance = componentInstanceMap[id]
@@ -308,10 +313,7 @@ const rerenderVDOMInTree = (node, id) => {
       console.warn(`rerenderVDOMInTree : ${id} isn't in the map!`);
       return node;
     }
-    if (typeof instance.render === 'function') {
-      node       = instance.render();
-      node.owner = instance;
-    }
+    node = renderComponentNode(instance);
   } else if (node.hasOwnProperty('type') && typeof node.type === 'function') {
     // During the update of a parent node, a new component has been added to the children
     node = createComponentVDOM(node);
@@ -324,12 +326,17 @@ const rerenderVDOMInTree = (node, id) => {
   return node;
 };
 
-export const isNoriComponent = test => test.$$typeof && Symbol.keyFor(test.$$typeof) === 'nori.component';
+const nodeHasOwnerComponent = node => node.hasOwnProperty('owner') && node.owner !== null;
 
-// export const removeChild = child => {
-//   if (isNoriComponent(child)) {
-//     child.remove();
-//   }
-// };
-//
-// export const removeChildren = children => children.forEach(removeChild);
+// TODO what if about component children of components?
+const removeComponentInstance = (node, $el) => {
+  if(nodeHasOwnerComponent(node)) {
+    if(node.owner === componentInstanceMap[node.owner.props.id]) {
+      componentInstanceMap[node.owner.props.id].componentWillUnmount();
+      // TODO need to remove events
+      delete componentInstanceMap[node.owner.props.id];
+    }
+  }
+};
+
+export const isNoriComponent = test => test.$$typeof && Symbol.keyFor(test.$$typeof) === 'nori.component';

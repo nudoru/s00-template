@@ -18,10 +18,11 @@ export default class Ticker extends DOMComponent {
   // Subclasses should only take passed props and children
   constructor(props, children) {
     super('h1', props, []);
+    this.tickerID = null;
   }
 
   componentDidMount = () => {
-    setInterval(this.$updateTicker, 1000)
+    this.tickerID = setInterval(this.$updateTicker, 1000)
   };
 
   $updateTicker = _ => {
@@ -34,7 +35,7 @@ export default class Ticker extends DOMComponent {
   };
 
   componentWillUnmount = () => {
-    //console.log('Ticker will umount');
+    clearInterval(this.tickerID);
   };
 
   render() {

@@ -19,6 +19,7 @@ export default class DOMComponent {
     this.tweens          = props.hasOwnProperty('tweens') ? props.tweens : {};
     this.internalState   = props.hasOwnProperty('state') ? props.state : {};
     this.internalCurrent = null;
+    this.internalVDOM = null;
     this.$$typeof        = Symbol.for('nori.component');
   }
 
@@ -49,6 +50,14 @@ export default class DOMComponent {
     return this.internalCurrent;
   }
 
+  set vdom(v) {
+    this.internalVDOM = v;
+  }
+
+  get vdom() {
+    return this.internalVDOM;
+  }
+
   forceUpdate() {
     enqueueUpdate(this.props.id);
   }
@@ -65,5 +74,10 @@ export default class DOMComponent {
   };
   componentDidUpdate   = () => {
   };
+
+  remove() {
+    this.internalCurrent = null;
+    this.internalVDOM = null;
+  }
 
 }

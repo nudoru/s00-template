@@ -19206,19 +19206,7 @@ var createComponentVDOM = function createComponentVDOM(node) {
   }
 
   if (typeof node.type === 'function') {
-    var instance;
-
-    if (componentInstanceMap.hasOwnProperty(node.props.id)) {
-      instance = componentInstanceMap[node.props.id];
-    } else {
-      instance = new node.type(node.props, node.children);
-      componentInstanceMap[node.props.id] = instance;
-    }
-
-    if (typeof instance.render === 'function') {
-      node = instance.render();
-      node.owner = instance;
-    }
+    node = renderComponentNode(instantiateNewComponent(node));
   }
 
   if (node.hasOwnProperty('children')) {
@@ -19228,6 +19216,31 @@ var createComponentVDOM = function createComponentVDOM(node) {
   }
 
   return node;
+};
+
+var instantiateNewComponent = function instantiateNewComponent(node) {
+  var instance;
+
+  if (componentInstanceMap.hasOwnProperty(node.props.id)) {
+    instance = componentInstanceMap[node.props.id];
+  } else {
+    instance = new node.type(node.props, node.children);
+    componentInstanceMap[node.props.id] = instance;
+  }
+
+  return instance;
+};
+
+var renderComponentNode = function renderComponentNode(instance) {
+  if (typeof instance.render === 'function') {
+    var node = instance.render();
+    instance.vdom = node;
+    node.owner = instance;
+    return node;
+  } else {
+    console.warn("renderComponentNode : No render() on instance");
+    return null;
+  }
 };
 
 var createElement = function createElement(node) {
@@ -19280,18 +19293,20 @@ var updateElement = function updateElement($hostNode, newNode, oldNode) {
   if (oldNode !== 0 && !oldNode) {
     $hostNode.appendChild(createElement(newNode));
   } else if (!newNode) {
-    var child = $hostNode.childNodes[index]; // TODO need to remove events
-    // instancemap[$hostnode['data-nid']].componentWillUnmount();
+    var $child = $hostNode.childNodes[index];
 
-    if (child) {
-      $hostNode.removeChild(child);
+    if ($child) {
+      removeComponentInstance(oldNode, $child);
+      $hostNode.removeChild($child);
     }
   } else if (changed(newNode, oldNode)) {
-    //console.log('Replacing', oldNode, 'with', newNode);
+    // TODO need to test for a component and fix this!
+    // console.log('Replacing', oldNode, 'with', newNode);
     $hostNode.replaceChild(createElement(newNode), $hostNode.childNodes[index]);
   } else if (newNode.type) {
     //console.log('NO', oldNode, 'with', newNode);
-    updateProps($hostNode.childNodes[index], newNode.props, oldNode.props);
+    updateProps($hostNode.childNodes[index], newNode.props, oldNode.props); // TODO replace for loop
+
     var newLength = newNode.children.length;
     var oldLength = oldNode.children.length;
 
@@ -19449,8 +19464,7 @@ var performUpdates = function performUpdates() {
   updateTimeOut = null;
   didUpdateQueue.forEach(function (id) {
     updatedVDOMTree = rerenderVDOMInTree(currentHostTree, id);
-  }); // console.log(updatedVDOMTree);
-
+  });
   updateElement($hostNode, updatedVDOMTree, currentHostTree);
   currentHostTree = updatedVDOMTree;
   performDidMountQueue();
@@ -19469,7 +19483,7 @@ var rerenderVDOMInTree = function rerenderVDOMInTree(node, id) {
     node = Object.assign({}, node);
   }
 
-  if (node.hasOwnProperty('owner') && node.owner !== null && node.owner.props.id === id) {
+  if (nodeHasOwnerComponent(node) && node.owner.props.id === id) {
     var instance;
 
     if (componentInstanceMap.hasOwnProperty(id)) {
@@ -19479,10 +19493,7 @@ var rerenderVDOMInTree = function rerenderVDOMInTree(node, id) {
       return node;
     }
 
-    if (typeof instance.render === 'function') {
-      node = instance.render();
-      node.owner = instance;
-    }
+    node = renderComponentNode(instance);
   } else if (node.hasOwnProperty('type') && typeof node.type === 'function') {
     // During the update of a parent node, a new component has been added to the children
     node = createComponentVDOM(node);
@@ -19497,16 +19508,24 @@ var rerenderVDOMInTree = function rerenderVDOMInTree(node, id) {
   return node;
 };
 
+var nodeHasOwnerComponent = function nodeHasOwnerComponent(node) {
+  return node.hasOwnProperty('owner') && node.owner !== null;
+}; // TODO what if about component children of components?
+
+
+var removeComponentInstance = function removeComponentInstance(node, $el) {
+  if (nodeHasOwnerComponent(node)) {
+    if (node.owner === componentInstanceMap[node.owner.props.id]) {
+      componentInstanceMap[node.owner.props.id].componentWillUnmount(); // TODO need to remove events
+
+      delete componentInstanceMap[node.owner.props.id];
+    }
+  }
+};
+
 var isNoriComponent = function isNoriComponent(test) {
   return test.$$typeof && Symbol.keyFor(test.$$typeof) === 'nori.component';
-}; // export const removeChild = child => {
-//   if (isNoriComponent(child)) {
-//     child.remove();
-//   }
-// };
-//
-// export const removeChildren = children => children.forEach(removeChild);
-
+};
 
 exports.isNoriComponent = isNoriComponent;
 },{"./browser/DOMToolbox":"js/nori/browser/DOMToolbox.js","./util/ArrayUtils":"js/nori/util/ArrayUtils.js","./Eventing":"js/nori/Eventing.js","./util/ElementIDCreator":"js/nori/util/ElementIDCreator.js","./events/DomEvents":"js/nori/events/DomEvents.js"}],"js/nori/util/is.js":[function(require,module,exports) {
@@ -19612,6 +19631,7 @@ function () {
     this.tweens = props.hasOwnProperty('tweens') ? props.tweens : {};
     this.internalState = props.hasOwnProperty('state') ? props.state : {};
     this.internalCurrent = null;
+    this.internalVDOM = null;
     this.$$typeof = Symbol.for('nori.component');
   }
 
@@ -19623,6 +19643,12 @@ function () {
     // Stub "lifecycle" methods. Override in subclass.
     //--------------------------------------------------------------------------------
 
+  }, {
+    key: "remove",
+    value: function remove() {
+      this.internalCurrent = null;
+      this.internalVDOM = null;
+    }
   }, {
     key: "state",
     set: function set(nextState) {
@@ -19649,6 +19675,14 @@ function () {
     },
     get: function get() {
       return this.internalCurrent;
+    }
+  }, {
+    key: "vdom",
+    set: function set(v) {
+      this.internalVDOM = v;
+    },
+    get: function get() {
+      return this.internalVDOM;
     }
   }]);
 
@@ -20165,7 +20199,7 @@ function (_DOMComponent) {
     };
 
     _this.componentDidMount = function () {
-      setInterval(_this.$updateTicker, 1000);
+      _this.tickerID = setInterval(_this.$updateTicker, 1000);
     };
 
     _this.$updateTicker = function (_) {
@@ -20178,9 +20212,11 @@ function (_DOMComponent) {
     _this.componentDidUpdate = function () {//console.log('Ticker update', this.state);
     };
 
-    _this.componentWillUnmount = function () {//console.log('Ticker will umount');
+    _this.componentWillUnmount = function () {
+      clearInterval(_this.tickerID);
     };
 
+    _this.tickerID = null;
     return _this;
   } // Default state
 
