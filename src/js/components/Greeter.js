@@ -35,14 +35,22 @@ export default class Greeter extends DOMComponent {
   };
 
   componentWillUpdate  = () => {
-    console.log('Greet will update', this.state.name);
+    //console.log('Greet will update', this.state.name);
   };
 
   componentDidUpdate   = () => {
     // console.log('Greet did update');
   };
 
+  onOver = () => {
+    console.log('Greeter over');
+  };
+
+  onOut = () => {
+    console.log('Greeter out');
+  };
+
   render() {
-    return <h1 click={this.$onClick}>Hello, <em className={blue}>{this.state.name}</em></h1>;
+    return <h1 click={this.$onClick} mouseover={this.onOver} mouseout={this.onOut}>Hello, <em className={blue}>{this.state.name}</em></h1>;
   }
 }

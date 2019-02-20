@@ -18985,7 +18985,7 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.isDomEvent = exports.domEventsList = void 0;
 //https://developer.mozilla.org/en-US/docs/Web/Events
-var domEventsList = ['focus', 'blur', 'resize', 'scroll', 'keydown', 'keypress', 'keyup', 'mouseenter', 'mousemove', 'mousedown', 'mouseup', 'click', 'dblclick', 'contextmenu', 'wheel', 'mouseleave', 'mouseout', 'select'];
+var domEventsList = ['focus', 'blur', 'resize', 'scroll', 'keydown', 'keypress', 'keyup', 'mouseenter', 'mousemove', 'mousedown', 'mouseover', 'mouseup', 'click', 'dblclick', 'contextmenu', 'wheel', 'mouseleave', 'mouseout', 'select'];
 exports.domEventsList = domEventsList;
 
 var isDomEvent = function isDomEvent(e) {
@@ -18999,14 +18999,16 @@ exports.isDomEvent = isDomEvent;
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.removeActions = exports.performBehavior = exports.createEventObject = exports.handleEventTrigger = exports.setEvents = exports.mapActions = void 0;
+exports.removeEvents = exports.setEvents = exports.mapActions = void 0;
 
 var _DomEvents = require("./events/DomEvents");
 
-var _this = void 0;
-
+/**
+ * Events and actions for Nori Components
+ */
 var ACTION_EVENT = 'event';
 var ACTION_BEHAVIOR = 'behavior';
+var eventMap = {};
 var BEHAVIORS = [];
 
 var mapActions = function mapActions(props) {
@@ -19030,19 +19032,38 @@ var mapActions = function mapActions(props) {
 
 exports.mapActions = mapActions;
 
-var setEvents = function setEvents() {
-  var props = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
-  var $element = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : null;
-  return mapActions(props).forEach(function (evt) {
-    // console.log('events on',$element);
+var setEvents = function setEvents(node, $element) {
+  var props = node.props || {};
+  mapActions(props).forEach(function (evt) {
     if (evt.type === ACTION_EVENT) {
+      var nodeId = node.props.id;
       evt.internalHandler = handleEventTrigger(evt, $element);
       $element.addEventListener(evt.event, evt.internalHandler);
+
+      if (!eventMap.hasOwnProperty(nodeId)) {
+        eventMap[nodeId] = [];
+      }
+
+      eventMap[nodeId].push(function () {
+        return $element.removeEventListener(evt.event, evt.internalHandler);
+      });
     }
   });
 };
 
 exports.setEvents = setEvents;
+
+var removeEvents = function removeEvents(id) {
+  if (eventMap.hasOwnProperty(id)) {
+    eventMap[id].map(function (fn) {
+      fn();
+      return null;
+    });
+    delete eventMap[id];
+  }
+};
+
+exports.removeEvents = removeEvents;
 
 var handleEventTrigger = function handleEventTrigger(evt, $src) {
   return function (e) {
@@ -19050,76 +19071,13 @@ var handleEventTrigger = function handleEventTrigger(evt, $src) {
   };
 };
 
-exports.handleEventTrigger = handleEventTrigger;
-
 var createEventObject = function createEventObject(e) {
   var $src = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : null;
   return {
     event: e,
     target: $src
   };
-}; // TODO implement options and useCapture? https://developer.mozilla.org/en-US/docs/Web/API/EventTarget/addEventListener
-// export const applyActions = (component, element) => component.actionMap.forEach(evt => {
-//   if (evt.type === ACTION_EVENT) {
-//     evt.internalHandler = handleEventTrigger(evt, component);
-//     element.addEventListener(evt.event, evt.internalHandler);
-//   }
-// });
-
-
-exports.createEventObject = createEventObject;
-
-var performBehavior = function performBehavior(component, behavior, e) {
-  return component.actionMap.forEach(function (evt) {
-    if (evt.type === ACTION_BEHAVIOR && evt.event === behavior) {
-      var event = e || {
-        type: behavior,
-        target: _this
-      };
-      evt.externalHandler(createEventObject(event, component));
-    }
-  });
-}; // behaviors don't have listeners
-
-
-exports.performBehavior = performBehavior;
-
-var removeActions = function removeActions(actionMap, element) {
-  return actionMap.forEach(function (evt) {
-    if (evt.type === ACTION_EVENT) {
-      element.removeEventListener(evt.event, evt.internalHandler);
-    }
-  });
 };
-/*
-Don't want to loose this ...
-
-// export const BEHAVIOR_SCOLLIN     = 'scrollIn';
-// export const BEHAVIOR_SCROLLOUT   = 'scrollOut';
-// export const BEHAVIOR_MOUSENEAR   = 'mouseNear';
-
-// also touch
-  // getDistanceFromCursor(mevt) {
-  //
-  //   const offset = this.offset;
-  // }
-  //
-  // also touch
-  // getCursorPositionOnElement(mevt) {
-  //
-  // }
-  //
-  // $onScroll = e => {
-  //   // TEST for in to view?
-  // };
-  //
-  // $onMouseMove = e => {
-  //   // test for proximity
-  // };
- */
-
-
-exports.removeActions = removeActions;
 },{"./events/DomEvents":"js/nori/events/DomEvents.js"}],"js/nori/util/ElementIDCreator.js":[function(require,module,exports) {
 "use strict";
 
@@ -19278,7 +19236,7 @@ var createElement = function createElement(node) {
   }
 
   setProps($el, node.props || {});
-  (0, _Eventing.setEvents)(node.props, $el);
+  (0, _Eventing.setEvents)(node, $el);
   return $el;
 };
 
@@ -19516,8 +19474,8 @@ var nodeHasOwnerComponent = function nodeHasOwnerComponent(node) {
 var removeComponentInstance = function removeComponentInstance(node, $el) {
   if (nodeHasOwnerComponent(node)) {
     if (node.owner === componentInstanceMap[node.owner.props.id]) {
-      componentInstanceMap[node.owner.props.id].componentWillUnmount(); // TODO need to remove events
-
+      componentInstanceMap[node.owner.props.id].componentWillUnmount();
+      (0, _Eventing.removeEvents)(node.owner.vdom.props.id);
       delete componentInstanceMap[node.owner.props.id];
     }
   }
@@ -20316,11 +20274,18 @@ function (_DOMComponent) {
     _this.componentWillUnmount = function () {//console.log('Greet will remove');
     };
 
-    _this.componentWillUpdate = function () {
-      console.log('Greet will update', _this.state.name);
+    _this.componentWillUpdate = function () {//console.log('Greet will update', this.state.name);
     };
 
     _this.componentDidUpdate = function () {// console.log('Greet did update');
+    };
+
+    _this.onOver = function () {
+      console.log('Greeter over');
+    };
+
+    _this.onOut = function () {
+      console.log('Greeter out');
     };
 
     return _this;
@@ -20331,7 +20296,9 @@ function (_DOMComponent) {
     key: "render",
     value: function render() {
       return (0, _Nori.h)("h1", {
-        click: this.$onClick
+        click: this.$onClick,
+        mouseover: this.onOver,
+        mouseout: this.onOut
       }, "Hello, ", (0, _Nori.h)("em", {
         className: blue
       }, this.state.name));
@@ -20460,7 +20427,7 @@ function (_DOMComponent) {
       }, "Add"), (0, _Nori.h)("button", {
         click: this.$onRemoveClick
       }, "Remove"), (0, _Nori.h)("hr", null), (0, _ArrayUtils.range)(this.state.counter).map(function (i) {
-        return (0, _Nori.h)(_Ticker.default, {
+        return (0, _Nori.h)(_Greeter.default, {
           key: 'listitem-' + i
         });
       }));

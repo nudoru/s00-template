@@ -1,6 +1,6 @@
 import {removeAllElements} from "./browser/DOMToolbox";
 import {flatten} from "./util/ArrayUtils";
-import {setEvents} from "./Eventing";
+import {removeEvents, setEvents} from "./Eventing";
 import {getNextId} from "./util/ElementIDCreator";
 import {domEventsList} from "./events/DomEvents";
 
@@ -115,7 +115,7 @@ const createElement = node => {
   }
 
   setProps($el, node.props || {});
-  setEvents(node.props, $el);
+  setEvents(node, $el);
 
   return $el;
 };
@@ -333,7 +333,7 @@ const removeComponentInstance = (node, $el) => {
   if(nodeHasOwnerComponent(node)) {
     if(node.owner === componentInstanceMap[node.owner.props.id]) {
       componentInstanceMap[node.owner.props.id].componentWillUnmount();
-      // TODO need to remove events
+      removeEvents(node.owner.vdom.props.id);
       delete componentInstanceMap[node.owner.props.id];
     }
   }

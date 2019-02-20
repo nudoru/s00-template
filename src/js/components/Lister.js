@@ -61,9 +61,8 @@ export default class Lister extends DOMComponent {
       <button click={this.$onAddClick}>Add</button><button click={this.$onRemoveClick}>Remove</button>
       <hr/>
       {range(this.state.counter).map(i => {
-        return <Ticker key={'listitem-'+i}/>;
+        return <Greeter key={'listitem-'+i}/>;
       })}
-
     </div>;
   }
 }

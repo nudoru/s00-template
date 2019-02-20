@@ -10,6 +10,7 @@ export const domEventsList = [
   'mouseenter',
   'mousemove',
   'mousedown',
+  'mouseover',
   'mouseup',
   'click',
   'dblclick',
