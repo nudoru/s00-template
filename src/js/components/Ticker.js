@@ -13,7 +13,7 @@ const red = css`color: red;`;
 export default class Ticker extends DOMComponent {
 
   // Default state
-  internalState = {counter: 0};
+  internalState = {counter: 1};
 
   // Subclasses should only take passed props and children
   constructor(props, children) {
@@ -21,8 +21,12 @@ export default class Ticker extends DOMComponent {
   }
 
   componentDidMount = () => {
-    //console.log('Ticker rendered!');
-    //setInterval(_ => {this.state = {counter: ++this.state.counter}}, 1000)
+    setInterval(this.$updateTicker, 1000)
+  };
+
+  $updateTicker = _ => {
+    //console.log('Ticker update!', this.props.id, this.current);
+    this.state = {counter: ++this.state.counter}
   };
 
   componentDidUpdate = () => {
@@ -34,6 +38,7 @@ export default class Ticker extends DOMComponent {
   };
 
   render() {
+    // console.log('render ticker',this.current);
     return <h3>The count is <strong className={red}>{this.internalState.counter}</strong> ticks.</h3>;
   }
 }

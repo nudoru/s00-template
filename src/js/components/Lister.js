@@ -10,6 +10,7 @@ import {css} from 'emotion';
 import {modularScale} from "../theme/Theme";
 import {range} from "../nori/util/ArrayUtils";
 import Ticker from './Ticker';
+import Greeter from './Greeter';
 
 const bordered = css`
 border: 1px solid #ccc;
@@ -50,7 +51,6 @@ export default class Lister extends DOMComponent {
     this.state = {counter: --current}
   };
 
-  //{range(this.state.counter).forEach(i => <li>Item</li>)}
 // <ul>
 // {range(this.state.counter).map(i => <li>Item {i+1}</li>)}
 // </ul>
@@ -60,7 +60,9 @@ export default class Lister extends DOMComponent {
     return <div className={bordered} key={this.props.id}>
       <button click={this.$onAddClick}>Add</button><button click={this.$onRemoveClick}>Remove</button>
       <hr/>
-        {range(this.state.counter).map(i => <Ticker/>)}
+      {range(this.state.counter).map(i => {
+        return <Ticker key={'listitem-'+i}/>;
+      })}
 
     </div>;
   }

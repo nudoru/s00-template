@@ -74,4 +74,4 @@ let testBox = <Box key='main' className={appContainer}>
   </Box>
 </Box>;
 
-render(testBox, applicationRoot);
+render(<Lister/>, applicationRoot);

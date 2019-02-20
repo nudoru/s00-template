@@ -25,18 +25,19 @@ export const mapActions = props => Object.keys(props).reduce((acc, key) => {
   return acc;
 }, []);
 
-export const setEvents = (props = {}, element = null) => mapActions(props).forEach(evt => {
+export const setEvents = (props = {}, $element = null) => mapActions(props).forEach(evt => {
+  // console.log('events on',$element);
   if (evt.type === ACTION_EVENT) {
-    evt.internalHandler = handleEventTrigger(evt, element);
-    element.addEventListener(evt.event, evt.internalHandler);
+    evt.internalHandler = handleEventTrigger(evt, $element);
+    $element.addEventListener(evt.event, evt.internalHandler);
   }
 });
 
-export const handleEventTrigger = (evt, src) => e => evt.externalHandler(createEventObject(e, src));
+export const handleEventTrigger = (evt, $src) => e => evt.externalHandler(createEventObject(e, $src));
 
-export const createEventObject = (e, src = null) => ({
+export const createEventObject = (e, $src = null) => ({
   event : e,
-  target: src
+  target: $src
 });
 
 // TODO implement options and useCapture? https://developer.mozilla.org/en-US/docs/Web/API/EventTarget/addEventListener

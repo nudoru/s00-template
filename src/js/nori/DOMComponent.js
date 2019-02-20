@@ -49,7 +49,6 @@ export default class DOMComponent {
     return this.internalCurrent;
   }
 
-
   forceUpdate() {
     enqueueUpdate(this.props.id);
   }

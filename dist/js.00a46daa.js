@@ -19032,30 +19032,31 @@ exports.mapActions = mapActions;
 
 var setEvents = function setEvents() {
   var props = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
-  var element = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : null;
+  var $element = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : null;
   return mapActions(props).forEach(function (evt) {
+    // console.log('events on',$element);
     if (evt.type === ACTION_EVENT) {
-      evt.internalHandler = handleEventTrigger(evt, element);
-      element.addEventListener(evt.event, evt.internalHandler);
+      evt.internalHandler = handleEventTrigger(evt, $element);
+      $element.addEventListener(evt.event, evt.internalHandler);
     }
   });
 };
 
 exports.setEvents = setEvents;
 
-var handleEventTrigger = function handleEventTrigger(evt, src) {
+var handleEventTrigger = function handleEventTrigger(evt, $src) {
   return function (e) {
-    return evt.externalHandler(createEventObject(e, src));
+    return evt.externalHandler(createEventObject(e, $src));
   };
 };
 
 exports.handleEventTrigger = handleEventTrigger;
 
 var createEventObject = function createEventObject(e) {
-  var src = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : null;
+  var $src = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : null;
   return {
     event: e,
-    target: src
+    target: $src
   };
 }; // TODO implement options and useCapture? https://developer.mozilla.org/en-US/docs/Web/API/EventTarget/addEventListener
 // export const applyActions = (component, element) => component.actionMap.forEach(evt => {
@@ -19162,7 +19163,7 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
 
 //https://jasonformat.com/wtf-is-jsx/
 //https://medium.com/@bluepnume/jsx-is-a-stellar-invention-even-with-react-out-of-the-picture-c597187134b7
-var lastHostTree,
+var currentHostTree,
     $hostNode,
     componentInstanceMap = {},
     didMountQueue = [],
@@ -19171,7 +19172,11 @@ var lastHostTree,
 
 var h = function h(type, props) {
   props = props || {};
-  props.id = props.key || (0, _ElementIDCreator.getNextId)();
+  props.id = props.key ? '' + props.key : (0, _ElementIDCreator.getNextId)(); // TODO fix this
+
+  if (props.key === 0) {
+    console.warn("Component key can't be '0' : ".concat(type, " ").concat(props));
+  }
 
   for (var _len = arguments.length, args = new Array(_len > 2 ? _len - 2 : 0), _key = 2; _key < _len; _key++) {
     args[_key - 2] = arguments[_key];
@@ -19201,8 +19206,14 @@ var createComponentVDOM = function createComponentVDOM(node) {
   }
 
   if (typeof node.type === 'function') {
-    var instance = new node.type(node.props, node.children);
-    componentInstanceMap[node.props.id] = instance;
+    var instance;
+
+    if (componentInstanceMap.hasOwnProperty(node.props.id)) {
+      instance = componentInstanceMap[node.props.id];
+    } else {
+      instance = new node.type(node.props, node.children);
+      componentInstanceMap[node.props.id] = instance;
+    }
 
     if (typeof instance.render === 'function') {
       node = instance.render();
@@ -19212,8 +19223,7 @@ var createComponentVDOM = function createComponentVDOM(node) {
 
   if (node.hasOwnProperty('children')) {
     node.children = node.children.map(function (child) {
-      var res = createComponentVDOM(child);
-      return res;
+      return createComponentVDOM(child);
     });
   }
 
@@ -19237,7 +19247,11 @@ var createElement = function createElement(node) {
     $el = createElement(new node.type(node.props, node.children));
   } else if (_typeof(node) === 'object' && typeof node.type === 'string') {
     $el = document.createElement(node.type);
-    node.children.map(createElement).forEach($el.appendChild.bind($el));
+
+    if (node.hasOwnProperty('children')) {
+      node.children.map(createElement).forEach($el.appendChild.bind($el));
+    } else {// This shouldn't happen ...
+    }
   } else if (typeof node === 'function') {
     console.log('node is a function', node);
     return;
@@ -19256,6 +19270,7 @@ var createElement = function createElement(node) {
 };
 
 var changed = function changed(newNode, oldNode) {
+  // console.log('changed',newNode, oldNode);
   return _typeof(newNode) !== _typeof(oldNode) || (typeof newNode === 'string' || typeof newNode === 'number' || typeof newNode === 'boolean') && newNode !== oldNode || newNode.type !== oldNode.type;
 };
 
@@ -19389,13 +19404,26 @@ var render = function render(component, hostNode) {
     (0, _DOMToolbox.removeAllElements)(hostNode);
   }
 
-  lastHostTree = createComponentVDOM(component);
-  updateElement(hostNode, lastHostTree);
+  currentHostTree = createComponentVDOM(component);
+  updateElement(hostNode, currentHostTree);
   $hostNode = hostNode;
+  performDidMountQueue();
+};
+
+exports.render = render;
+
+var performDidMountQueue = function performDidMountQueue() {
   didMountQueue.forEach(function (fn) {
     return fn();
   });
   didMountQueue = [];
+};
+
+var performDidUpdateQueue = function performDidUpdateQueue() {
+  didUpdateQueue.forEach(function (id) {
+    componentInstanceMap[id].componentDidUpdate();
+  });
+  didUpdateQueue = [];
 }; //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
@@ -19404,8 +19432,6 @@ var render = function render(component, hostNode) {
 Queue updates from components and batch update every so often
  */
 
-
-exports.render = render;
 
 var enqueueUpdate = function enqueueUpdate(id) {
   didUpdateQueue.push(id);
@@ -19422,18 +19448,13 @@ var performUpdates = function performUpdates() {
   clearTimeout(updateTimeOut);
   updateTimeOut = null;
   didUpdateQueue.forEach(function (id) {
-    updatedVDOMTree = rerenderVDOMInTree(lastHostTree, componentInstanceMap, id);
-  });
-  updateElement($hostNode, updatedVDOMTree, lastHostTree);
-  lastHostTree = updatedVDOMTree;
-  didUpdateQueue.forEach(function (id) {
-    // try catch in case the comp had been removed
-    // try {
-    componentInstanceMap[id].componentDidUpdate(); // } catch (e) {
-    //   console.warn(`performUpdates, cdu: WTF? ${e}`);
-    // }
-  });
-  didUpdateQueue = [];
+    updatedVDOMTree = rerenderVDOMInTree(currentHostTree, id);
+  }); // console.log(updatedVDOMTree);
+
+  updateElement($hostNode, updatedVDOMTree, currentHostTree);
+  currentHostTree = updatedVDOMTree;
+  performDidMountQueue();
+  performDidUpdateQueue();
 };
 /*
 Rerenders the components from id down to a vdom tree for diffing w/ the original
@@ -19443,34 +19464,34 @@ TODO, reconcile any over laps with createComponentVDOM
 
 exports.performUpdates = performUpdates;
 
-var rerenderVDOMInTree = function rerenderVDOMInTree(node, componentInstanceMap, id) {
+var rerenderVDOMInTree = function rerenderVDOMInTree(node, id) {
   if (_typeof(node) === 'object') {
     node = Object.assign({}, node);
   }
 
-  if (node.owner !== null) {
-    if (node.hasOwnProperty('owner') && node.owner.props.id === id) {
-      var instance;
+  if (node.hasOwnProperty('owner') && node.owner !== null && node.owner.props.id === id) {
+    var instance;
 
-      if (componentInstanceMap.hasOwnProperty(id)) {
-        instance = componentInstanceMap[id];
-      } else {
-        console.warn("rerenderVDOMInTree : ".concat(id, " isn't in the map!"));
-        return node;
-      }
-
-      if (typeof instance.render === 'function') {
-        node = instance.render();
-        node.owner = instance;
-      }
+    if (componentInstanceMap.hasOwnProperty(id)) {
+      instance = componentInstanceMap[id];
+    } else {
+      console.warn("rerenderVDOMInTree : ".concat(id, " isn't in the map!"));
+      return node;
     }
 
-    if (node.hasOwnProperty('children')) {
-      node.children = node.children.map(function (child) {
-        var res = rerenderVDOMInTree(child, componentInstanceMap, id);
-        return res;
-      });
+    if (typeof instance.render === 'function') {
+      node = instance.render();
+      node.owner = instance;
     }
+  } else if (node.hasOwnProperty('type') && typeof node.type === 'function') {
+    // During the update of a parent node, a new component has been added to the children
+    node = createComponentVDOM(node);
+  }
+
+  if (node.hasOwnProperty('children')) {
+    node.children = node.children.map(function (child) {
+      return rerenderVDOMInTree(child, id);
+    });
   }
 
   return node;
@@ -20140,11 +20161,18 @@ function (_DOMComponent) {
 
     _this = _possibleConstructorReturn(this, _getPrototypeOf(Ticker).call(this, 'h1', props, []));
     _this.internalState = {
-      counter: 0
+      counter: 1
     };
 
-    _this.componentDidMount = function () {//console.log('Ticker rendered!');
-      //setInterval(_ => {this.state = {counter: ++this.state.counter}}, 1000)
+    _this.componentDidMount = function () {
+      setInterval(_this.$updateTicker, 1000);
+    };
+
+    _this.$updateTicker = function (_) {
+      //console.log('Ticker update!', this.props.id, this.current);
+      _this.state = {
+        counter: ++_this.state.counter
+      };
     };
 
     _this.componentDidUpdate = function () {//console.log('Ticker update', this.state);
@@ -20160,6 +20188,7 @@ function (_DOMComponent) {
   _createClass(Ticker, [{
     key: "render",
     value: function render() {
+      // console.log('render ticker',this.current);
       return (0, _Nori.h)("h3", null, "The count is ", (0, _Nori.h)("strong", {
         className: red
       }, this.internalState.counter), " ticks.");
@@ -20297,6 +20326,8 @@ var _ArrayUtils = require("../nori/util/ArrayUtils");
 
 var _Ticker = _interopRequireDefault(require("./Ticker"));
 
+var _Greeter = _interopRequireDefault(require("./Greeter"));
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
@@ -20380,7 +20411,6 @@ function (_DOMComponent) {
 
   _createClass(Lister, [{
     key: "render",
-    //{range(this.state.counter).forEach(i => <li>Item</li>)}
     // <ul>
     // {range(this.state.counter).map(i => <li>Item {i+1}</li>)}
     // </ul>
@@ -20394,7 +20424,9 @@ function (_DOMComponent) {
       }, "Add"), (0, _Nori.h)("button", {
         click: this.$onRemoveClick
       }, "Remove"), (0, _Nori.h)("hr", null), (0, _ArrayUtils.range)(this.state.counter).map(function (i) {
-        return (0, _Nori.h)(_Ticker.default, null);
+        return (0, _Nori.h)(_Ticker.default, {
+          key: 'listitem-' + i
+        });
       }));
     }
   }]);
@@ -20403,7 +20435,7 @@ function (_DOMComponent) {
 }(_DOMComponent2.default);
 
 exports.default = Lister;
-},{"../nori/DOMComponent":"js/nori/DOMComponent.js","../nori/Nori":"js/nori/Nori.js","emotion":"../node_modules/emotion/dist/index.esm.js","../theme/Theme":"js/theme/Theme.js","../nori/util/ArrayUtils":"js/nori/util/ArrayUtils.js","./Ticker":"js/components/Ticker.js"}],"img/pattern/shattered.png":[function(require,module,exports) {
+},{"../nori/DOMComponent":"js/nori/DOMComponent.js","../nori/Nori":"js/nori/Nori.js","emotion":"../node_modules/emotion/dist/index.esm.js","../theme/Theme":"js/theme/Theme.js","../nori/util/ArrayUtils":"js/nori/util/ArrayUtils.js","./Ticker":"js/components/Ticker.js","./Greeter":"js/components/Greeter.js"}],"img/pattern/shattered.png":[function(require,module,exports) {
 module.exports = "/shattered.a446e091.png";
 },{}],"js/index.js":[function(require,module,exports) {
 "use strict";
@@ -20495,7 +20527,7 @@ var testBox = (0, _Nori.h)(_Box.default, {
 }), (0, _Nori.h)(_Box.default, {
   className: whiteBox
 }, (0, _Nori.h)(Sfc, null), (0, _Nori.h)(_Ticker.default, null), (0, _Nori.h)(_Greeter.default, null), (0, _Nori.h)(_Greeter.default, null), (0, _Nori.h)(_Lister.default, null))));
-(0, _Nori.render)(testBox, applicationRoot);
+(0, _Nori.render)((0, _Nori.h)(_Lister.default, null), applicationRoot);
 },{"./theme/Global":"js/theme/Global.js","./theme/Theme":"js/theme/Theme.js","emotion":"../node_modules/emotion/dist/index.esm.js","./nori/Nori":"js/nori/Nori.js","./components/Box":"js/components/Box.js","./components/Lorem":"js/components/Lorem.js","./components/Ticker":"js/components/Ticker.js","./components/Greeter":"js/components/Greeter.js","./components/Lister":"js/components/Lister.js","../img/pattern/shattered.png":"img/pattern/shattered.png"}],"../node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
 var global = arguments[3];
 var OVERLAY_ID = '__parcel__error__overlay__';
