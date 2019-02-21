@@ -17,26 +17,14 @@ let currentHostTree,
     updateTimeOut,
     eventMap = {};
 
+// "Special props should be updated as new props are added to components. This is a bad design
+const specialProps = domEventsList.concat(['tweens', 'state', 'actions', 'children', 'element', 'min', 'max', 'mode', 'key']);
+const $isSpecialProp = test => specialProps.includes(test);
 const BEHAVIORS = [];
 
-// Create VDOM from JSX. Used by the Babel/JSX transpiler
-export const h = (type, props, ...args) => {
-  props    = props || {};
-  props.id = props.key ? '' + props.key : getNextId();
-
-  // TODO fix this
-  if (props.key === 0) {
-    console.warn(`Component key can't be '0' : ${type} ${props}`)
-  }
-
-  let vdomNode = {
-    type, props, children: args.length ? flatten(args) : [], owner: null
-  };
-
-  return vdomNode;
-};
-
 export const isNoriComponent = test => test.$$typeof && Symbol.keyFor(test.$$typeof) === 'nori.component';
+const isVDOMNode = node => typeof node === 'object' && node.hasOwnProperty('type') && node.hasOwnProperty('props') && node.hasOwnProperty('children');
+const hasOwnerComponent = node => node.hasOwnProperty('owner') && node.owner !== null;
 
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
@@ -78,6 +66,10 @@ const renderComponentNode = instance => {
     node.owner    = instance;
     return node;
   } else {
+    // Stateless functional component
+    if(isVDOMNode(instance)) {
+      return instance;
+    }
     console.warn(`renderComponentNode : No render() on instance`)
     return null;
   }
@@ -105,10 +97,7 @@ const createElement = node => {
       node.children
         .map(createElement)
         .forEach($el.appendChild.bind($el));
-    } else {
-      // This shouldn't happen ...
     }
-
   } else if (typeof node === 'function') {
     console.log('node is a function', node);
     return;
@@ -133,7 +122,6 @@ const createElement = node => {
 
 const setEvents = (node, $element) => {
   const props = node.props || {};
-
   mapActions(props).forEach(evt => {
     if (evt.type === ACTION_EVENT) {
       const nodeId = node.props.id;
@@ -147,6 +135,7 @@ const setEvents = (node, $element) => {
   });
 };
 
+// Behaviors have been removed for now, but I may return to it later
 const mapActions = props => Object.keys(props).reduce((acc, key) => {
   let value      = props[key],
       domEvt     = isDomEvent(key),
@@ -185,7 +174,6 @@ const createEventObject = (e, $src = null) => ({
 //------------------------------------------------------------------------------
 
 const changed = (newNode, oldNode) => {
-  // console.log('changed',newNode, oldNode);
   return typeof newNode !== typeof oldNode ||
     (typeof newNode === 'string' || typeof newNode === 'number' || typeof newNode === 'boolean') && newNode !== oldNode ||
     newNode.type !== oldNode.type
@@ -210,23 +198,16 @@ const updateElement = ($hostNode, newNode, oldNode, index = 0) => {
       $hostNode.childNodes[index]
     );
   } else if (newNode.type) {
-    //console.log('NO', oldNode, 'with', newNode);
     updateProps(
       $hostNode.childNodes[index],
       newNode.props,
       oldNode.props
     );
 
-    // TODO replace for loop
     const newLength = newNode.children.length;
     const oldLength = oldNode.children.length;
     for (let i = 0; i < newLength || i < oldLength; i++) {
-      updateElement(
-        $hostNode.childNodes[index],
-        newNode.children[i],
-        oldNode.children[i],
-        i
-      );
+      updateElement($hostNode.childNodes[index], newNode.children[i], oldNode.children[i], i);
     }
   }
 };
@@ -234,11 +215,6 @@ const updateElement = ($hostNode, newNode, oldNode, index = 0) => {
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
-
-// "Special props should be updated as new props are added to components. This is a bad design
-const specialProps = domEventsList.concat(['tweens', 'state', 'actions', 'children', 'element', 'min', 'max', 'mode']);
-
-const $isSpecialProp = test => specialProps.includes(test);
 
 const updateProp = (element, key, newValue, oldVaue) => {
   if (!newValue) {
@@ -248,20 +224,20 @@ const updateProp = (element, key, newValue, oldVaue) => {
   }
 };
 
-export const updateProps = (element, newProps, oldProps = {}) => {
+const updateProps = (element, newProps, oldProps = {}) => {
   let props = Object.assign({}, newProps, oldProps);
   Object.keys(props).forEach(key => {
     updateProp(element, key, newProps[key], oldProps[key]);
   });
 };
 
-export const setProps = (element, props) => Object.keys(props).forEach(key => {
+const setProps = (element, props) => Object.keys(props).forEach(key => {
   let value = props[key];
   setProp(element, key, value);
   return element;
 });
 
-export const setProp = (element, key, value) => {
+const setProp = (element, key, value) => {
   if (!$isSpecialProp(key)) {
     if (key === 'className') {
       key = 'class';
@@ -276,7 +252,7 @@ export const setProp = (element, key, value) => {
   }
 };
 
-export const setBooleanProp = (element, key, value) => {
+const setBooleanProp = (element, key, value) => {
   if (value) {
     element.setAttribute(key, value);
     element[key] = true;
@@ -285,7 +261,7 @@ export const setBooleanProp = (element, key, value) => {
   }
 };
 
-export const removeProp = (element, key, value) => {
+const removeProp = (element, key, value) => {
   if (!$isSpecialProp(key)) {
     if (key === 'className') {
       key = 'class';
@@ -301,7 +277,7 @@ export const removeProp = (element, key, value) => {
   }
 };
 
-export const removeBooleanProp = (element, key) => {
+const removeBooleanProp = (element, key) => {
   element.removeAttribute(key);
   element[key] = false;
 };
@@ -310,12 +286,24 @@ export const removeBooleanProp = (element, key) => {
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
 
-// Render a component to a dom node
+// Create VDOM from JSX. Used by the Babel/JSX transpiler
+export const h = (type, props, ...args) => {
+  props    = props || {};
+  props.id = props.key ? '' + props.key : getNextId();
+  // TODO fix this
+  if (props.key === 0) {
+    console.warn(`Component key can't be '0' : ${type} ${props}`)
+  }
+  let vdomNode = {
+    type, props, children: args.length ? flatten(args) : [], owner: null
+  };
+  return vdomNode;
+};
+
 export const render = (component, hostNode, removeExisting = true) => {
   if (removeExisting) {
     removeAllElements(hostNode);
   }
-
   currentHostTree = createComponentVDOM(component);
   updateElement(hostNode, currentHostTree);
   $hostNode = hostNode;
@@ -348,7 +336,7 @@ export const enqueueUpdate = (id) => {
   }
 };
 
-export const performUpdates = () => {
+const performUpdates = () => {
   let updatedVDOMTree;
   clearTimeout(updateTimeOut);
   updateTimeOut = null;
@@ -369,7 +357,7 @@ const rerenderVDOMInTree = (node, id) => {
   if (typeof node === 'object') {
     node = Object.assign({}, node);
   }
-  if (nodeHasOwnerComponent(node) && node.owner.props.id === id) {
+  if (hasOwnerComponent(node) && node.owner.props.id === id) {
     let instance;
     if (componentInstanceMap.hasOwnProperty(id)) {
       instance = componentInstanceMap[id]
@@ -390,11 +378,11 @@ const rerenderVDOMInTree = (node, id) => {
   return node;
 };
 
-const nodeHasOwnerComponent = node => node.hasOwnProperty('owner') && node.owner !== null;
+
 
 // TODO what if about component children of components?
 const removeComponentInstance = (node, $el) => {
-  if(nodeHasOwnerComponent(node)) {
+  if(hasOwnerComponent(node)) {
     if(node.owner === componentInstanceMap[node.owner.props.id]) {
       componentInstanceMap[node.owner.props.id].componentWillUnmount();
       removeEvents(node.owner.vdom.props.id);

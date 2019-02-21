@@ -19020,7 +19020,7 @@ exports.isDomEvent = isDomEvent;
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.performUpdates = exports.enqueueUpdate = exports.render = exports.removeBooleanProp = exports.removeProp = exports.setBooleanProp = exports.setProp = exports.setProps = exports.updateProps = exports.isNoriComponent = exports.h = void 0;
+exports.enqueueUpdate = exports.render = exports.h = exports.isNoriComponent = void 0;
 
 var _DOMToolbox = require("./browser/DOMToolbox");
 
@@ -19042,34 +19042,28 @@ var currentHostTree,
     didMountQueue = [],
     didUpdateQueue = [],
     updateTimeOut,
-    eventMap = {};
-var BEHAVIORS = []; // Create VDOM from JSX. Used by the Babel/JSX transpiler
+    eventMap = {}; // "Special props should be updated as new props are added to components. This is a bad design
 
-var h = function h(type, props) {
-  props = props || {};
-  props.id = props.key ? '' + props.key : (0, _ElementIDCreator.getNextId)(); // TODO fix this
+var specialProps = _DomEvents.domEventsList.concat(['tweens', 'state', 'actions', 'children', 'element', 'min', 'max', 'mode', 'key']);
 
-  if (props.key === 0) {
-    console.warn("Component key can't be '0' : ".concat(type, " ").concat(props));
-  }
-
-  for (var _len = arguments.length, args = new Array(_len > 2 ? _len - 2 : 0), _key = 2; _key < _len; _key++) {
-    args[_key - 2] = arguments[_key];
-  }
-
-  var vdomNode = {
-    type: type,
-    props: props,
-    children: args.length ? (0, _ArrayUtils.flatten)(args) : [],
-    owner: null
-  };
-  return vdomNode;
+var $isSpecialProp = function $isSpecialProp(test) {
+  return specialProps.includes(test);
 };
 
-exports.h = h;
+var BEHAVIORS = [];
 
 var isNoriComponent = function isNoriComponent(test) {
   return test.$$typeof && Symbol.keyFor(test.$$typeof) === 'nori.component';
+};
+
+exports.isNoriComponent = isNoriComponent;
+
+var isVDOMNode = function isVDOMNode(node) {
+  return _typeof(node) === 'object' && node.hasOwnProperty('type') && node.hasOwnProperty('props') && node.hasOwnProperty('children');
+};
+
+var hasOwnerComponent = function hasOwnerComponent(node) {
+  return node.hasOwnProperty('owner') && node.owner !== null;
 }; //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
@@ -19078,8 +19072,6 @@ var isNoriComponent = function isNoriComponent(test) {
 Renders out components to get a vdom tree of just html
  */
 
-
-exports.isNoriComponent = isNoriComponent;
 
 var createComponentVDOM = function createComponentVDOM(node) {
   if (_typeof(node) === 'object') {
@@ -19119,6 +19111,11 @@ var renderComponentNode = function renderComponentNode(instance) {
     node.owner = instance;
     return node;
   } else {
+    // Stateless functional component
+    if (isVDOMNode(instance)) {
+      return instance;
+    }
+
     console.warn("renderComponentNode : No render() on instance");
     return null;
   }
@@ -19144,7 +19141,6 @@ var createElement = function createElement(node) {
 
     if (node.hasOwnProperty('children')) {
       node.children.map(createElement).forEach($el.appendChild.bind($el));
-    } else {// This shouldn't happen ...
     }
   } else if (typeof node === 'function') {
     console.log('node is a function', node);
@@ -19183,7 +19179,8 @@ var setEvents = function setEvents(node, $element) {
       });
     }
   });
-};
+}; // Behaviors have been removed for now, but I may return to it later
+
 
 var mapActions = function mapActions(props) {
   return Object.keys(props).reduce(function (acc, key) {
@@ -19232,7 +19229,6 @@ var createEventObject = function createEventObject(e) {
 
 
 var changed = function changed(newNode, oldNode) {
-  // console.log('changed',newNode, oldNode);
   return _typeof(newNode) !== _typeof(oldNode) || (typeof newNode === 'string' || typeof newNode === 'number' || typeof newNode === 'boolean') && newNode !== oldNode || newNode.type !== oldNode.type;
 };
 
@@ -19253,9 +19249,7 @@ var updateElement = function updateElement($hostNode, newNode, oldNode) {
     // console.log('Replacing', oldNode, 'with', newNode);
     $hostNode.replaceChild(createElement(newNode), $hostNode.childNodes[index]);
   } else if (newNode.type) {
-    //console.log('NO', oldNode, 'with', newNode);
-    updateProps($hostNode.childNodes[index], newNode.props, oldNode.props); // TODO replace for loop
-
+    updateProps($hostNode.childNodes[index], newNode.props, oldNode.props);
     var newLength = newNode.children.length;
     var oldLength = oldNode.children.length;
 
@@ -19266,14 +19260,7 @@ var updateElement = function updateElement($hostNode, newNode, oldNode) {
 }; //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
-// "Special props should be updated as new props are added to components. This is a bad design
 
-
-var specialProps = _DomEvents.domEventsList.concat(['tweens', 'state', 'actions', 'children', 'element', 'min', 'max', 'mode']);
-
-var $isSpecialProp = function $isSpecialProp(test) {
-  return specialProps.includes(test);
-};
 
 var updateProp = function updateProp(element, key, newValue, oldVaue) {
   if (!newValue) {
@@ -19291,8 +19278,6 @@ var updateProps = function updateProps(element, newProps) {
   });
 };
 
-exports.updateProps = updateProps;
-
 var setProps = function setProps(element, props) {
   return Object.keys(props).forEach(function (key) {
     var value = props[key];
@@ -19300,8 +19285,6 @@ var setProps = function setProps(element, props) {
     return element;
   });
 };
-
-exports.setProps = setProps;
 
 var setProp = function setProp(element, key, value) {
   if (!$isSpecialProp(key)) {
@@ -19319,8 +19302,6 @@ var setProp = function setProp(element, key, value) {
   }
 };
 
-exports.setProp = setProp;
-
 var setBooleanProp = function setBooleanProp(element, key, value) {
   if (value) {
     element.setAttribute(key, value);
@@ -19329,8 +19310,6 @@ var setBooleanProp = function setBooleanProp(element, key, value) {
     element[key] = false;
   }
 };
-
-exports.setBooleanProp = setBooleanProp;
 
 var removeProp = function removeProp(element, key, value) {
   if (!$isSpecialProp(key)) {
@@ -19348,18 +19327,37 @@ var removeProp = function removeProp(element, key, value) {
   }
 };
 
-exports.removeProp = removeProp;
-
 var removeBooleanProp = function removeBooleanProp(element, key) {
   element.removeAttribute(key);
   element[key] = false;
 }; //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
-// Render a component to a dom node
+// Create VDOM from JSX. Used by the Babel/JSX transpiler
 
 
-exports.removeBooleanProp = removeBooleanProp;
+var h = function h(type, props) {
+  props = props || {};
+  props.id = props.key ? '' + props.key : (0, _ElementIDCreator.getNextId)(); // TODO fix this
+
+  if (props.key === 0) {
+    console.warn("Component key can't be '0' : ".concat(type, " ").concat(props));
+  }
+
+  for (var _len = arguments.length, args = new Array(_len > 2 ? _len - 2 : 0), _key = 2; _key < _len; _key++) {
+    args[_key - 2] = arguments[_key];
+  }
+
+  var vdomNode = {
+    type: type,
+    props: props,
+    children: args.length ? (0, _ArrayUtils.flatten)(args) : [],
+    owner: null
+  };
+  return vdomNode;
+};
+
+exports.h = h;
 
 var render = function render(component, hostNode) {
   var removeExisting = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : true;
@@ -19425,14 +19423,12 @@ TODO, reconcile any over laps with createComponentVDOM
  */
 
 
-exports.performUpdates = performUpdates;
-
 var rerenderVDOMInTree = function rerenderVDOMInTree(node, id) {
   if (_typeof(node) === 'object') {
     node = Object.assign({}, node);
   }
 
-  if (nodeHasOwnerComponent(node) && node.owner.props.id === id) {
+  if (hasOwnerComponent(node) && node.owner.props.id === id) {
     var instance;
 
     if (componentInstanceMap.hasOwnProperty(id)) {
@@ -19455,15 +19451,11 @@ var rerenderVDOMInTree = function rerenderVDOMInTree(node, id) {
   }
 
   return node;
-};
-
-var nodeHasOwnerComponent = function nodeHasOwnerComponent(node) {
-  return node.hasOwnProperty('owner') && node.owner !== null;
 }; // TODO what if about component children of components?
 
 
 var removeComponentInstance = function removeComponentInstance(node, $el) {
-  if (nodeHasOwnerComponent(node)) {
+  if (hasOwnerComponent(node)) {
     if (node.owner === componentInstanceMap[node.owner.props.id]) {
       componentInstanceMap[node.owner.props.id].componentWillUnmount();
       removeEvents(node.owner.vdom.props.id);
@@ -20484,24 +20476,10 @@ var appContainerBG = require('../img/pattern/shattered.png');
 var appContainer = (0, _emotion.css)(_templateObject(), appContainerBG);
 var whiteBox = (0, _emotion.css)(_templateObject2(), _Theme.theme.gradients['premium-white'], _Theme.theme.shadows.dropShadow.bigsoft);
 var blackBox = (0, _emotion.css)(_templateObject3(), _Theme.theme.gradients['premium-dark'], _Theme.theme.shadows.dropShadow.bigsoft);
-var applicationRoot = document.querySelector('#js-application');
 
 var Sfc = function Sfc(_) {
   return (0, _Nori.h)("h1", null, "I'm a stateless functional component");
-}; //
-// let testHTML = <div><h1>Heading 1</h1>
-//   <div>
-//     <h1>1</h1>
-//     <Lorem mode={Lorem.TITLE}/>
-//     <h3>3</h3>
-//     <p>Para<strong>BOLD<em>EM!</em></strong></p>
-//     <Box className={whiteBox}>
-//       <Sfc/>
-//     </Box>
-//   </div>
-// </div>;
-//
-
+};
 
 var testBox = (0, _Nori.h)(_Box.default, {
   key: "main",
@@ -20512,8 +20490,8 @@ var testBox = (0, _Nori.h)(_Box.default, {
   mode: _Lorem.default.TITLE
 }), (0, _Nori.h)(_Box.default, {
   className: whiteBox
-}, (0, _Nori.h)(Sfc, null), (0, _Nori.h)(_Ticker.default, null), (0, _Nori.h)(_Greeter.default, null), (0, _Nori.h)(_Greeter.default, null), (0, _Nori.h)(_Lister.default, null))));
-(0, _Nori.render)((0, _Nori.h)(_Lister.default, null), applicationRoot);
+}, (0, _Nori.h)(Sfc, null), (0, _Nori.h)(_Ticker.default, null), (0, _Nori.h)(_Ticker.default, null), (0, _Nori.h)(_Greeter.default, null), (0, _Nori.h)(_Lister.default, null))));
+(0, _Nori.render)(testBox, document.querySelector('#js-application'));
 },{"./theme/Global":"js/theme/Global.js","./theme/Theme":"js/theme/Theme.js","emotion":"../node_modules/emotion/dist/index.esm.js","./nori/Nori":"js/nori/Nori.js","./components/Box":"js/components/Box.js","./components/Lorem":"js/components/Lorem.js","./components/Ticker":"js/components/Ticker.js","./components/Greeter":"js/components/Greeter.js","./components/Lister":"js/components/Lister.js","../img/pattern/shattered.png":"img/pattern/shattered.png"}],"../node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
 var global = arguments[3];
 var OVERLAY_ID = '__parcel__error__overlay__';

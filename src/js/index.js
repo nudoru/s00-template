@@ -44,22 +44,10 @@ const blackBox = css`
   box-shadow: ${theme.shadows.dropShadow.bigsoft};
 `;
 
-const applicationRoot = document.querySelector('#js-application');
 
 const Sfc = _ => <h1>I'm a stateless functional component</h1>;
-//
-// let testHTML = <div><h1>Heading 1</h1>
-//   <div>
-//     <h1>1</h1>
-//     <Lorem mode={Lorem.TITLE}/>
-//     <h3>3</h3>
-//     <p>Para<strong>BOLD<em>EM!</em></strong></p>
-//     <Box className={whiteBox}>
-//       <Sfc/>
-//     </Box>
-//   </div>
-// </div>;
-//
+
+
 
 let testBox = <Box key='main' className={appContainer}>
   <Box className={blackBox}>
@@ -67,11 +55,11 @@ let testBox = <Box key='main' className={appContainer}>
     <Box className={whiteBox}>
       <Sfc/>
       <Ticker/>
-      <Greeter/>
+      <Ticker/>
       <Greeter/>
       <Lister/>
     </Box>
   </Box>
 </Box>;
 
-render(<Lister/>, applicationRoot);
+render(testBox, document.querySelector('#js-application'));
