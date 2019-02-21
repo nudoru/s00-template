@@ -19067,11 +19067,52 @@ var hasOwnerComponent = function hasOwnerComponent(node) {
 }; //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
+// Create VDOM from JSX. Used by the Babel/JSX transpiler
+
+
+var h = function h(type, props) {
+  props = props || {};
+  props.id = props.key ? '' + props.key : (0, _ElementIDCreator.getNextId)(); // TODO fix this
+
+  if (props.key === 0) {
+    console.warn("Component key can't be '0' : ".concat(type, " ").concat(props));
+  }
+
+  for (var _len = arguments.length, args = new Array(_len > 2 ? _len - 2 : 0), _key = 2; _key < _len; _key++) {
+    args[_key - 2] = arguments[_key];
+  }
+
+  return {
+    type: type,
+    props: props,
+    children: args.length ? (0, _ArrayUtils.flatten)(args) : [],
+    owner: null
+  };
+};
+
+exports.h = h;
+
+var render = function render(component, hostNode) {
+  var removeExisting = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : true;
+
+  if (removeExisting) {
+    (0, _DOMToolbox.removeAllElements)(hostNode);
+  }
+
+  currentHostTree = createComponentVDOM(component);
+  updateElement(hostNode, currentHostTree);
+  $hostNode = hostNode;
+  performDidMountQueue();
+}; //------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 /*
 Renders out components to get a vdom tree of just html
  */
 
+
+exports.render = render;
 
 var createComponentVDOM = function createComponentVDOM(node) {
   if (_typeof(node) === 'object') {
@@ -19333,46 +19374,7 @@ var removeBooleanProp = function removeBooleanProp(element, key) {
 }; //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
-// Create VDOM from JSX. Used by the Babel/JSX transpiler
 
-
-var h = function h(type, props) {
-  props = props || {};
-  props.id = props.key ? '' + props.key : (0, _ElementIDCreator.getNextId)(); // TODO fix this
-
-  if (props.key === 0) {
-    console.warn("Component key can't be '0' : ".concat(type, " ").concat(props));
-  }
-
-  for (var _len = arguments.length, args = new Array(_len > 2 ? _len - 2 : 0), _key = 2; _key < _len; _key++) {
-    args[_key - 2] = arguments[_key];
-  }
-
-  var vdomNode = {
-    type: type,
-    props: props,
-    children: args.length ? (0, _ArrayUtils.flatten)(args) : [],
-    owner: null
-  };
-  return vdomNode;
-};
-
-exports.h = h;
-
-var render = function render(component, hostNode) {
-  var removeExisting = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : true;
-
-  if (removeExisting) {
-    (0, _DOMToolbox.removeAllElements)(hostNode);
-  }
-
-  currentHostTree = createComponentVDOM(component);
-  updateElement(hostNode, currentHostTree);
-  $hostNode = hostNode;
-  performDidMountQueue();
-};
-
-exports.render = render;
 
 var performDidMountQueue = function performDidMountQueue() {
   didMountQueue.forEach(function (fn) {

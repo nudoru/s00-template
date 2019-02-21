@@ -30,6 +30,33 @@ const hasOwnerComponent = node => node.hasOwnProperty('owner') && node.owner !==
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
 
+// Create VDOM from JSX. Used by the Babel/JSX transpiler
+export const h = (type, props, ...args) => {
+  props    = props || {};
+  props.id = props.key ? '' + props.key : getNextId();
+  // TODO fix this
+  if (props.key === 0) {
+    console.warn(`Component key can't be '0' : ${type} ${props}`)
+  }
+  return {
+    type, props, children: args.length ? flatten(args) : [], owner: null
+  };
+};
+
+export const render = (component, hostNode, removeExisting = true) => {
+  if (removeExisting) {
+    removeAllElements(hostNode);
+  }
+  currentHostTree = createComponentVDOM(component);
+  updateElement(hostNode, currentHostTree);
+  $hostNode = hostNode;
+  performDidMountQueue();
+};
+
+//------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+
 /*
 Renders out components to get a vdom tree of just html
  */
@@ -285,30 +312,6 @@ const removeBooleanProp = (element, key) => {
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
-
-// Create VDOM from JSX. Used by the Babel/JSX transpiler
-export const h = (type, props, ...args) => {
-  props    = props || {};
-  props.id = props.key ? '' + props.key : getNextId();
-  // TODO fix this
-  if (props.key === 0) {
-    console.warn(`Component key can't be '0' : ${type} ${props}`)
-  }
-  let vdomNode = {
-    type, props, children: args.length ? flatten(args) : [], owner: null
-  };
-  return vdomNode;
-};
-
-export const render = (component, hostNode, removeExisting = true) => {
-  if (removeExisting) {
-    removeAllElements(hostNode);
-  }
-  currentHostTree = createComponentVDOM(component);
-  updateElement(hostNode, currentHostTree);
-  $hostNode = hostNode;
-  performDidMountQueue();
-};
 
 const performDidMountQueue = () => {
   didMountQueue.forEach(fn => fn());
