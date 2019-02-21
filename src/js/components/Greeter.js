@@ -51,6 +51,6 @@ export default class Greeter extends NoriComponent {
   };
 
   render() {
-    return <h1 click={this.$onClick} mouseover={this.onOver} mouseout={this.onOut}>Hello, <em className={blue}>{this.state.name}</em></h1>;
+    return <h1 onClick={this.$onClick} onMouseOver={this.onOver} onMouseOut={this.onOut}>Hello, <em className={blue}>{this.state.name}</em></h1>;
   }
 }

@@ -18998,22 +18998,6 @@ var getNextId = function getNextId() {
 };
 
 exports.getNextId = getNextId;
-},{}],"js/nori/events/DomEvents.js":[function(require,module,exports) {
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.isDomEvent = exports.domEventsList = void 0;
-//https://developer.mozilla.org/en-US/docs/Web/Events
-var domEventsList = ['focus', 'blur', 'resize', 'scroll', 'keydown', 'keypress', 'keyup', 'mouseenter', 'mousemove', 'mousedown', 'mouseover', 'mouseup', 'click', 'dblclick', 'contextmenu', 'wheel', 'mouseleave', 'mouseout', 'select'];
-exports.domEventsList = domEventsList;
-
-var isDomEvent = function isDomEvent(e) {
-  return domEventsList.includes(e);
-};
-
-exports.isDomEvent = isDomEvent;
 },{}],"js/nori/Nori.js":[function(require,module,exports) {
 "use strict";
 
@@ -19028,29 +19012,15 @@ var _ArrayUtils = require("./util/ArrayUtils");
 
 var _ElementIDCreator = require("./util/ElementIDCreator");
 
-var _DomEvents = require("./events/DomEvents");
-
 function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
 
-//https://jasonformat.com/wtf-is-jsx/
-//https://medium.com/@bluepnume/jsx-is-a-stellar-invention-even-with-react-out-of-the-picture-c597187134b7
-var ACTION_EVENT = 'event';
-var ACTION_BEHAVIOR = 'behavior';
 var currentHostTree,
     $hostNode,
     componentInstanceMap = {},
     didMountQueue = [],
     didUpdateQueue = [],
     updateTimeOut,
-    eventMap = {}; // "Special props should be updated as new props are added to components. This is a bad design
-
-var specialProps = _DomEvents.domEventsList.concat(['tweens', 'state', 'actions', 'children', 'element', 'min', 'max', 'mode', 'key']);
-
-var $isSpecialProp = function $isSpecialProp(test) {
-  return specialProps.includes(test);
-};
-
-var BEHAVIORS = [];
+    eventMap = {};
 
 var isNoriComponent = function isNoriComponent(test) {
   return test.$$typeof && Symbol.keyFor(test.$$typeof) === 'nori.component';
@@ -19064,6 +19034,21 @@ var isVDOMNode = function isVDOMNode(node) {
 
 var hasOwnerComponent = function hasOwnerComponent(node) {
   return node.hasOwnProperty('owner') && node.owner !== null;
+};
+
+var isEvent = function isEvent(event) {
+  return /^on/.test(event);
+};
+
+var getEventName = function getEventName(event) {
+  return event.slice(2).toLowerCase();
+}; // "Special props should be updated as new props are added to components.
+
+
+var specialProps = ['tweens', 'state', 'actions', 'children', 'element', 'min', 'max', 'mode', 'key'];
+
+var isSpecialProp = function isSpecialProp(test) {
+  return specialProps.includes(test);
 }; //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
@@ -19206,7 +19191,7 @@ var createElement = function createElement(node) {
 var setEvents = function setEvents(node, $element) {
   var props = node.props || {};
   mapActions(props).forEach(function (evt) {
-    if (evt.type === ACTION_EVENT) {
+    if (evt.type === 'event') {
       var nodeId = node.props.id;
       evt.internalHandler = handleEventTrigger(evt, $element);
       $element.addEventListener(evt.event, evt.internalHandler);
@@ -19220,19 +19205,17 @@ var setEvents = function setEvents(node, $element) {
       });
     }
   });
-}; // Behaviors have been removed for now, but I may return to it later
-
+};
 
 var mapActions = function mapActions(props) {
   return Object.keys(props).reduce(function (acc, key) {
     var value = props[key],
-        domEvt = (0, _DomEvents.isDomEvent)(key),
-        actionType = domEvt ? ACTION_EVENT : ACTION_BEHAVIOR;
+        evt = isEvent(key) ? getEventName(key) : null;
 
-    if (domEvt || BEHAVIORS.includes(key)) {
+    if (evt !== null) {
       acc.push({
-        type: actionType,
-        event: key,
+        type: 'event',
+        event: evt,
         externalHandler: value,
         internalHandler: null
       });
@@ -19339,11 +19322,12 @@ var setProps = function setProps(element, props) {
 };
 
 var setProp = function setProp(element, key, value) {
-  if (!$isSpecialProp(key)) {
+  if (!isSpecialProp(key) && !isEvent(key)) {
     if (key === 'className') {
       key = 'class';
-    } else if (key === 'id') {
-      key = 'data-nid';
+    } else if (key === 'id' && value.indexOf('element-id-') === 0) {
+      // key = 'data-nid';
+      return;
     }
 
     if (typeof value === 'boolean') {
@@ -19364,7 +19348,7 @@ var setBooleanProp = function setBooleanProp(element, key, value) {
 };
 
 var removeProp = function removeProp(element, key, value) {
-  if (!$isSpecialProp(key)) {
+  if (!isSpecialProp(key)) {
     if (key === 'className') {
       key = 'class';
     } else if (key === 'id') {
@@ -19464,7 +19448,7 @@ var rerenderVDOMInTree = function rerenderVDOMInTree(node, id) {
 
   return node;
 };
-},{"./browser/DOMToolbox":"js/nori/browser/DOMToolbox.js","./util/ArrayUtils":"js/nori/util/ArrayUtils.js","./util/ElementIDCreator":"js/nori/util/ElementIDCreator.js","./events/DomEvents":"js/nori/events/DomEvents.js"}],"js/nori/util/is.js":[function(require,module,exports) {
+},{"./browser/DOMToolbox":"js/nori/browser/DOMToolbox.js","./util/ArrayUtils":"js/nori/util/ArrayUtils.js","./util/ElementIDCreator":"js/nori/util/ElementIDCreator.js"}],"js/nori/util/is.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -20271,9 +20255,9 @@ function (_NoriComponent) {
     key: "render",
     value: function render() {
       return (0, _Nori.h)("h1", {
-        click: this.$onClick,
-        mouseover: this.onOver,
-        mouseout: this.onOut
+        onClick: this.$onClick,
+        onMouseOver: this.onOver,
+        onMouseOut: this.onOut
       }, "Hello, ", (0, _Nori.h)("em", {
         className: blue
       }, this.state.name));
@@ -20398,9 +20382,9 @@ function (_NoriComponent) {
         className: bordered,
         key: this.props.id
       }, (0, _Nori.h)("button", {
-        click: this.$onAddClick
+        onClick: this.$onAddClick
       }, "Add"), (0, _Nori.h)("button", {
-        click: this.$onRemoveClick
+        onClick: this.$onRemoveClick
       }, "Remove"), (0, _Nori.h)("hr", null), (0, _ArrayUtils.range)(this.state.counter).map(function (i) {
         return (0, _Nori.h)(_Ticker.default, {
           key: 'listitem-' + i

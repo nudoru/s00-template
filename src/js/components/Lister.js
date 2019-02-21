@@ -58,7 +58,7 @@ export default class Lister extends NoriComponent {
   render() {
     //console.log('render lister');
     return <div className={bordered} key={this.props.id}>
-      <button click={this.$onAddClick}>Add</button><button click={this.$onRemoveClick}>Remove</button>
+      <button onClick={this.$onAddClick}>Add</button><button onClick={this.$onRemoveClick}>Remove</button>
       <hr/>
       {range(this.state.counter).map(i => {
         return <Ticker key={'listitem-'+i}/>;

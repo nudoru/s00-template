@@ -1,13 +1,6 @@
 import {removeAllElements} from "./browser/DOMToolbox";
 import {flatten} from "./util/ArrayUtils";
 import {getNextId} from "./util/ElementIDCreator";
-import {isDomEvent, domEventsList} from "./events/DomEvents";
-
-//https://jasonformat.com/wtf-is-jsx/
-//https://medium.com/@bluepnume/jsx-is-a-stellar-invention-even-with-react-out-of-the-picture-c597187134b7
-
-const ACTION_EVENT    = 'event';
-const ACTION_BEHAVIOR = 'behavior';
 
 let currentHostTree,
     $hostNode,
@@ -15,16 +8,18 @@ let currentHostTree,
     didMountQueue        = [],
     didUpdateQueue       = [],
     updateTimeOut,
-    eventMap = {};
+    eventMap             = {};
 
-// "Special props should be updated as new props are added to components. This is a bad design
-const specialProps = domEventsList.concat(['tweens', 'state', 'actions', 'children', 'element', 'min', 'max', 'mode', 'key']);
-const $isSpecialProp = test => specialProps.includes(test);
-const BEHAVIORS = [];
 
 export const isNoriComponent = test => test.$$typeof && Symbol.keyFor(test.$$typeof) === 'nori.component';
-const isVDOMNode = node => typeof node === 'object' && node.hasOwnProperty('type') && node.hasOwnProperty('props') && node.hasOwnProperty('children');
+
+const isVDOMNode        = node => typeof node === 'object' && node.hasOwnProperty('type') && node.hasOwnProperty('props') && node.hasOwnProperty('children');
 const hasOwnerComponent = node => node.hasOwnProperty('owner') && node.owner !== null;
+const isEvent           = event => /^on/.test(event);
+const getEventName      = event => event.slice(2).toLowerCase();
+// "Special props should be updated as new props are added to components.
+const specialProps      = ['tweens', 'state', 'actions', 'children', 'element', 'min', 'max', 'mode', 'key'];
+const isSpecialProp    = test => specialProps.includes(test);
 
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
@@ -88,13 +83,13 @@ const instantiateNewComponent = node => {
 
 const renderComponentNode = instance => {
   if (typeof instance.render === 'function') {
-    let node          = instance.render();
+    let node      = instance.render();
     instance.vdom = node;
     node.owner    = instance;
     return node;
   } else {
     // Stateless functional component
-    if(isVDOMNode(instance)) {
+    if (isVDOMNode(instance)) {
       return instance;
     }
     console.warn(`renderComponentNode : No render() on instance`)
@@ -150,11 +145,11 @@ const createElement = node => {
 const setEvents = (node, $element) => {
   const props = node.props || {};
   mapActions(props).forEach(evt => {
-    if (evt.type === ACTION_EVENT) {
-      const nodeId = node.props.id;
+    if (evt.type === 'event') {
+      const nodeId        = node.props.id;
       evt.internalHandler = handleEventTrigger(evt, $element);
       $element.addEventListener(evt.event, evt.internalHandler);
-      if(!eventMap.hasOwnProperty(nodeId)) {
+      if (!eventMap.hasOwnProperty(nodeId)) {
         eventMap[nodeId] = [];
       }
       eventMap[nodeId].push(() => $element.removeEventListener(evt.event, evt.internalHandler));
@@ -162,16 +157,14 @@ const setEvents = (node, $element) => {
   });
 };
 
-// Behaviors have been removed for now, but I may return to it later
 const mapActions = props => Object.keys(props).reduce((acc, key) => {
-  let value      = props[key],
-      domEvt     = isDomEvent(key),
-      actionType = domEvt ? ACTION_EVENT : ACTION_BEHAVIOR;
+  let value = props[key],
+      evt   = isEvent(key) ? getEventName(key) : null;
 
-  if (domEvt || BEHAVIORS.includes(key)) {
+  if (evt !== null) {
     acc.push({
-      type           : actionType,
-      event          : key,
+      type           : 'event',
+      event          : evt,
       externalHandler: value,
       internalHandler: null
     });
@@ -180,7 +173,7 @@ const mapActions = props => Object.keys(props).reduce((acc, key) => {
 }, []);
 
 const removeEvents = id => {
-  if(eventMap.hasOwnProperty(id)) {
+  if (eventMap.hasOwnProperty(id)) {
     eventMap[id].map(fn => {
       fn();
       return null;
@@ -241,8 +234,8 @@ const updateElement = ($hostNode, newNode, oldNode, index = 0) => {
 
 // TODO what if about component children of components?
 const removeComponentInstance = (node) => {
-  if(hasOwnerComponent(node)) {
-    if(node.owner === componentInstanceMap[node.owner.props.id]) {
+  if (hasOwnerComponent(node)) {
+    if (node.owner === componentInstanceMap[node.owner.props.id]) {
       componentInstanceMap[node.owner.props.id].componentWillUnmount();
       removeEvents(node.owner.vdom.props.id);
       delete componentInstanceMap[node.owner.props.id];
@@ -276,11 +269,12 @@ const setProps = (element, props) => Object.keys(props).forEach(key => {
 });
 
 const setProp = (element, key, value) => {
-  if (!$isSpecialProp(key)) {
+  if (!isSpecialProp(key) && !isEvent(key)) {
     if (key === 'className') {
       key = 'class';
-    } else if (key === 'id') {
-      key = 'data-nid';
+    } else if (key === 'id' && value.indexOf('element-id-') === 0) {
+      // key = 'data-nid';
+      return;
     }
     if (typeof value === 'boolean') {
       setBooleanProp(element, key, value);
@@ -300,7 +294,7 @@ const setBooleanProp = (element, key, value) => {
 };
 
 const removeProp = (element, key, value) => {
-  if (!$isSpecialProp(key)) {
+  if (!isSpecialProp(key)) {
     if (key === 'className') {
       key = 'class';
     } else if (key === 'id') {
