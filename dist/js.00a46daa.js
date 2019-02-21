@@ -19050,7 +19050,7 @@ var specialProps = ['tweens', 'state', 'actions', 'children', 'element', 'min', 
 var isSpecialProp = function isSpecialProp(test) {
   return specialProps.includes(test);
 }; //------------------------------------------------------------------------------
-//------------------------------------------------------------------------------
+//PUBLICPUBLICPUBLICPUBLICPUBLICPUBLICPUBLICPUBLICPUBLICPUBLICPUBLICPUBLICPUBLIC
 //------------------------------------------------------------------------------
 // Create VDOM from JSX. Used by the Babel/JSX transpiler
 
@@ -19089,7 +19089,7 @@ var render = function render(component, hostNode) {
   $hostNode = hostNode;
   performDidMountQueue();
 }; //------------------------------------------------------------------------------
-//------------------------------------------------------------------------------
+//CREATIONCREATIONCREATIONCREATIONCREATIONCREATIONCREATIONCREATIONCREATIONCREATI
 //------------------------------------------------------------------------------
 
 /*
@@ -19184,7 +19184,7 @@ var createElement = function createElement(node) {
   setEvents(node, $el);
   return $el;
 }; //------------------------------------------------------------------------------
-//------------------------------------------------------------------------------
+//EVENTSEVENTSEVENTSEVENTSEVENTSEVENTSEVENTSEVENTSEVENTSEVENTSEVENTSEVENTSEVENTS
 //------------------------------------------------------------------------------
 
 
@@ -19248,7 +19248,7 @@ var createEventObject = function createEventObject(e) {
     target: $src
   };
 }; //------------------------------------------------------------------------------
-//------------------------------------------------------------------------------
+//UPDATESUPDATESUPDATESUPDATESUPDATESUPDATESUPDATESUPDATESUPDATESUPDATESUPDATESU
 //------------------------------------------------------------------------------
 
 
@@ -19270,7 +19270,6 @@ var updateElement = function updateElement($hostNode, newNode, oldNode) {
     }
   } else if (changed(newNode, oldNode)) {
     // TODO need to test for a component and fix this!
-    // console.log('Replacing', oldNode, 'with', newNode);
     $hostNode.replaceChild(createElement(newNode), $hostNode.childNodes[index]);
   } else if (newNode.type) {
     updateProps($hostNode.childNodes[index], newNode.props, oldNode.props);
@@ -19293,7 +19292,7 @@ var removeComponentInstance = function removeComponentInstance(node) {
     }
   }
 }; //------------------------------------------------------------------------------
-//------------------------------------------------------------------------------
+//PROPSPROPSPROPSPROPSPROPSPROPSPROPSPROPSPROPSPROPSPROPSPROPSPROPSPROPSPROPSPRO
 //------------------------------------------------------------------------------
 
 
@@ -19367,7 +19366,7 @@ var removeBooleanProp = function removeBooleanProp(element, key) {
   element.removeAttribute(key);
   element[key] = false;
 }; //------------------------------------------------------------------------------
-//------------------------------------------------------------------------------
+//LIFECYCLELIFECYCLELIFECYCLELIFECYCLELIFECYCLELIFECYCLELIFECYCLELIFECYCLELIFECY
 //------------------------------------------------------------------------------
 
 
@@ -19384,12 +19383,9 @@ var performDidUpdateQueue = function performDidUpdateQueue() {
   });
   didUpdateQueue = [];
 }; //------------------------------------------------------------------------------
+//STATEUPDATESTATEUPDATESTATEUPDATESTATEUPDATESTATEUPDATESTATEUPDATESTATEUPDATES
 //------------------------------------------------------------------------------
-//------------------------------------------------------------------------------
-
-/*
-Queue updates from components and batch update every so often
- */
+// Queue updates from components and batch update every so often
 
 
 var enqueueUpdate = function enqueueUpdate(id) {
@@ -19413,10 +19409,7 @@ var performUpdates = function performUpdates() {
   currentHostTree = updatedVDOMTree;
   performDidMountQueue();
   performDidUpdateQueue();
-};
-/*
-Rerenders the components from id down to a vdom tree for diffing w/ the original
- */
+}; // Rerenders the components from id down to a vdom tree for diffing w/ the original
 
 
 var rerenderVDOMInTree = function rerenderVDOMInTree(node, id) {

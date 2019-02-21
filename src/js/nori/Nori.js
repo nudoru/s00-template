@@ -22,7 +22,7 @@ const specialProps      = ['tweens', 'state', 'actions', 'children', 'element', 
 const isSpecialProp    = test => specialProps.includes(test);
 
 //------------------------------------------------------------------------------
-//------------------------------------------------------------------------------
+//PUBLICPUBLICPUBLICPUBLICPUBLICPUBLICPUBLICPUBLICPUBLICPUBLICPUBLICPUBLICPUBLIC
 //------------------------------------------------------------------------------
 
 // Create VDOM from JSX. Used by the Babel/JSX transpiler
@@ -49,7 +49,7 @@ export const render = (component, hostNode, removeExisting = true) => {
 };
 
 //------------------------------------------------------------------------------
-//------------------------------------------------------------------------------
+//CREATIONCREATIONCREATIONCREATIONCREATIONCREATIONCREATIONCREATIONCREATIONCREATI
 //------------------------------------------------------------------------------
 
 /*
@@ -139,7 +139,7 @@ const createElement = node => {
 };
 
 //------------------------------------------------------------------------------
-//------------------------------------------------------------------------------
+//EVENTSEVENTSEVENTSEVENTSEVENTSEVENTSEVENTSEVENTSEVENTSEVENTSEVENTSEVENTSEVENTS
 //------------------------------------------------------------------------------
 
 const setEvents = (node, $element) => {
@@ -190,7 +190,7 @@ const createEventObject = (e, $src = null) => ({
 });
 
 //------------------------------------------------------------------------------
-//------------------------------------------------------------------------------
+//UPDATESUPDATESUPDATESUPDATESUPDATESUPDATESUPDATESUPDATESUPDATESUPDATESUPDATESU
 //------------------------------------------------------------------------------
 
 const changed = (newNode, oldNode) => {
@@ -212,7 +212,6 @@ const updateElement = ($hostNode, newNode, oldNode, index = 0) => {
     }
   } else if (changed(newNode, oldNode)) {
     // TODO need to test for a component and fix this!
-    // console.log('Replacing', oldNode, 'with', newNode);
     $hostNode.replaceChild(
       createElement(newNode),
       $hostNode.childNodes[index]
@@ -223,7 +222,6 @@ const updateElement = ($hostNode, newNode, oldNode, index = 0) => {
       newNode.props,
       oldNode.props
     );
-
     const newLength = newNode.children.length;
     const oldLength = oldNode.children.length;
     for (let i = 0; i < newLength || i < oldLength; i++) {
@@ -244,7 +242,7 @@ const removeComponentInstance = (node) => {
 };
 
 //------------------------------------------------------------------------------
-//------------------------------------------------------------------------------
+//PROPSPROPSPROPSPROPSPROPSPROPSPROPSPROPSPROPSPROPSPROPSPROPSPROPSPROPSPROPSPRO
 //------------------------------------------------------------------------------
 
 const updateProp = (element, key, newValue, oldVaue) => {
@@ -315,7 +313,7 @@ const removeBooleanProp = (element, key) => {
 };
 
 //------------------------------------------------------------------------------
-//------------------------------------------------------------------------------
+//LIFECYCLELIFECYCLELIFECYCLELIFECYCLELIFECYCLELIFECYCLELIFECYCLELIFECYCLELIFECY
 //------------------------------------------------------------------------------
 
 const performDidMountQueue = () => {
@@ -331,12 +329,10 @@ const performDidUpdateQueue = () => {
 };
 
 //------------------------------------------------------------------------------
-//------------------------------------------------------------------------------
+//STATEUPDATESTATEUPDATESTATEUPDATESTATEUPDATESTATEUPDATESTATEUPDATESTATEUPDATES
 //------------------------------------------------------------------------------
 
-/*
-Queue updates from components and batch update every so often
- */
+// Queue updates from components and batch update every so often
 export const enqueueUpdate = (id) => {
   didUpdateQueue.push(id);
   if (!updateTimeOut) {
@@ -357,9 +353,7 @@ const performUpdates = () => {
   performDidUpdateQueue();
 };
 
-/*
-Rerenders the components from id down to a vdom tree for diffing w/ the original
- */
+// Rerenders the components from id down to a vdom tree for diffing w/ the original
 const rerenderVDOMInTree = (node, id) => {
   if (typeof node === 'object') {
     node = Object.assign({}, node);
