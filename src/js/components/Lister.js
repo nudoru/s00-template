@@ -4,7 +4,7 @@
  * Example component that supports lifecycle hooks and state updating
  */
 
-import DOMComponent from '../nori/DOMComponent';
+import NoriComponent from '../nori/NoriComponent';
 import {h} from "../nori/Nori";
 import {css} from 'emotion';
 import {modularScale} from "../theme/Theme";
@@ -18,7 +18,7 @@ background-color: #eee;
 padding: ${modularScale.ms0}
 `;
 
-export default class Lister extends DOMComponent {
+export default class Lister extends NoriComponent {
 
   // Default state
   internalState = {counter: 1};

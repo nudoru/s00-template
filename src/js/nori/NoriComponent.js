@@ -9,7 +9,7 @@ import {
 } from './Eventing';
 import {enqueueUpdate} from "./Nori";
 
-export default class DOMComponent {
+export default class NoriComponent {
 
   constructor(type, props, children) {
     this.type            = type;

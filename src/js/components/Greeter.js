@@ -4,14 +4,14 @@
  * Example component that supports action triggers, lifecycle hooks and state updating
  */
 
-import DOMComponent from '../nori/DOMComponent';
+import NoriComponent from '../nori/NoriComponent';
 import {h} from "../nori/Nori";
 import * as L from '../nori/util/Lorem';
 import {css} from 'emotion';
 
 const blue = css`color: blue;`;
 
-export default class Greeter extends DOMComponent {
+export default class Greeter extends NoriComponent {
 
   // Default state
   internalState = {name: L.firstLastName()};

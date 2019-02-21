@@ -19542,7 +19542,7 @@ var _default = {
   }
 };
 exports.default = _default;
-},{}],"js/nori/DOMComponent.js":[function(require,module,exports) {
+},{}],"js/nori/NoriComponent.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -19568,11 +19568,11 @@ function _defineProperties(target, props) { for (var i = 0; i < props.length; i+
 
 function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
 
-var DOMComponent =
+var NoriComponent =
 /*#__PURE__*/
 function () {
-  function DOMComponent(type, props, children) {
-    _classCallCheck(this, DOMComponent);
+  function NoriComponent(type, props, children) {
+    _classCallCheck(this, NoriComponent);
 
     this.componentDidMount = function () {};
 
@@ -19593,7 +19593,7 @@ function () {
     this.$$typeof = Symbol.for('nori.component');
   }
 
-  _createClass(DOMComponent, [{
+  _createClass(NoriComponent, [{
     key: "forceUpdate",
     value: function forceUpdate() {
       (0, _Nori.enqueueUpdate)(this.props.id);
@@ -19644,10 +19644,10 @@ function () {
     }
   }]);
 
-  return DOMComponent;
+  return NoriComponent;
 }();
 
-exports.default = DOMComponent;
+exports.default = NoriComponent;
 },{"ramda":"../node_modules/ramda/es/index.js","./util/is":"js/nori/util/is.js","./util/ElementIDCreator":"js/nori/util/ElementIDCreator.js","./Eventing":"js/nori/Eventing.js","./Nori":"js/nori/Nori.js"}],"js/components/Box.js":[function(require,module,exports) {
 "use strict";
 
@@ -19658,7 +19658,7 @@ exports.default = void 0;
 
 var _Nori = require("../nori/Nori");
 
-var _DOMComponent2 = _interopRequireDefault(require("../nori/DOMComponent"));
+var _NoriComponent2 = _interopRequireDefault(require("../nori/NoriComponent"));
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -19684,8 +19684,8 @@ function _objectWithoutProperties(obj, keys) { var target = {}; for (var i in ob
 
 var Box =
 /*#__PURE__*/
-function (_DOMComponent) {
-  _inherits(Box, _DOMComponent);
+function (_NoriComponent) {
+  _inherits(Box, _NoriComponent);
 
   function Box(props, children) {
     _classCallCheck(this, Box);
@@ -19706,10 +19706,10 @@ function (_DOMComponent) {
   }]);
 
   return Box;
-}(_DOMComponent2.default);
+}(_NoriComponent2.default);
 
 exports.default = Box;
-},{"../nori/Nori":"js/nori/Nori.js","../nori/DOMComponent":"js/nori/DOMComponent.js"}],"js/nori/util/StringUtils.js":[function(require,module,exports) {
+},{"../nori/Nori":"js/nori/Nori.js","../nori/NoriComponent":"js/nori/NoriComponent.js"}],"js/nori/util/StringUtils.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -19973,7 +19973,7 @@ var _Nori = require("../nori/Nori");
 
 var L = _interopRequireWildcard(require("../nori/util/Lorem"));
 
-var _DOMComponent2 = _interopRequireDefault(require("../nori/DOMComponent"));
+var _NoriComponent2 = _interopRequireDefault(require("../nori/NoriComponent"));
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -19999,8 +19999,8 @@ function _setPrototypeOf(o, p) { _setPrototypeOf = Object.setPrototypeOf || func
 
 var Lorem =
 /*#__PURE__*/
-function (_DOMComponent) {
-  _inherits(Lorem, _DOMComponent);
+function (_NoriComponent) {
+  _inherits(Lorem, _NoriComponent);
 
   function Lorem(props) {
     var _this;
@@ -20083,7 +20083,7 @@ function (_DOMComponent) {
   }]);
 
   return Lorem;
-}(_DOMComponent2.default);
+}(_NoriComponent2.default);
 
 exports.default = Lorem;
 Lorem.TEXT = 'text';
@@ -20092,7 +20092,7 @@ Lorem.TITLE = 'title';
 Lorem.SENTENCE = 'sentence';
 Lorem.DATE = 'date';
 Lorem.FULLNAMEFL = 'fullNameFL';
-},{"../nori/Nori":"js/nori/Nori.js","../nori/util/Lorem":"js/nori/util/Lorem.js","../nori/DOMComponent":"js/nori/DOMComponent.js"}],"js/components/Ticker.js":[function(require,module,exports) {
+},{"../nori/Nori":"js/nori/Nori.js","../nori/util/Lorem":"js/nori/util/Lorem.js","../nori/NoriComponent":"js/nori/NoriComponent.js"}],"js/components/Ticker.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -20100,7 +20100,7 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.default = void 0;
 
-var _DOMComponent2 = _interopRequireDefault(require("../nori/DOMComponent"));
+var _NoriComponent2 = _interopRequireDefault(require("../nori/NoriComponent"));
 
 var _Nori = require("../nori/Nori");
 
@@ -20142,8 +20142,8 @@ var red = (0, _emotion.css)(_templateObject());
 
 var Ticker =
 /*#__PURE__*/
-function (_DOMComponent) {
-  _inherits(Ticker, _DOMComponent);
+function (_NoriComponent) {
+  _inherits(Ticker, _NoriComponent);
 
   // Subclasses should only take passed props and children
   function Ticker(props, children) {
@@ -20190,10 +20190,10 @@ function (_DOMComponent) {
   }]);
 
   return Ticker;
-}(_DOMComponent2.default);
+}(_NoriComponent2.default);
 
 exports.default = Ticker;
-},{"../nori/DOMComponent":"js/nori/DOMComponent.js","../nori/Nori":"js/nori/Nori.js","emotion":"../node_modules/emotion/dist/index.esm.js"}],"js/components/Greeter.js":[function(require,module,exports) {
+},{"../nori/NoriComponent":"js/nori/NoriComponent.js","../nori/Nori":"js/nori/Nori.js","emotion":"../node_modules/emotion/dist/index.esm.js"}],"js/components/Greeter.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -20201,7 +20201,7 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.default = void 0;
 
-var _DOMComponent2 = _interopRequireDefault(require("../nori/DOMComponent"));
+var _NoriComponent2 = _interopRequireDefault(require("../nori/NoriComponent"));
 
 var _Nori = require("../nori/Nori");
 
@@ -20247,8 +20247,8 @@ var blue = (0, _emotion.css)(_templateObject());
 
 var Greeter =
 /*#__PURE__*/
-function (_DOMComponent) {
-  _inherits(Greeter, _DOMComponent);
+function (_NoriComponent) {
+  _inherits(Greeter, _NoriComponent);
 
   // Subclasses should only take passed props and children
   function Greeter(props, children) {
@@ -20306,10 +20306,10 @@ function (_DOMComponent) {
   }]);
 
   return Greeter;
-}(_DOMComponent2.default);
+}(_NoriComponent2.default);
 
 exports.default = Greeter;
-},{"../nori/DOMComponent":"js/nori/DOMComponent.js","../nori/Nori":"js/nori/Nori.js","../nori/util/Lorem":"js/nori/util/Lorem.js","emotion":"../node_modules/emotion/dist/index.esm.js"}],"js/components/Lister.js":[function(require,module,exports) {
+},{"../nori/NoriComponent":"js/nori/NoriComponent.js","../nori/Nori":"js/nori/Nori.js","../nori/util/Lorem":"js/nori/util/Lorem.js","emotion":"../node_modules/emotion/dist/index.esm.js"}],"js/components/Lister.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -20317,7 +20317,7 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.default = void 0;
 
-var _DOMComponent2 = _interopRequireDefault(require("../nori/DOMComponent"));
+var _NoriComponent2 = _interopRequireDefault(require("../nori/NoriComponent"));
 
 var _Nori = require("../nori/Nori");
 
@@ -20367,8 +20367,8 @@ var bordered = (0, _emotion.css)(_templateObject(), _Theme.modularScale.ms0);
 
 var Lister =
 /*#__PURE__*/
-function (_DOMComponent) {
-  _inherits(Lister, _DOMComponent);
+function (_NoriComponent) {
+  _inherits(Lister, _NoriComponent);
 
   // Subclasses should only take passed props and children
   function Lister(props, children) {
@@ -20435,10 +20435,10 @@ function (_DOMComponent) {
   }]);
 
   return Lister;
-}(_DOMComponent2.default);
+}(_NoriComponent2.default);
 
 exports.default = Lister;
-},{"../nori/DOMComponent":"js/nori/DOMComponent.js","../nori/Nori":"js/nori/Nori.js","emotion":"../node_modules/emotion/dist/index.esm.js","../theme/Theme":"js/theme/Theme.js","../nori/util/ArrayUtils":"js/nori/util/ArrayUtils.js","./Ticker":"js/components/Ticker.js","./Greeter":"js/components/Greeter.js"}],"img/pattern/shattered.png":[function(require,module,exports) {
+},{"../nori/NoriComponent":"js/nori/NoriComponent.js","../nori/Nori":"js/nori/Nori.js","emotion":"../node_modules/emotion/dist/index.esm.js","../theme/Theme":"js/theme/Theme.js","../nori/util/ArrayUtils":"js/nori/util/ArrayUtils.js","./Ticker":"js/components/Ticker.js","./Greeter":"js/components/Greeter.js"}],"img/pattern/shattered.png":[function(require,module,exports) {
 module.exports = "/shattered.a446e091.png";
 },{}],"js/index.js":[function(require,module,exports) {
 "use strict";
