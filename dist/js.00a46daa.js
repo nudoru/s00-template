@@ -19282,7 +19282,7 @@ var updateElement = function updateElement($hostNode, newNode, oldNode) {
     var $child = $hostNode.childNodes[index];
 
     if ($child) {
-      removeComponentInstance(oldNode, $child);
+      removeComponentInstance(oldNode);
       $hostNode.removeChild($child);
     }
   } else if (changed(newNode, oldNode)) {
@@ -19296,6 +19296,17 @@ var updateElement = function updateElement($hostNode, newNode, oldNode) {
 
     for (var i = 0; i < newLength || i < oldLength; i++) {
       updateElement($hostNode.childNodes[index], newNode.children[i], oldNode.children[i], i);
+    }
+  }
+}; // TODO what if about component children of components?
+
+
+var removeComponentInstance = function removeComponentInstance(node) {
+  if (hasOwnerComponent(node)) {
+    if (node.owner === componentInstanceMap[node.owner.props.id]) {
+      componentInstanceMap[node.owner.props.id].componentWillUnmount();
+      removeEvents(node.owner.vdom.props.id);
+      delete componentInstanceMap[node.owner.props.id];
     }
   }
 }; //------------------------------------------------------------------------------
@@ -19408,11 +19419,11 @@ var enqueueUpdate = function enqueueUpdate(id) {
 exports.enqueueUpdate = enqueueUpdate;
 
 var performUpdates = function performUpdates() {
-  var updatedVDOMTree;
+  var updatedVDOMTree = currentHostTree;
   clearTimeout(updateTimeOut);
   updateTimeOut = null;
   didUpdateQueue.forEach(function (id) {
-    updatedVDOMTree = rerenderVDOMInTree(currentHostTree, id);
+    updatedVDOMTree = rerenderVDOMInTree(updatedVDOMTree, id);
   });
   updateElement($hostNode, updatedVDOMTree, currentHostTree);
   currentHostTree = updatedVDOMTree;
@@ -19421,7 +19432,6 @@ var performUpdates = function performUpdates() {
 };
 /*
 Rerenders the components from id down to a vdom tree for diffing w/ the original
-TODO, reconcile any over laps with createComponentVDOM
  */
 
 
@@ -19442,7 +19452,7 @@ var rerenderVDOMInTree = function rerenderVDOMInTree(node, id) {
 
     node = renderComponentNode(instance);
   } else if (node.hasOwnProperty('type') && typeof node.type === 'function') {
-    // During the update of a parent node, a new component has been added to the children
+    // During the update of a parent node, a new component has been added to the child
     node = createComponentVDOM(node);
   }
 
@@ -19453,17 +19463,6 @@ var rerenderVDOMInTree = function rerenderVDOMInTree(node, id) {
   }
 
   return node;
-}; // TODO what if about component children of components?
-
-
-var removeComponentInstance = function removeComponentInstance(node, $el) {
-  if (hasOwnerComponent(node)) {
-    if (node.owner === componentInstanceMap[node.owner.props.id]) {
-      componentInstanceMap[node.owner.props.id].componentWillUnmount();
-      removeEvents(node.owner.vdom.props.id);
-      delete componentInstanceMap[node.owner.props.id];
-    }
-  }
 };
 },{"./browser/DOMToolbox":"js/nori/browser/DOMToolbox.js","./util/ArrayUtils":"js/nori/util/ArrayUtils.js","./util/ElementIDCreator":"js/nori/util/ElementIDCreator.js","./events/DomEvents":"js/nori/events/DomEvents.js"}],"js/nori/util/is.js":[function(require,module,exports) {
 "use strict";
@@ -20159,7 +20158,6 @@ function (_NoriComponent) {
   _createClass(Ticker, [{
     key: "render",
     value: function render() {
-      // console.log('render ticker',this.current);
       return (0, _Nori.h)("h3", null, "The count is ", (0, _Nori.h)("strong", {
         className: red
       }, this.internalState.counter), " ticks.");
@@ -20404,7 +20402,7 @@ function (_NoriComponent) {
       }, "Add"), (0, _Nori.h)("button", {
         click: this.$onRemoveClick
       }, "Remove"), (0, _Nori.h)("hr", null), (0, _ArrayUtils.range)(this.state.counter).map(function (i) {
-        return (0, _Nori.h)(_Greeter.default, {
+        return (0, _Nori.h)(_Ticker.default, {
           key: 'listitem-' + i
         });
       }));

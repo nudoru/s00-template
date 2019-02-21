@@ -39,7 +39,6 @@ export default class Ticker extends NoriComponent {
   };
 
   render() {
-    // console.log('render ticker',this.current);
     return <h3>The count is <strong className={red}>{this.internalState.counter}</strong> ticks.</h3>;
   }
 }

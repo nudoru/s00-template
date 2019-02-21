@@ -214,7 +214,7 @@ const updateElement = ($hostNode, newNode, oldNode, index = 0) => {
   } else if (!newNode) {
     let $child = $hostNode.childNodes[index];
     if ($child) {
-      removeComponentInstance(oldNode, $child);
+      removeComponentInstance(oldNode);
       $hostNode.removeChild($child);
     }
   } else if (changed(newNode, oldNode)) {
@@ -235,6 +235,17 @@ const updateElement = ($hostNode, newNode, oldNode, index = 0) => {
     const oldLength = oldNode.children.length;
     for (let i = 0; i < newLength || i < oldLength; i++) {
       updateElement($hostNode.childNodes[index], newNode.children[i], oldNode.children[i], i);
+    }
+  }
+};
+
+// TODO what if about component children of components?
+const removeComponentInstance = (node) => {
+  if(hasOwnerComponent(node)) {
+    if(node.owner === componentInstanceMap[node.owner.props.id]) {
+      componentInstanceMap[node.owner.props.id].componentWillUnmount();
+      removeEvents(node.owner.vdom.props.id);
+      delete componentInstanceMap[node.owner.props.id];
     }
   }
 };
@@ -340,11 +351,11 @@ export const enqueueUpdate = (id) => {
 };
 
 const performUpdates = () => {
-  let updatedVDOMTree;
+  let updatedVDOMTree = currentHostTree;
   clearTimeout(updateTimeOut);
   updateTimeOut = null;
   didUpdateQueue.forEach(id => {
-    updatedVDOMTree = rerenderVDOMInTree(currentHostTree, id);
+    updatedVDOMTree = rerenderVDOMInTree(updatedVDOMTree, id);
   });
   updateElement($hostNode, updatedVDOMTree, currentHostTree);
   currentHostTree = updatedVDOMTree;
@@ -354,7 +365,6 @@ const performUpdates = () => {
 
 /*
 Rerenders the components from id down to a vdom tree for diffing w/ the original
-TODO, reconcile any over laps with createComponentVDOM
  */
 const rerenderVDOMInTree = (node, id) => {
   if (typeof node === 'object') {
@@ -370,7 +380,7 @@ const rerenderVDOMInTree = (node, id) => {
     }
     node = renderComponentNode(instance);
   } else if (node.hasOwnProperty('type') && typeof node.type === 'function') {
-    // During the update of a parent node, a new component has been added to the children
+    // During the update of a parent node, a new component has been added to the child
     node = createComponentVDOM(node);
   }
   if (node.hasOwnProperty('children')) {
@@ -379,17 +389,4 @@ const rerenderVDOMInTree = (node, id) => {
     });
   }
   return node;
-};
-
-
-
-// TODO what if about component children of components?
-const removeComponentInstance = (node, $el) => {
-  if(hasOwnerComponent(node)) {
-    if(node.owner === componentInstanceMap[node.owner.props.id]) {
-      componentInstanceMap[node.owner.props.id].componentWillUnmount();
-      removeEvents(node.owner.vdom.props.id);
-      delete componentInstanceMap[node.owner.props.id];
-    }
-  }
 };
