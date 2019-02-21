@@ -1,12 +1,6 @@
 import {equals} from 'ramda';
 import Is from './util/is';
 import {getNextId} from './util/ElementIDCreator';
-import {
-  BEHAVIOR_RENDER,
-  BEHAVIOR_STATECHANGE,
-  BEHAVIOR_UPDATE,
-  BEHAVIOR_WILLREMOVE
-} from './Eventing';
 import {enqueueUpdate} from "./Nori";
 
 export default class NoriComponent {

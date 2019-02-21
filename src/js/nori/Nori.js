@@ -1,18 +1,23 @@
 import {removeAllElements} from "./browser/DOMToolbox";
 import {flatten} from "./util/ArrayUtils";
-import {removeEvents, setEvents} from "./Eventing";
 import {getNextId} from "./util/ElementIDCreator";
-import {domEventsList} from "./events/DomEvents";
+import {isDomEvent, domEventsList} from "./events/DomEvents";
 
 //https://jasonformat.com/wtf-is-jsx/
 //https://medium.com/@bluepnume/jsx-is-a-stellar-invention-even-with-react-out-of-the-picture-c597187134b7
+
+const ACTION_EVENT    = 'event';
+const ACTION_BEHAVIOR = 'behavior';
 
 let currentHostTree,
     $hostNode,
     componentInstanceMap = {},
     didMountQueue        = [],
     didUpdateQueue       = [],
-    updateTimeOut;
+    updateTimeOut,
+    eventMap = {};
+
+const BEHAVIORS = [];
 
 // Create VDOM from JSX. Used by the Babel/JSX transpiler
 export const h = (type, props, ...args) => {
@@ -30,6 +35,8 @@ export const h = (type, props, ...args) => {
 
   return vdomNode;
 };
+
+export const isNoriComponent = test => test.$$typeof && Symbol.keyFor(test.$$typeof) === 'nori.component';
 
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
@@ -119,6 +126,63 @@ const createElement = node => {
 
   return $el;
 };
+
+//------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+
+const setEvents = (node, $element) => {
+  const props = node.props || {};
+
+  mapActions(props).forEach(evt => {
+    if (evt.type === ACTION_EVENT) {
+      const nodeId = node.props.id;
+      evt.internalHandler = handleEventTrigger(evt, $element);
+      $element.addEventListener(evt.event, evt.internalHandler);
+      if(!eventMap.hasOwnProperty(nodeId)) {
+        eventMap[nodeId] = [];
+      }
+      eventMap[nodeId].push(() => $element.removeEventListener(evt.event, evt.internalHandler));
+    }
+  });
+};
+
+const mapActions = props => Object.keys(props).reduce((acc, key) => {
+  let value      = props[key],
+      domEvt     = isDomEvent(key),
+      actionType = domEvt ? ACTION_EVENT : ACTION_BEHAVIOR;
+
+  if (domEvt || BEHAVIORS.includes(key)) {
+    acc.push({
+      type           : actionType,
+      event          : key,
+      externalHandler: value,
+      internalHandler: null
+    });
+  }
+  return acc;
+}, []);
+
+const removeEvents = id => {
+  if(eventMap.hasOwnProperty(id)) {
+    eventMap[id].map(fn => {
+      fn();
+      return null;
+    });
+    delete eventMap[id];
+  }
+};
+
+const handleEventTrigger = (evt, $src) => e => evt.externalHandler(createEventObject(e, $src));
+
+const createEventObject = (e, $src = null) => ({
+  event : e,
+  target: $src
+});
+
+//------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 
 const changed = (newNode, oldNode) => {
   // console.log('changed',newNode, oldNode);
@@ -338,5 +402,3 @@ const removeComponentInstance = (node, $el) => {
     }
   }
 };
-
-export const isNoriComponent = test => test.$$typeof && Symbol.keyFor(test.$$typeof) === 'nori.component';

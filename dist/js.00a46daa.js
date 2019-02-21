@@ -18977,108 +18977,7 @@ var flatten = function flatten(arry) {
 };
 
 exports.flatten = flatten;
-},{"./NumberUtils":"js/nori/util/NumberUtils.js"}],"js/nori/events/DomEvents.js":[function(require,module,exports) {
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.isDomEvent = exports.domEventsList = void 0;
-//https://developer.mozilla.org/en-US/docs/Web/Events
-var domEventsList = ['focus', 'blur', 'resize', 'scroll', 'keydown', 'keypress', 'keyup', 'mouseenter', 'mousemove', 'mousedown', 'mouseover', 'mouseup', 'click', 'dblclick', 'contextmenu', 'wheel', 'mouseleave', 'mouseout', 'select'];
-exports.domEventsList = domEventsList;
-
-var isDomEvent = function isDomEvent(e) {
-  return domEventsList.includes(e);
-};
-
-exports.isDomEvent = isDomEvent;
-},{}],"js/nori/Eventing.js":[function(require,module,exports) {
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.removeEvents = exports.setEvents = exports.mapActions = void 0;
-
-var _DomEvents = require("./events/DomEvents");
-
-/**
- * Events and actions for Nori Components
- */
-var ACTION_EVENT = 'event';
-var ACTION_BEHAVIOR = 'behavior';
-var eventMap = {};
-var BEHAVIORS = [];
-
-var mapActions = function mapActions(props) {
-  return Object.keys(props).reduce(function (acc, key) {
-    var value = props[key],
-        domEvt = (0, _DomEvents.isDomEvent)(key),
-        actionType = domEvt ? ACTION_EVENT : ACTION_BEHAVIOR;
-
-    if (domEvt || BEHAVIORS.includes(key)) {
-      acc.push({
-        type: actionType,
-        event: key,
-        externalHandler: value,
-        internalHandler: null
-      });
-    }
-
-    return acc;
-  }, []);
-};
-
-exports.mapActions = mapActions;
-
-var setEvents = function setEvents(node, $element) {
-  var props = node.props || {};
-  mapActions(props).forEach(function (evt) {
-    if (evt.type === ACTION_EVENT) {
-      var nodeId = node.props.id;
-      evt.internalHandler = handleEventTrigger(evt, $element);
-      $element.addEventListener(evt.event, evt.internalHandler);
-
-      if (!eventMap.hasOwnProperty(nodeId)) {
-        eventMap[nodeId] = [];
-      }
-
-      eventMap[nodeId].push(function () {
-        return $element.removeEventListener(evt.event, evt.internalHandler);
-      });
-    }
-  });
-};
-
-exports.setEvents = setEvents;
-
-var removeEvents = function removeEvents(id) {
-  if (eventMap.hasOwnProperty(id)) {
-    eventMap[id].map(function (fn) {
-      fn();
-      return null;
-    });
-    delete eventMap[id];
-  }
-};
-
-exports.removeEvents = removeEvents;
-
-var handleEventTrigger = function handleEventTrigger(evt, $src) {
-  return function (e) {
-    return evt.externalHandler(createEventObject(e, $src));
-  };
-};
-
-var createEventObject = function createEventObject(e) {
-  var $src = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : null;
-  return {
-    event: e,
-    target: $src
-  };
-};
-},{"./events/DomEvents":"js/nori/events/DomEvents.js"}],"js/nori/util/ElementIDCreator.js":[function(require,module,exports) {
+},{"./NumberUtils":"js/nori/util/NumberUtils.js"}],"js/nori/util/ElementIDCreator.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -19099,19 +18998,33 @@ var getNextId = function getNextId() {
 };
 
 exports.getNextId = getNextId;
+},{}],"js/nori/events/DomEvents.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.isDomEvent = exports.domEventsList = void 0;
+//https://developer.mozilla.org/en-US/docs/Web/Events
+var domEventsList = ['focus', 'blur', 'resize', 'scroll', 'keydown', 'keypress', 'keyup', 'mouseenter', 'mousemove', 'mousedown', 'mouseover', 'mouseup', 'click', 'dblclick', 'contextmenu', 'wheel', 'mouseleave', 'mouseout', 'select'];
+exports.domEventsList = domEventsList;
+
+var isDomEvent = function isDomEvent(e) {
+  return domEventsList.includes(e);
+};
+
+exports.isDomEvent = isDomEvent;
 },{}],"js/nori/Nori.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.isNoriComponent = exports.performUpdates = exports.enqueueUpdate = exports.render = exports.removeBooleanProp = exports.removeProp = exports.setBooleanProp = exports.setProp = exports.setProps = exports.updateProps = exports.h = void 0;
+exports.performUpdates = exports.enqueueUpdate = exports.render = exports.removeBooleanProp = exports.removeProp = exports.setBooleanProp = exports.setProp = exports.setProps = exports.updateProps = exports.isNoriComponent = exports.h = void 0;
 
 var _DOMToolbox = require("./browser/DOMToolbox");
 
 var _ArrayUtils = require("./util/ArrayUtils");
-
-var _Eventing = require("./Eventing");
 
 var _ElementIDCreator = require("./util/ElementIDCreator");
 
@@ -19121,12 +19034,16 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
 
 //https://jasonformat.com/wtf-is-jsx/
 //https://medium.com/@bluepnume/jsx-is-a-stellar-invention-even-with-react-out-of-the-picture-c597187134b7
+var ACTION_EVENT = 'event';
+var ACTION_BEHAVIOR = 'behavior';
 var currentHostTree,
     $hostNode,
     componentInstanceMap = {},
     didMountQueue = [],
     didUpdateQueue = [],
-    updateTimeOut; // Create VDOM from JSX. Used by the Babel/JSX transpiler
+    updateTimeOut,
+    eventMap = {};
+var BEHAVIORS = []; // Create VDOM from JSX. Used by the Babel/JSX transpiler
 
 var h = function h(type, props) {
   props = props || {};
@@ -19147,6 +19064,12 @@ var h = function h(type, props) {
     owner: null
   };
   return vdomNode;
+};
+
+exports.h = h;
+
+var isNoriComponent = function isNoriComponent(test) {
+  return test.$$typeof && Symbol.keyFor(test.$$typeof) === 'nori.component';
 }; //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
@@ -19156,7 +19079,7 @@ Renders out components to get a vdom tree of just html
  */
 
 
-exports.h = h;
+exports.isNoriComponent = isNoriComponent;
 
 var createComponentVDOM = function createComponentVDOM(node) {
   if (_typeof(node) === 'object') {
@@ -19236,9 +19159,77 @@ var createElement = function createElement(node) {
   }
 
   setProps($el, node.props || {});
-  (0, _Eventing.setEvents)(node, $el);
+  setEvents(node, $el);
   return $el;
+}; //------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+
+
+var setEvents = function setEvents(node, $element) {
+  var props = node.props || {};
+  mapActions(props).forEach(function (evt) {
+    if (evt.type === ACTION_EVENT) {
+      var nodeId = node.props.id;
+      evt.internalHandler = handleEventTrigger(evt, $element);
+      $element.addEventListener(evt.event, evt.internalHandler);
+
+      if (!eventMap.hasOwnProperty(nodeId)) {
+        eventMap[nodeId] = [];
+      }
+
+      eventMap[nodeId].push(function () {
+        return $element.removeEventListener(evt.event, evt.internalHandler);
+      });
+    }
+  });
 };
+
+var mapActions = function mapActions(props) {
+  return Object.keys(props).reduce(function (acc, key) {
+    var value = props[key],
+        domEvt = (0, _DomEvents.isDomEvent)(key),
+        actionType = domEvt ? ACTION_EVENT : ACTION_BEHAVIOR;
+
+    if (domEvt || BEHAVIORS.includes(key)) {
+      acc.push({
+        type: actionType,
+        event: key,
+        externalHandler: value,
+        internalHandler: null
+      });
+    }
+
+    return acc;
+  }, []);
+};
+
+var removeEvents = function removeEvents(id) {
+  if (eventMap.hasOwnProperty(id)) {
+    eventMap[id].map(function (fn) {
+      fn();
+      return null;
+    });
+    delete eventMap[id];
+  }
+};
+
+var handleEventTrigger = function handleEventTrigger(evt, $src) {
+  return function (e) {
+    return evt.externalHandler(createEventObject(e, $src));
+  };
+};
+
+var createEventObject = function createEventObject(e) {
+  var $src = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : null;
+  return {
+    event: e,
+    target: $src
+  };
+}; //------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+
 
 var changed = function changed(newNode, oldNode) {
   // console.log('changed',newNode, oldNode);
@@ -19475,18 +19466,12 @@ var removeComponentInstance = function removeComponentInstance(node, $el) {
   if (nodeHasOwnerComponent(node)) {
     if (node.owner === componentInstanceMap[node.owner.props.id]) {
       componentInstanceMap[node.owner.props.id].componentWillUnmount();
-      (0, _Eventing.removeEvents)(node.owner.vdom.props.id);
+      removeEvents(node.owner.vdom.props.id);
       delete componentInstanceMap[node.owner.props.id];
     }
   }
 };
-
-var isNoriComponent = function isNoriComponent(test) {
-  return test.$$typeof && Symbol.keyFor(test.$$typeof) === 'nori.component';
-};
-
-exports.isNoriComponent = isNoriComponent;
-},{"./browser/DOMToolbox":"js/nori/browser/DOMToolbox.js","./util/ArrayUtils":"js/nori/util/ArrayUtils.js","./Eventing":"js/nori/Eventing.js","./util/ElementIDCreator":"js/nori/util/ElementIDCreator.js","./events/DomEvents":"js/nori/events/DomEvents.js"}],"js/nori/util/is.js":[function(require,module,exports) {
+},{"./browser/DOMToolbox":"js/nori/browser/DOMToolbox.js","./util/ArrayUtils":"js/nori/util/ArrayUtils.js","./util/ElementIDCreator":"js/nori/util/ElementIDCreator.js","./events/DomEvents":"js/nori/events/DomEvents.js"}],"js/nori/util/is.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -19555,8 +19540,6 @@ var _ramda = require("ramda");
 var _is = _interopRequireDefault(require("./util/is"));
 
 var _ElementIDCreator = require("./util/ElementIDCreator");
-
-var _Eventing = require("./Eventing");
 
 var _Nori = require("./Nori");
 
@@ -19648,7 +19631,7 @@ function () {
 }();
 
 exports.default = NoriComponent;
-},{"ramda":"../node_modules/ramda/es/index.js","./util/is":"js/nori/util/is.js","./util/ElementIDCreator":"js/nori/util/ElementIDCreator.js","./Eventing":"js/nori/Eventing.js","./Nori":"js/nori/Nori.js"}],"js/components/Box.js":[function(require,module,exports) {
+},{"ramda":"../node_modules/ramda/es/index.js","./util/is":"js/nori/util/is.js","./util/ElementIDCreator":"js/nori/util/ElementIDCreator.js","./Nori":"js/nori/Nori.js"}],"js/components/Box.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
