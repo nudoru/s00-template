@@ -19505,8 +19505,6 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.default = void 0;
 
-var _ramda = require("ramda");
-
 var _is = _interopRequireDefault(require("./util/is"));
 
 var _ElementIDCreator = require("./util/ElementIDCreator");
@@ -19547,6 +19545,15 @@ function () {
   }
 
   _createClass(NoriComponent, [{
+    key: "shouldComponentUpdate",
+    //https://reactjs.org/docs/shallow-compare.html
+    value: function shouldComponentUpdate(nextProps, nextState) {
+      // Deep compare
+      // return !equals(nextState, this.internalState); //equals is from Ramda
+      // Shallow compare
+      return !(nextState === this.internalState) || !(nextProps === this.props);
+    }
+  }, {
     key: "forceUpdate",
     value: function forceUpdate() {
       (0, _Nori.enqueueUpdate)(this.props.id);
@@ -19568,13 +19575,11 @@ function () {
         return;
       }
 
-      if ((0, _ramda.equals)(nextState, this.internalState)) {
-        return;
+      if (this.shouldComponentUpdate({}, nextState)) {
+        this.internalState = Object.assign({}, this.internalState, nextState);
+        this.componentWillUpdate();
+        (0, _Nori.enqueueUpdate)(this.props.id);
       }
-
-      this.internalState = Object.assign({}, this.internalState, nextState);
-      this.componentWillUpdate();
-      (0, _Nori.enqueueUpdate)(this.props.id);
     },
     get: function get() {
       return Object.assign({}, this.internalState);
@@ -19601,7 +19606,7 @@ function () {
 }();
 
 exports.default = NoriComponent;
-},{"ramda":"../node_modules/ramda/es/index.js","./util/is":"js/nori/util/is.js","./util/ElementIDCreator":"js/nori/util/ElementIDCreator.js","./Nori":"js/nori/Nori.js"}],"js/components/Box.js":[function(require,module,exports) {
+},{"./util/is":"js/nori/util/is.js","./util/ElementIDCreator":"js/nori/util/ElementIDCreator.js","./Nori":"js/nori/Nori.js"}],"js/components/Box.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {

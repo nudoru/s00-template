@@ -1,4 +1,3 @@
-import {equals} from 'ramda';
 import Is from './util/is';
 import {getNextId} from './util/ElementIDCreator';
 import {enqueueUpdate} from "./Nori";
@@ -23,13 +22,11 @@ export default class NoriComponent {
       return;
     }
 
-    if (equals(nextState, this.internalState)) {
-      return;
+    if(this.shouldComponentUpdate({}, nextState)) {
+      this.internalState = Object.assign({}, this.internalState, nextState);
+      this.componentWillUpdate();
+      enqueueUpdate(this.props.id);
     }
-
-    this.internalState = Object.assign({}, this.internalState, nextState);
-    this.componentWillUpdate();
-    enqueueUpdate(this.props.id);
   }
 
   get state() {
@@ -50,6 +47,14 @@ export default class NoriComponent {
 
   get vdom() {
     return this.internalVDOM;
+  }
+
+  //https://reactjs.org/docs/shallow-compare.html
+  shouldComponentUpdate(nextProps, nextState) {
+    // Deep compare
+    // return !equals(nextState, this.internalState); //equals is from Ramda
+    // Shallow compare
+    return !(nextState === this.internalState) || !(nextProps === this.props);
   }
 
   forceUpdate() {

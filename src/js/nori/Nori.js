@@ -1,3 +1,12 @@
+/*
+TODO
+  - remove life cycle stubs from NC and check w/ a typeof call, call if true
+  - try to use this.state in constructor rather than internalState
+  - test a renderProp
+  - test my mouse renderprops
+ */
+
+
 import {removeAllElements} from "./browser/DOMToolbox";
 import {flatten} from "./util/ArrayUtils";
 import {getNextId} from "./util/ElementIDCreator";
