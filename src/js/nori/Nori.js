@@ -1,8 +1,9 @@
 /*
 TODO
-  - try to use this.state in constructor rather than internalState
   - test a renderProp
   - test my mouse renderprops
+  - what happens if an update is enququed while the update loop is updating vdom?
+  - in component constructor, call super w/ only props
  */
 
 
@@ -27,7 +28,7 @@ const isEvent           = event => /^on/.test(event);
 const getEventName      = event => event.slice(2).toLowerCase();
 // "Special props should be updated as new props are added to components.
 const specialProps      = ['tweens', 'state', 'actions', 'children', 'element', 'min', 'max', 'mode', 'key'];
-const isSpecialProp    = test => specialProps.includes(test);
+const isSpecialProp     = test => specialProps.includes(test);
 
 //------------------------------------------------------------------------------
 //PUBLICPUBLICPUBLICPUBLICPUBLICPUBLICPUBLICPUBLICPUBLICPUBLICPUBLICPUBLICPUBLIC
@@ -66,11 +67,29 @@ Renders out components to get a vdom tree of just html
 const createComponentVDOM = node => {
   if (typeof node === 'object') {
     node = Object.assign({}, node);
+  } else if (typeof node === 'function') {
+    // Function as child
+    console.warn(`createComponentVDOM : node is a function`, node);
   }
   if (typeof node.type === 'function') {
     node = renderComponentNode(instantiateNewComponent(node));
   }
   if (node.hasOwnProperty('children')) {
+    let result      = [],
+        resultIndex = [];
+
+    node.children.forEach((child, i) => {
+      if (typeof child === 'function') {
+        let childResult = child();
+        result.unshift(childResult);
+        resultIndex.unshift(i);
+      }
+    });
+
+    resultIndex.forEach((idx, i) => {
+      node.children.splice(idx, 1, ...result[i]);
+    });
+
     node.children = node.children.map(child => {
       return createComponentVDOM(child);
     });
@@ -129,15 +148,14 @@ const createElement = node => {
         .forEach($el.appendChild.bind($el));
     }
   } else if (typeof node === 'function') {
-    console.log('node is a function', node);
-    return;
+    return document.createTextNode('createElement : expected vdom, node is a function', node);
   } else {
     return document.createTextNode(`createElement: Unknown node type ${node} : ${node.type}`);
   }
 
   if (ownerComp) {
     ownerComp.current = $el;
-    if(typeof ownerComp.componentDidMount === 'function') {
+    if (typeof ownerComp.componentDidMount === 'function') {
       didMountQueue.push(ownerComp.componentDidMount.bind(ownerComp));
     }
   }
@@ -245,7 +263,7 @@ const removeComponentInstance = (node) => {
   if (hasOwnerComponent(node)) {
     let id = node.owner.props.id;
     if (node.owner === componentInstanceMap[id]) {
-      if(typeof componentInstanceMap[id].componentWillUnmount === 'function') {
+      if (typeof componentInstanceMap[id].componentWillUnmount === 'function') {
         componentInstanceMap[id].componentWillUnmount();
       }
 
@@ -337,7 +355,7 @@ const performDidMountQueue = () => {
 
 const performDidUpdateQueue = () => {
   didUpdateQueue.forEach(id => {
-    if(typeof componentInstanceMap[id].componentDidUpdate === 'function') {
+    if (typeof componentInstanceMap[id].componentDidUpdate === 'function') {
       componentInstanceMap[id].componentDidUpdate()
     }
   });
@@ -388,6 +406,21 @@ const rerenderVDOMInTree = (node, id) => {
     node = createComponentVDOM(node);
   }
   if (node.hasOwnProperty('children')) {
+    let result      = [],
+        resultIndex = [];
+
+    node.children.forEach((child, i) => {
+      if (typeof child === 'function') {
+        let childResult = child();
+        result.unshift(childResult);
+        resultIndex.unshift(i);
+      }
+    });
+
+    resultIndex.forEach((idx, i) => {
+      node.children.splice(idx, 1, ...result[i]);
+    });
+
     node.children = node.children.map(child => {
       return rerenderVDOMInTree(child, id);
     });

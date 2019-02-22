@@ -19012,6 +19012,14 @@ var _ArrayUtils = require("./util/ArrayUtils");
 
 var _ElementIDCreator = require("./util/ElementIDCreator");
 
+function _toConsumableArray(arr) { return _arrayWithoutHoles(arr) || _iterableToArray(arr) || _nonIterableSpread(); }
+
+function _nonIterableSpread() { throw new TypeError("Invalid attempt to spread non-iterable instance"); }
+
+function _iterableToArray(iter) { if (Symbol.iterator in Object(iter) || Object.prototype.toString.call(iter) === "[object Arguments]") return Array.from(iter); }
+
+function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = new Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } }
+
 function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
 
 var currentHostTree,
@@ -19102,6 +19110,9 @@ exports.render = render;
 var createComponentVDOM = function createComponentVDOM(node) {
   if (_typeof(node) === 'object') {
     node = Object.assign({}, node);
+  } else if (typeof node === 'function') {
+    // Function as child
+    console.warn("createComponentVDOM : node is a function", node);
   }
 
   if (typeof node.type === 'function') {
@@ -19109,6 +19120,20 @@ var createComponentVDOM = function createComponentVDOM(node) {
   }
 
   if (node.hasOwnProperty('children')) {
+    var result = [],
+        resultIndex = [];
+    node.children.forEach(function (child, i) {
+      if (typeof child === 'function') {
+        var childResult = child();
+        result.unshift(childResult);
+        resultIndex.unshift(i);
+      }
+    });
+    resultIndex.forEach(function (idx, i) {
+      var _node$children;
+
+      (_node$children = node.children).splice.apply(_node$children, [idx, 1].concat(_toConsumableArray(result[i])));
+    });
     node.children = node.children.map(function (child) {
       return createComponentVDOM(child);
     });
@@ -19169,8 +19194,7 @@ var createElement = function createElement(node) {
       node.children.map(createElement).forEach($el.appendChild.bind($el));
     }
   } else if (typeof node === 'function') {
-    console.log('node is a function', node);
-    return;
+    return document.createTextNode('createElement : expected vdom, node is a function', node);
   } else {
     return document.createTextNode("createElement: Unknown node type ".concat(node, " : ").concat(node.type));
   }
@@ -19444,6 +19468,20 @@ var rerenderVDOMInTree = function rerenderVDOMInTree(node, id) {
   }
 
   if (node.hasOwnProperty('children')) {
+    var result = [],
+        resultIndex = [];
+    node.children.forEach(function (child, i) {
+      if (typeof child === 'function') {
+        var childResult = child();
+        result.unshift(childResult);
+        resultIndex.unshift(i);
+      }
+    });
+    resultIndex.forEach(function (idx, i) {
+      var _node$children2;
+
+      (_node$children2 = node.children).splice.apply(_node$children2, [idx, 1].concat(_toConsumableArray(result[i])));
+    });
     node.children = node.children.map(function (child) {
       return rerenderVDOMInTree(child, id);
     });
@@ -20113,9 +20151,6 @@ function (_NoriComponent) {
     _classCallCheck(this, Ticker);
 
     _this = _possibleConstructorReturn(this, _getPrototypeOf(Ticker).call(this, 'h1', props, []));
-    _this.internalState = {
-      counter: 1
-    };
 
     _this.componentDidMount = function () {
       _this.tickerID = setInterval(_this.$updateTicker, 1000);
@@ -20136,9 +20171,11 @@ function (_NoriComponent) {
     };
 
     _this.tickerID = null;
+    _this.state = {
+      counter: 1
+    };
     return _this;
-  } // Default state
-
+  }
 
   _createClass(Ticker, [{
     key: "render",
@@ -20217,9 +20254,6 @@ function (_NoriComponent) {
     _classCallCheck(this, Greeter);
 
     _this = _possibleConstructorReturn(this, _getPrototypeOf(Greeter).call(this, 'h1', props, []));
-    _this.internalState = {
-      name: L.firstLastName()
-    };
 
     _this.$onClick = function (evt) {
       // console.log('Greet click!',evt, this);
@@ -20248,9 +20282,11 @@ function (_NoriComponent) {
       console.log('Greeter out');
     };
 
+    _this.state = {
+      name: L.firstLastName()
+    };
     return _this;
-  } // Default state
-
+  }
 
   _createClass(Greeter, [{
     key: "render",
@@ -20337,9 +20373,6 @@ function (_NoriComponent) {
     _classCallCheck(this, Lister);
 
     _this = _possibleConstructorReturn(this, _getPrototypeOf(Lister).call(this, 'h1', props, []));
-    _this.internalState = {
-      counter: 1
-    };
 
     _this.componentDidMount = function () {//console.log('Ticker did mount');
     };
@@ -20368,9 +20401,11 @@ function (_NoriComponent) {
       };
     };
 
+    _this.state = {
+      counter: 3
+    };
     return _this;
-  } // Default state
-
+  }
 
   _createClass(Lister, [{
     key: "render",
@@ -20378,6 +20413,8 @@ function (_NoriComponent) {
     // {range(this.state.counter).map(i => <li>Item {i+1}</li>)}
     // </ul>
     value: function render() {
+      var _this2 = this;
+
       //console.log('render lister');
       return (0, _Nori.h)("div", {
         className: bordered,
@@ -20386,11 +20423,19 @@ function (_NoriComponent) {
         onClick: this.$onAddClick
       }, "Add"), (0, _Nori.h)("button", {
         onClick: this.$onRemoveClick
-      }, "Remove"), (0, _Nori.h)("hr", null), (0, _ArrayUtils.range)(this.state.counter).map(function (i) {
-        return (0, _Nori.h)(_Ticker.default, {
-          key: 'listitem-' + i
+      }, "Remove"), (0, _Nori.h)("hr", null), function () {
+        return (0, _ArrayUtils.range)(_this2.state.counter).map(function (i) {
+          return (0, _Nori.h)(_Ticker.default, {
+            key: 'listitem-' + i
+          });
         });
-      }));
+      }, (0, _Nori.h)("hr", null), function () {
+        return (0, _ArrayUtils.range)(_this2.state.counter).map(function (i) {
+          return (0, _Nori.h)(_Ticker.default, {
+            key: 'listitem-' + i
+          });
+        });
+      });
     }
   }]);
 
@@ -20476,7 +20521,7 @@ var testBox = (0, _Nori.h)(_Box.default, {
 }), (0, _Nori.h)(_Box.default, {
   className: whiteBox
 }, (0, _Nori.h)(Sfc, null), (0, _Nori.h)(_Ticker.default, null), (0, _Nori.h)(_Ticker.default, null), (0, _Nori.h)(_Greeter.default, null), (0, _Nori.h)(_Lister.default, null))));
-(0, _Nori.render)(testBox, document.querySelector('#js-application'));
+(0, _Nori.render)((0, _Nori.h)(_Lister.default, null), document.querySelector('#js-application'));
 },{"./theme/Global":"js/theme/Global.js","./theme/Theme":"js/theme/Theme.js","emotion":"../node_modules/emotion/dist/index.esm.js","./nori/Nori":"js/nori/Nori.js","./components/Box":"js/components/Box.js","./components/Lorem":"js/components/Lorem.js","./components/Ticker":"js/components/Ticker.js","./components/Greeter":"js/components/Greeter.js","./components/Lister":"js/components/Lister.js","../img/pattern/shattered.png":"img/pattern/shattered.png"}],"../node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
 var global = arguments[3];
 var OVERLAY_ID = '__parcel__error__overlay__';

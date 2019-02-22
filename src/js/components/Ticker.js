@@ -12,13 +12,11 @@ const red = css`color: red;`;
 
 export default class Ticker extends NoriComponent {
 
-  // Default state
-  internalState = {counter: 1};
-
   // Subclasses should only take passed props and children
   constructor(props, children) {
     super('h1', props, []);
     this.tickerID = null;
+    this.state = {counter: 1};
   }
 
   componentDidMount = () => {

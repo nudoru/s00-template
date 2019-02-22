@@ -20,11 +20,10 @@ padding: ${modularScale.ms0}
 
 export default class Lister extends NoriComponent {
 
-  // Default state
-  internalState = {counter: 1};
   // Subclasses should only take passed props and children
   constructor(props, children) {
     super('h1', props, []);
+    this.state = {counter: 3};
   }
 
   componentDidMount = () => {
@@ -60,9 +59,13 @@ export default class Lister extends NoriComponent {
     return <div className={bordered} key={this.props.id}>
       <button onClick={this.$onAddClick}>Add</button><button onClick={this.$onRemoveClick}>Remove</button>
       <hr/>
-      {range(this.state.counter).map(i => {
+      {() => (range(this.state.counter).map(i => {
         return <Ticker key={'listitem-'+i}/>;
-      })}
+      }))}
+      <hr/>
+      {() => (range(this.state.counter).map(i => {
+        return <Ticker key={'listitem-'+i}/>;
+      }))}
     </div>;
   }
 }

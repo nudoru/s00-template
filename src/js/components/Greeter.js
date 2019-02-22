@@ -13,12 +13,10 @@ const blue = css`color: blue;`;
 
 export default class Greeter extends NoriComponent {
 
-  // Default state
-  internalState = {name: L.firstLastName()};
-
   // Subclasses should only take passed props and children
   constructor(props, children) {
     super('h1', props, []);
+    this.state = {name: L.firstLastName()};
   }
 
   $onClick = evt => {
