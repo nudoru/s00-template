@@ -1,3 +1,5 @@
+# **README is most likely out of date!**
+
 # Sketch 00 - Vanilla JS Template
 
 Taking a break from React and playing around with the new Vanilla JS framework for experimentation and fun.
