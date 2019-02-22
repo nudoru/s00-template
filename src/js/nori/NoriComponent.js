@@ -24,7 +24,9 @@ export default class NoriComponent {
 
     if(this.shouldComponentUpdate({}, nextState)) {
       this.internalState = Object.assign({}, this.internalState, nextState);
-      this.componentWillUpdate();
+      if(typeof this.componentWillUpdate === 'function')  {
+        this.componentWillUpdate();
+      }
       enqueueUpdate(this.props.id);
     }
   }
@@ -60,19 +62,6 @@ export default class NoriComponent {
   forceUpdate() {
     enqueueUpdate(this.props.id);
   }
-
-  //--------------------------------------------------------------------------------
-  // Stub "lifecycle" methods. Override in subclass.
-  //--------------------------------------------------------------------------------
-
-  componentDidMount    = () => {
-  };
-  componentWillUnmount = () => {
-  };
-  componentWillUpdate  = () => {
-  };
-  componentDidUpdate   = () => {
-  };
 
   remove() {
     this.internalCurrent = null;

@@ -19177,7 +19177,10 @@ var createElement = function createElement(node) {
 
   if (ownerComp) {
     ownerComp.current = $el;
-    didMountQueue.push(ownerComp.componentDidMount.bind(ownerComp));
+
+    if (typeof ownerComp.componentDidMount === 'function') {
+      didMountQueue.push(ownerComp.componentDidMount.bind(ownerComp));
+    }
   }
 
   setProps($el, node.props || {});
@@ -19285,10 +19288,15 @@ var updateElement = function updateElement($hostNode, newNode, oldNode) {
 
 var removeComponentInstance = function removeComponentInstance(node) {
   if (hasOwnerComponent(node)) {
-    if (node.owner === componentInstanceMap[node.owner.props.id]) {
-      componentInstanceMap[node.owner.props.id].componentWillUnmount();
+    var id = node.owner.props.id;
+
+    if (node.owner === componentInstanceMap[id]) {
+      if (typeof componentInstanceMap[id].componentWillUnmount === 'function') {
+        componentInstanceMap[id].componentWillUnmount();
+      }
+
       removeEvents(node.owner.vdom.props.id);
-      delete componentInstanceMap[node.owner.props.id];
+      delete componentInstanceMap[id];
     }
   }
 }; //------------------------------------------------------------------------------
@@ -19379,7 +19387,9 @@ var performDidMountQueue = function performDidMountQueue() {
 
 var performDidUpdateQueue = function performDidUpdateQueue() {
   didUpdateQueue.forEach(function (id) {
-    componentInstanceMap[id].componentDidUpdate();
+    if (typeof componentInstanceMap[id].componentDidUpdate === 'function') {
+      componentInstanceMap[id].componentDidUpdate();
+    }
   });
   didUpdateQueue = [];
 }; //------------------------------------------------------------------------------
@@ -19525,14 +19535,6 @@ function () {
   function NoriComponent(type, props, children) {
     _classCallCheck(this, NoriComponent);
 
-    this.componentDidMount = function () {};
-
-    this.componentWillUnmount = function () {};
-
-    this.componentWillUpdate = function () {};
-
-    this.componentDidUpdate = function () {};
-
     this.type = type;
     this.props = props || {};
     this.props.id = props.key || (0, _ElementIDCreator.getNextId)();
@@ -19557,10 +19559,7 @@ function () {
     key: "forceUpdate",
     value: function forceUpdate() {
       (0, _Nori.enqueueUpdate)(this.props.id);
-    } //--------------------------------------------------------------------------------
-    // Stub "lifecycle" methods. Override in subclass.
-    //--------------------------------------------------------------------------------
-
+    }
   }, {
     key: "remove",
     value: function remove() {
@@ -19577,7 +19576,11 @@ function () {
 
       if (this.shouldComponentUpdate({}, nextState)) {
         this.internalState = Object.assign({}, this.internalState, nextState);
-        this.componentWillUpdate();
+
+        if (typeof this.componentWillUpdate === 'function') {
+          this.componentWillUpdate();
+        }
+
         (0, _Nori.enqueueUpdate)(this.props.id);
       }
     },

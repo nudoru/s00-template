@@ -1,6 +1,5 @@
 /*
 TODO
-  - remove life cycle stubs from NC and check w/ a typeof call, call if true
   - try to use this.state in constructor rather than internalState
   - test a renderProp
   - test my mouse renderprops
@@ -138,7 +137,9 @@ const createElement = node => {
 
   if (ownerComp) {
     ownerComp.current = $el;
-    didMountQueue.push(ownerComp.componentDidMount.bind(ownerComp));
+    if(typeof ownerComp.componentDidMount === 'function') {
+      didMountQueue.push(ownerComp.componentDidMount.bind(ownerComp));
+    }
   }
 
   setProps($el, node.props || {});
@@ -242,10 +243,14 @@ const updateElement = ($hostNode, newNode, oldNode, index = 0) => {
 // TODO what if about component children of components?
 const removeComponentInstance = (node) => {
   if (hasOwnerComponent(node)) {
-    if (node.owner === componentInstanceMap[node.owner.props.id]) {
-      componentInstanceMap[node.owner.props.id].componentWillUnmount();
+    let id = node.owner.props.id;
+    if (node.owner === componentInstanceMap[id]) {
+      if(typeof componentInstanceMap[id].componentWillUnmount === 'function') {
+        componentInstanceMap[id].componentWillUnmount();
+      }
+
       removeEvents(node.owner.vdom.props.id);
-      delete componentInstanceMap[node.owner.props.id];
+      delete componentInstanceMap[id];
     }
   }
 };
@@ -332,7 +337,9 @@ const performDidMountQueue = () => {
 
 const performDidUpdateQueue = () => {
   didUpdateQueue.forEach(id => {
-    componentInstanceMap[id].componentDidUpdate()
+    if(typeof componentInstanceMap[id].componentDidUpdate === 'function') {
+      componentInstanceMap[id].componentDidUpdate()
+    }
   });
   didUpdateQueue = [];
 };
