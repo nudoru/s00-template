@@ -13,6 +13,7 @@ TODO
 import {removeAllElements} from "./browser/DOMToolbox";
 import {flatten} from "./util/ArrayUtils";
 import {getNextId} from "./util/ElementIDCreator";
+import {cloneDeep} from 'lodash';
 
 let currentHostTree,
     $hostNode,
@@ -25,6 +26,7 @@ let currentHostTree,
 export const isNoriComponent = test => test.$$typeof && Symbol.keyFor(test.$$typeof) === 'nori.component';
 
 const isVDOMNode        = node => typeof node === 'object' && node.hasOwnProperty('type') && node.hasOwnProperty('props') && node.hasOwnProperty('children');
+const cloneNode         = node => cloneDeep(node);
 const hasOwnerComponent = node => node.hasOwnProperty('owner') && node.owner !== null;
 const isEvent           = event => /^on/.test(event);
 const getEventName      = event => event.slice(2).toLowerCase();
@@ -53,7 +55,7 @@ export const render = (component, hostNode, removeExisting = true) => {
   if (removeExisting) {
     removeAllElements(hostNode);
   }
-  currentHostTree = createComponentVDOM(component);
+  currentHostTree = createInitialComponentVDOM(component);
   updateElement(hostNode, currentHostTree);
   $hostNode = hostNode;
   performDidMountQueue();
@@ -63,22 +65,16 @@ export const render = (component, hostNode, removeExisting = true) => {
 //CREATIONCREATIONCREATIONCREATIONCREATIONCREATIONCREATIONCREATIONCREATIONCREATI
 //------------------------------------------------------------------------------
 
-/*
-Renders out components to get a vdom tree of just html
- */
-const createComponentVDOM = node => {
+// Renders out components to get a vdom tree of just html
+const createInitialComponentVDOM = node => {
+  node = cloneNode(node);
   if (typeof node === 'object') {
-    node = Object.assign({}, node);
+    if (typeof node.type === 'function') {
+      node = renderComponentNode(instantiateNewComponent(node));
+    }
+    node.children = renderChildFunctions(node.children).map(createInitialComponentVDOM);
   } else if (typeof node === 'function') {
     console.warn(`createComponentVDOM : node is a function`, node);
-  }
-  if (typeof node.type === 'function') {
-    node = renderComponentNode(instantiateNewComponent(node));
-  }
-  if (node.hasOwnProperty('children')) {
-    node.children = renderChildFunctions(node.children).map(child => {
-      return createComponentVDOM(child);
-    });
   }
   return node;
 };
@@ -359,7 +355,9 @@ const performDidMountQueue = () => {
 
 const performDidUpdateQueue = () => {
   didUpdateQueue.forEach(id => {
-    if (typeof componentInstanceMap[id].componentDidUpdate === 'function') {
+    if(!componentInstanceMap[id]) {
+      console.warn(`performDidUpdateQueue : Can't get component instance ${id}, it's been removed.`);
+    } else if (typeof componentInstanceMap[id].componentDidUpdate === 'function') {
       componentInstanceMap[id].componentDidUpdate()
     }
   });
@@ -379,11 +377,11 @@ export const enqueueUpdate = (id) => {
 };
 
 const performUpdates = () => {
-  let updatedVDOMTree = currentHostTree; //createComponentVDOM(currentHostTree);
+  let updatedVDOMTree = currentHostTree; //createInitialComponentVDOM(currentHostTree);
   clearTimeout(updateTimeOut);
   updateTimeOut = null;
   didUpdateQueue.forEach(id => {
-    updatedVDOMTree = rerenderVDOMInTree(updatedVDOMTree, id);
+    updatedVDOMTree = updateComponentVDOM(updatedVDOMTree, id);
   });
   updateElement($hostNode, updatedVDOMTree, currentHostTree);
   currentHostTree = updatedVDOMTree;
@@ -392,27 +390,24 @@ const performUpdates = () => {
 };
 
 // Rerenders the components from id down to a vdom tree for diffing w/ the original
-const rerenderVDOMInTree = (node, id) => {
+const updateComponentVDOM = (node, id) => {
+  node = cloneNode(node);
   if (typeof node === 'object') {
-    node = Object.assign({}, node);
-  }
-  if (hasOwnerComponent(node) && node.owner.props.id === id) {
-    let instance;
-    if (componentInstanceMap.hasOwnProperty(id)) {
-      instance = componentInstanceMap[id]
-    } else {
-      console.warn(`rerenderVDOMInTree : ${id} isn't in the map!`);
-      return node;
+    if (hasOwnerComponent(node) && node.owner.props.id === id) {
+      let instance;
+      if (componentInstanceMap.hasOwnProperty(id)) {
+        instance = componentInstanceMap[id]
+      } else {
+        console.warn(`updateComponentVDOM : ${id} hasn't been created`);
+        return node;
+      }
+      node = renderComponentNode(instance);
+    } else if (typeof node.type === 'function') {
+      // During the update of a parent node, a new component has been added to the child
+      node = createInitialComponentVDOM(node);
     }
-    node = renderComponentNode(instance);
-  } else if (node.hasOwnProperty('type') && typeof node.type === 'function') {
-    // During the update of a parent node, a new component has been added to the child
-    node = createComponentVDOM(node);
+    node.children = renderChildFunctions(node.children).map(child => updateComponentVDOM(child, id));
   }
-  if (node.hasOwnProperty('children')) {
-    node.children = renderChildFunctions(node.children).map(child => {
-      return rerenderVDOMInTree(child, id);
-    });
-  }
+
   return node;
 };
