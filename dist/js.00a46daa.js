@@ -38213,7 +38213,7 @@ exports.centerElementInViewPort = centerElementInViewPort;
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.updateProps = exports.removeEvents = exports.createElement = exports.updateDOM = exports.patch = exports.render = void 0;
+exports.removeEvents = exports.patch = exports.render = void 0;
 
 var _LifecycleQueue = require("./LifecycleQueue");
 
@@ -38296,8 +38296,6 @@ var updateDOM = function updateDOM($element, newNode, oldNode) {
   }
 };
 
-exports.updateDOM = updateDOM;
-
 var changed = function changed(newNode, oldNode) {
   return _typeof(newNode) !== _typeof(oldNode) || (typeof newNode === 'string' || typeof newNode === 'number' || typeof newNode === 'boolean') && newNode !== oldNode || newNode.type !== oldNode.type;
 };
@@ -38345,8 +38343,6 @@ var createElement = function createElement(node) {
 //------------------------------------------------------------------------------
 
 
-exports.createElement = createElement;
-
 var setEvents = function setEvents(node, $element) {
   var props = node.props || {};
   mapActions(props).forEach(function (evt) {
@@ -38382,7 +38378,8 @@ var mapActions = function mapActions(props) {
 
     return acc;
   }, []);
-};
+}; // Nori calls into this
+
 
 var removeEvents = function removeEvents(id) {
   if (eventMap.hasOwnProperty(id)) {
@@ -38420,8 +38417,6 @@ var updateProps = function updateProps($element, newProps) {
     updateProp($element, key, newProps[key], oldProps[key]);
   });
 };
-
-exports.updateProps = updateProps;
 
 var updateProp = function updateProp($element, key, newValue, oldVaue) {
   if (!newValue) {

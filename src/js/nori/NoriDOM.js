@@ -43,7 +43,7 @@ export const patch = (newNode, oldNode) => {
     updateDOM($documentHostNode, newNode, oldNode)
 };
 
-export const updateDOM = ($element, newNode, oldNode, index = 0) => {
+const updateDOM = ($element, newNode, oldNode, index = 0) => {
   if (oldNode !== 0 && !oldNode) {
     $element.appendChild(
       createElement(newNode)
@@ -80,7 +80,7 @@ const changed = (newNode, oldNode) => {
     newNode.type !== oldNode.type
 };
 
-export const createElement = node => {
+const createElement = node => {
   let $element,
       ownerComp = node.owner !== null && node.owner !== undefined ? node.owner : null;
 
@@ -156,6 +156,7 @@ const mapActions = props => Object.keys(props).reduce((acc, key) => {
   return acc;
 }, []);
 
+// Nori calls into this
 export const removeEvents = id => {
   if (eventMap.hasOwnProperty(id)) {
     eventMap[id].map(fn => {
@@ -177,7 +178,7 @@ const createEventObject = (e, $element = null) => ({
 //PROPSPROPSPROPSPROPSPROPSPROPSPROPSPROPSPROPSPROPSPROPSPROPSPROPSPROPSPROPSPRO
 //------------------------------------------------------------------------------
 
-export const updateProps = ($element, newProps, oldProps = {}) => {
+const updateProps = ($element, newProps, oldProps = {}) => {
   let props = Object.assign({}, newProps, oldProps);
   Object.keys(props).forEach(key => {
     updateProp($element, key, newProps[key], oldProps[key]);
