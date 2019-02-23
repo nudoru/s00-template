@@ -38207,7 +38207,231 @@ var performDidUpdateQueue = function performDidUpdateQueue(map) {
 };
 
 exports.performDidUpdateQueue = performDidUpdateQueue;
-},{"lodash":"../node_modules/lodash/lodash.js"}],"js/nori/Nori.js":[function(require,module,exports) {
+},{"lodash":"../node_modules/lodash/lodash.js"}],"js/nori/NoriDOM.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.updateProps = exports.removeEvents = exports.createElement = void 0;
+
+var _LifecycleQueue = require("./LifecycleQueue");
+
+function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
+
+var eventMap = {};
+
+var isEvent = function isEvent(event) {
+  return /^on/.test(event);
+};
+
+var getEventName = function getEventName(event) {
+  return event.slice(2).toLowerCase();
+}; // "Special props should be updated as new props are added to components.
+
+
+var specialProps = ['tweens', 'state', 'actions', 'children', 'element', 'min', 'max', 'mode', 'key'];
+
+var isSpecialProp = function isSpecialProp(test) {
+  return specialProps.includes(test);
+};
+/*
+______________ ______________ ________   ________      _____      ________________________ _________________________
+\__    ___/   |   \_   _____/ \______ \  \_____  \    /     \    /   _____/\__    ___/    |   \_   _____/\_   _____/
+  |    | /    ~    \    __)_   |    |  \  /   |   \  /  \ /  \   \_____  \   |    |  |    |   /|    __)   |    __)
+  |    | \    Y    /        \  |    `   \/    |    \/    Y    \  /        \  |    |  |    |  / |     \    |     \
+  |____|  \___|_  /_______  / /_______  /\_______  /\____|__  / /_______  /  |____|  |______/  \___  /    \___  /
+                \/        \/          \/         \/         \/          \/                         \/         \/
+
+ALL THE THINGS THAT TOUCH THE DOM
+ */
+
+
+var createElement = function createElement(node) {
+  var $element,
+      ownerComp = node.owner !== null && node.owner !== undefined ? node.owner : null; // This shouldn't happen ... but just in case ...
+
+  if (node == null || node == undefined) {
+    console.warn("createElement: Error, ".concat(node, " was undefined"));
+    return document.createTextNode("createElement: Error, ".concat(node, " was undefined"));
+  }
+
+  if (typeof node === 'string' || typeof node === 'number') {
+    // Plain value of a tag
+    $element = document.createTextNode(node);
+  } else if (typeof node.type === 'function') {
+    // Stateless functional component
+    $element = createElement(new node.type(node.props, node.children));
+  } else if (_typeof(node) === 'object' && typeof node.type === 'string') {
+    $element = document.createElement(node.type);
+
+    if (node.hasOwnProperty('children')) {
+      node.children.map(createElement).forEach($element.appendChild.bind($element));
+    }
+  } else if (typeof node === 'function') {
+    return document.createTextNode('createElement : expected vdom, node is a function', node);
+  } else {
+    return document.createTextNode("createElement: Unknown node type ".concat(node, " : ").concat(node.type));
+  }
+
+  if (ownerComp) {
+    ownerComp.current = $element;
+
+    if (typeof ownerComp.componentDidMount === 'function') {
+      (0, _LifecycleQueue.enqueueDidMount)(ownerComp.componentDidMount.bind(ownerComp));
+    }
+  }
+
+  setProps($element, node.props || {});
+  setEvents(node, $element);
+  return $element;
+}; //------------------------------------------------------------------------------
+//EVENTSEVENTSEVENTSEVENTSEVENTSEVENTSEVENTSEVENTSEVENTSEVENTSEVENTSEVENTSEVENTS
+//------------------------------------------------------------------------------
+
+
+exports.createElement = createElement;
+
+var setEvents = function setEvents(node, $element) {
+  var props = node.props || {};
+  mapActions(props).forEach(function (evt) {
+    if (evt.type === 'event') {
+      var nodeId = node.props.id;
+      evt.internalHandler = handleEventTrigger(evt, $element);
+      $element.addEventListener(evt.event, evt.internalHandler);
+
+      if (!eventMap.hasOwnProperty(nodeId)) {
+        eventMap[nodeId] = [];
+      }
+
+      eventMap[nodeId].push(function () {
+        return $element.removeEventListener(evt.event, evt.internalHandler);
+      });
+    }
+  });
+};
+
+var mapActions = function mapActions(props) {
+  return Object.keys(props).reduce(function (acc, key) {
+    var value = props[key],
+        evt = isEvent(key) ? getEventName(key) : null;
+
+    if (evt !== null) {
+      acc.push({
+        type: 'event',
+        event: evt,
+        externalHandler: value,
+        internalHandler: null
+      });
+    }
+
+    return acc;
+  }, []);
+};
+
+var removeEvents = function removeEvents(id) {
+  if (eventMap.hasOwnProperty(id)) {
+    eventMap[id].map(function (fn) {
+      fn();
+      return null;
+    });
+    delete eventMap[id];
+  }
+};
+
+exports.removeEvents = removeEvents;
+
+var handleEventTrigger = function handleEventTrigger(evt, $element) {
+  return function (e) {
+    return evt.externalHandler(createEventObject(e, $element));
+  };
+};
+
+var createEventObject = function createEventObject(e) {
+  var $element = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : null;
+  return {
+    event: e,
+    target: $element
+  };
+}; //------------------------------------------------------------------------------
+//PROPSPROPSPROPSPROPSPROPSPROPSPROPSPROPSPROPSPROPSPROPSPROPSPROPSPROPSPROPSPRO
+//------------------------------------------------------------------------------
+
+
+var updateProps = function updateProps($element, newProps) {
+  var oldProps = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
+  var props = Object.assign({}, newProps, oldProps);
+  Object.keys(props).forEach(function (key) {
+    updateProp($element, key, newProps[key], oldProps[key]);
+  });
+};
+
+exports.updateProps = updateProps;
+
+var updateProp = function updateProp($element, key, newValue, oldVaue) {
+  if (!newValue) {
+    removeProp($element, key, oldVaue);
+  } else if (!oldVaue || newValue !== oldVaue) {
+    setProp($element, key, newValue);
+  }
+};
+
+var setProps = function setProps($element, props) {
+  return Object.keys(props).forEach(function (key) {
+    var value = props[key];
+    setProp($element, key, value);
+    return $element;
+  });
+};
+
+var setProp = function setProp($element, key, value) {
+  if (!isSpecialProp(key) && !isEvent(key)) {
+    if (key === 'className') {
+      key = 'class';
+    } else if (key === 'id' && value.indexOf('element-id-') === 0) {
+      // Disabled, it's too noisy
+      // key = 'data-nid';
+      return;
+    }
+
+    if (typeof value === 'boolean') {
+      setBooleanProp($element, key, value);
+    } else {
+      $element.setAttribute(key, value);
+    }
+  }
+};
+
+var setBooleanProp = function setBooleanProp($element, key, value) {
+  if (value) {
+    $element.setAttribute(key, value);
+    $element[key] = true;
+  } else {
+    $element[key] = false;
+  }
+};
+
+var removeProp = function removeProp($element, key, value) {
+  if (!isSpecialProp(key)) {
+    if (key === 'className') {
+      key = 'class';
+    } else if (key === 'id') {
+      key = 'data-nid';
+    }
+
+    if (typeof value === 'boolean') {
+      removeBooleanProp($element, key);
+    } else {
+      $element.removeAttribute(key);
+    }
+  }
+};
+
+var removeBooleanProp = function removeBooleanProp($element, key) {
+  $element.removeAttribute(key);
+  $element[key] = false;
+};
+},{"./LifecycleQueue":"js/nori/LifecycleQueue.js"}],"js/nori/Nori.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -38225,6 +38449,8 @@ var _lodash = require("lodash");
 
 var _LifecycleQueue = require("./LifecycleQueue");
 
+var _NoriDOM = require("./NoriDOM");
+
 function _toConsumableArray(arr) { return _arrayWithoutHoles(arr) || _iterableToArray(arr) || _nonIterableSpread(); }
 
 function _nonIterableSpread() { throw new TypeError("Invalid attempt to spread non-iterable instance"); }
@@ -38238,8 +38464,7 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
 var currentHostTree,
     $hostNode,
     componentInstanceMap = {},
-    updateTimeOut,
-    eventMap = {};
+    updateTimeOut;
 
 var isNoriComponent = function isNoriComponent(test) {
   return test.$$typeof && Symbol.keyFor(test.$$typeof) === 'nori.component';
@@ -38258,21 +38483,6 @@ var cloneNode = function cloneNode(node) {
 
 var hasOwnerComponent = function hasOwnerComponent(node) {
   return node.hasOwnProperty('owner') && node.owner !== null;
-};
-
-var isEvent = function isEvent(event) {
-  return /^on/.test(event);
-};
-
-var getEventName = function getEventName(event) {
-  return event.slice(2).toLowerCase();
-}; // "Special props should be updated as new props are added to components.
-
-
-var specialProps = ['tweens', 'state', 'actions', 'children', 'element', 'min', 'max', 'mode', 'key'];
-
-var isSpecialProp = function isSpecialProp(test) {
-  return specialProps.includes(test);
 }; //------------------------------------------------------------------------------
 //PUBLICPUBLICPUBLICPUBLICPUBLICPUBLICPUBLICPUBLICPUBLICPUBLICPUBLICPUBLICPUBLIC
 //------------------------------------------------------------------------------
@@ -38395,7 +38605,7 @@ var updateElement = function updateElement($hostNode, newNode, oldNode) {
   var index = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : 0;
 
   if (oldNode !== 0 && !oldNode) {
-    $hostNode.appendChild(createElement(newNode));
+    $hostNode.appendChild((0, _NoriDOM.createElement)(newNode));
   } else if (!newNode) {
     var $child = $hostNode.childNodes[index];
 
@@ -38405,9 +38615,9 @@ var updateElement = function updateElement($hostNode, newNode, oldNode) {
     }
   } else if (changed(newNode, oldNode)) {
     // TODO need to test for a component and fix this!
-    $hostNode.replaceChild(createElement(newNode), $hostNode.childNodes[index]);
+    $hostNode.replaceChild((0, _NoriDOM.createElement)(newNode), $hostNode.childNodes[index]);
   } else if (newNode.type) {
-    updateProps($hostNode.childNodes[index], newNode.props, oldNode.props);
+    (0, _NoriDOM.updateProps)($hostNode.childNodes[index], newNode.props, oldNode.props);
     var newLength = newNode.children.length;
     var oldLength = oldNode.children.length;
 
@@ -38427,7 +38637,7 @@ var removeComponentInstance = function removeComponentInstance(node) {
         componentInstanceMap[id].componentWillUnmount();
       }
 
-      removeEvents(node.owner.vdom.props.id);
+      (0, _NoriDOM.removeEvents)(node.owner.vdom.props.id);
       delete componentInstanceMap[id];
     }
   }
@@ -38489,197 +38699,7 @@ var updateComponentVDOM = function updateComponentVDOM(node, id) {
 
   return node;
 };
-/*
-______________ ______________ ________   ________      _____      ________________________ _________________________
-\__    ___/   |   \_   _____/ \______ \  \_____  \    /     \    /   _____/\__    ___/    |   \_   _____/\_   _____/
-  |    | /    ~    \    __)_   |    |  \  /   |   \  /  \ /  \   \_____  \   |    |  |    |   /|    __)   |    __)
-  |    | \    Y    /        \  |    `   \/    |    \/    Y    \  /        \  |    |  |    |  / |     \    |     \
-  |____|  \___|_  /_______  / /_______  /\_______  /\____|__  / /_______  /  |____|  |______/  \___  /    \___  /
-                \/        \/          \/         \/         \/          \/                         \/         \/
-
-ALL THE THINGS THAT TOUCH THE DOM
- */
-
-
-var createElement = function createElement(node) {
-  var $element,
-      ownerComp = node.owner !== null && node.owner !== undefined ? node.owner : null; // This shouldn't happen ... but just in case ...
-
-  if (node == null || node == undefined) {
-    console.warn("createElement: Error, ".concat(node, " was undefined"));
-    return document.createTextNode("createElement: Error, ".concat(node, " was undefined"));
-  }
-
-  if (typeof node === 'string' || typeof node === 'number') {
-    // Plain value of a tag
-    $element = document.createTextNode(node);
-  } else if (typeof node.type === 'function') {
-    // Stateless functional component
-    $element = createElement(new node.type(node.props, node.children));
-  } else if (_typeof(node) === 'object' && typeof node.type === 'string') {
-    $element = document.createElement(node.type);
-
-    if (node.hasOwnProperty('children')) {
-      node.children.map(createElement).forEach($element.appendChild.bind($element));
-    }
-  } else if (typeof node === 'function') {
-    return document.createTextNode('createElement : expected vdom, node is a function', node);
-  } else {
-    return document.createTextNode("createElement: Unknown node type ".concat(node, " : ").concat(node.type));
-  }
-
-  if (ownerComp) {
-    ownerComp.current = $element;
-
-    if (typeof ownerComp.componentDidMount === 'function') {
-      (0, _LifecycleQueue.enqueueDidMount)(ownerComp.componentDidMount.bind(ownerComp));
-    }
-  }
-
-  setProps($element, node.props || {});
-  setEvents(node, $element);
-  return $element;
-}; //------------------------------------------------------------------------------
-//EVENTSEVENTSEVENTSEVENTSEVENTSEVENTSEVENTSEVENTSEVENTSEVENTSEVENTSEVENTSEVENTS
-//------------------------------------------------------------------------------
-
-
-var setEvents = function setEvents(node, $element) {
-  var props = node.props || {};
-  mapActions(props).forEach(function (evt) {
-    if (evt.type === 'event') {
-      var nodeId = node.props.id;
-      evt.internalHandler = handleEventTrigger(evt, $element);
-      $element.addEventListener(evt.event, evt.internalHandler);
-
-      if (!eventMap.hasOwnProperty(nodeId)) {
-        eventMap[nodeId] = [];
-      }
-
-      eventMap[nodeId].push(function () {
-        return $element.removeEventListener(evt.event, evt.internalHandler);
-      });
-    }
-  });
-};
-
-var mapActions = function mapActions(props) {
-  return Object.keys(props).reduce(function (acc, key) {
-    var value = props[key],
-        evt = isEvent(key) ? getEventName(key) : null;
-
-    if (evt !== null) {
-      acc.push({
-        type: 'event',
-        event: evt,
-        externalHandler: value,
-        internalHandler: null
-      });
-    }
-
-    return acc;
-  }, []);
-};
-
-var removeEvents = function removeEvents(id) {
-  if (eventMap.hasOwnProperty(id)) {
-    eventMap[id].map(function (fn) {
-      fn();
-      return null;
-    });
-    delete eventMap[id];
-  }
-};
-
-var handleEventTrigger = function handleEventTrigger(evt, $element) {
-  return function (e) {
-    return evt.externalHandler(createEventObject(e, $element));
-  };
-};
-
-var createEventObject = function createEventObject(e) {
-  var $element = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : null;
-  return {
-    event: e,
-    target: $element
-  };
-}; //------------------------------------------------------------------------------
-//PROPSPROPSPROPSPROPSPROPSPROPSPROPSPROPSPROPSPROPSPROPSPROPSPROPSPROPSPROPSPRO
-//------------------------------------------------------------------------------
-
-
-var updateProp = function updateProp($element, key, newValue, oldVaue) {
-  if (!newValue) {
-    removeProp($element, key, oldVaue);
-  } else if (!oldVaue || newValue !== oldVaue) {
-    setProp($element, key, newValue);
-  }
-};
-
-var updateProps = function updateProps($element, newProps) {
-  var oldProps = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
-  var props = Object.assign({}, newProps, oldProps);
-  Object.keys(props).forEach(function (key) {
-    updateProp($element, key, newProps[key], oldProps[key]);
-  });
-};
-
-var setProps = function setProps($element, props) {
-  return Object.keys(props).forEach(function (key) {
-    var value = props[key];
-    setProp($element, key, value);
-    return $element;
-  });
-};
-
-var setProp = function setProp($element, key, value) {
-  if (!isSpecialProp(key) && !isEvent(key)) {
-    if (key === 'className') {
-      key = 'class';
-    } else if (key === 'id' && value.indexOf('element-id-') === 0) {
-      // Disabled, it's too noisy
-      // key = 'data-nid';
-      return;
-    }
-
-    if (typeof value === 'boolean') {
-      setBooleanProp($element, key, value);
-    } else {
-      $element.setAttribute(key, value);
-    }
-  }
-};
-
-var setBooleanProp = function setBooleanProp($element, key, value) {
-  if (value) {
-    $element.setAttribute(key, value);
-    $element[key] = true;
-  } else {
-    $element[key] = false;
-  }
-};
-
-var removeProp = function removeProp($element, key, value) {
-  if (!isSpecialProp(key)) {
-    if (key === 'className') {
-      key = 'class';
-    } else if (key === 'id') {
-      key = 'data-nid';
-    }
-
-    if (typeof value === 'boolean') {
-      removeBooleanProp($element, key);
-    } else {
-      $element.removeAttribute(key);
-    }
-  }
-};
-
-var removeBooleanProp = function removeBooleanProp($element, key) {
-  $element.removeAttribute(key);
-  $element[key] = false;
-};
-},{"./browser/DOMToolbox":"js/nori/browser/DOMToolbox.js","./util/ArrayUtils":"js/nori/util/ArrayUtils.js","./util/ElementIDCreator":"js/nori/util/ElementIDCreator.js","lodash":"../node_modules/lodash/lodash.js","./LifecycleQueue":"js/nori/LifecycleQueue.js"}],"js/nori/util/is.js":[function(require,module,exports) {
+},{"./browser/DOMToolbox":"js/nori/browser/DOMToolbox.js","./util/ArrayUtils":"js/nori/util/ArrayUtils.js","./util/ElementIDCreator":"js/nori/util/ElementIDCreator.js","lodash":"../node_modules/lodash/lodash.js","./LifecycleQueue":"js/nori/LifecycleQueue.js","./NoriDOM":"js/nori/NoriDOM.js"}],"js/nori/util/is.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
