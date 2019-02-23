@@ -38149,7 +38149,65 @@ var define;
   }
 }.call(this));
 
-},{"buffer":"../node_modules/buffer/index.js"}],"js/nori/Nori.js":[function(require,module,exports) {
+},{"buffer":"../node_modules/buffer/index.js"}],"js/nori/LifecycleQueue.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.performDidUpdateQueue = exports.getDidUpdateQueue = exports.enqueueDidUpdate = exports.performDidMountQueue = exports.getDidMountQueue = exports.enqueueDidMount = void 0;
+
+var _lodash = require("lodash");
+
+var didMountQueue = [],
+    didUpdateQueue = [];
+
+var enqueueDidMount = function enqueueDidMount(id) {
+  return didMountQueue.push(id);
+};
+
+exports.enqueueDidMount = enqueueDidMount;
+
+var getDidMountQueue = function getDidMountQueue(_) {
+  return (0, _lodash.clone)(didMountQueue);
+};
+
+exports.getDidMountQueue = getDidMountQueue;
+
+var performDidMountQueue = function performDidMountQueue() {
+  didMountQueue.forEach(function (fn) {
+    return fn();
+  });
+  didMountQueue = [];
+};
+
+exports.performDidMountQueue = performDidMountQueue;
+
+var enqueueDidUpdate = function enqueueDidUpdate(id) {
+  return didUpdateQueue.push(id);
+};
+
+exports.enqueueDidUpdate = enqueueDidUpdate;
+
+var getDidUpdateQueue = function getDidUpdateQueue(_) {
+  return (0, _lodash.clone)(didUpdateQueue);
+};
+
+exports.getDidUpdateQueue = getDidUpdateQueue;
+
+var performDidUpdateQueue = function performDidUpdateQueue(map) {
+  didUpdateQueue.forEach(function (id) {
+    if (!map[id]) {
+      console.warn("performDidUpdateQueue : Can't get component instance ".concat(id, ", it's been removed."));
+    } else if (typeof map[id].componentDidUpdate === 'function') {
+      map[id].componentDidUpdate();
+    }
+  });
+  didUpdateQueue = [];
+};
+
+exports.performDidUpdateQueue = performDidUpdateQueue;
+},{"lodash":"../node_modules/lodash/lodash.js"}],"js/nori/Nori.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -38165,6 +38223,8 @@ var _ElementIDCreator = require("./util/ElementIDCreator");
 
 var _lodash = require("lodash");
 
+var _LifecycleQueue = require("./LifecycleQueue");
+
 function _toConsumableArray(arr) { return _arrayWithoutHoles(arr) || _iterableToArray(arr) || _nonIterableSpread(); }
 
 function _nonIterableSpread() { throw new TypeError("Invalid attempt to spread non-iterable instance"); }
@@ -38178,8 +38238,6 @@ function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterat
 var currentHostTree,
     $hostNode,
     componentInstanceMap = {},
-    didMountQueue = [],
-    didUpdateQueue = [],
     updateTimeOut,
     eventMap = {};
 
@@ -38195,7 +38253,8 @@ var isVDOMNode = function isVDOMNode(node) {
 
 var cloneNode = function cloneNode(node) {
   return (0, _lodash.cloneDeep)(node);
-};
+}; // Warning: Potentially expensive
+
 
 var hasOwnerComponent = function hasOwnerComponent(node) {
   return node.hasOwnProperty('owner') && node.owner !== null;
@@ -38252,7 +38311,7 @@ var render = function render(component, hostNode) {
   currentHostTree = createInitialComponentVDOM(component);
   updateElement(hostNode, currentHostTree);
   $hostNode = hostNode;
-  performDidMountQueue();
+  (0, _LifecycleQueue.performDidMountQueue)();
 }; //------------------------------------------------------------------------------
 //CREATIONCREATIONCREATIONCREATIONCREATIONCREATIONCREATIONCREATIONCREATIONCREATI
 //------------------------------------------------------------------------------
@@ -38323,10 +38382,127 @@ var renderComponentNode = function renderComponentNode(instance) {
     console.warn("renderComponentNode : No render() on instance");
     return null;
   }
+}; //------------------------------------------------------------------------------
+//UPDATESUPDATESUPDATESUPDATESUPDATESUPDATESUPDATESUPDATESUPDATESUPDATESUPDATESU
+//------------------------------------------------------------------------------
+
+
+var changed = function changed(newNode, oldNode) {
+  return _typeof(newNode) !== _typeof(oldNode) || (typeof newNode === 'string' || typeof newNode === 'number' || typeof newNode === 'boolean') && newNode !== oldNode || newNode.type !== oldNode.type;
 };
 
+var updateElement = function updateElement($hostNode, newNode, oldNode) {
+  var index = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : 0;
+
+  if (oldNode !== 0 && !oldNode) {
+    $hostNode.appendChild(createElement(newNode));
+  } else if (!newNode) {
+    var $child = $hostNode.childNodes[index];
+
+    if ($child) {
+      removeComponentInstance(oldNode);
+      $hostNode.removeChild($child);
+    }
+  } else if (changed(newNode, oldNode)) {
+    // TODO need to test for a component and fix this!
+    $hostNode.replaceChild(createElement(newNode), $hostNode.childNodes[index]);
+  } else if (newNode.type) {
+    updateProps($hostNode.childNodes[index], newNode.props, oldNode.props);
+    var newLength = newNode.children.length;
+    var oldLength = oldNode.children.length;
+
+    for (var i = 0; i < newLength || i < oldLength; i++) {
+      updateElement($hostNode.childNodes[index], newNode.children[i], oldNode.children[i], i);
+    }
+  }
+}; // TODO what if about component children of components?
+
+
+var removeComponentInstance = function removeComponentInstance(node) {
+  if (hasOwnerComponent(node)) {
+    var id = node.owner.props.id;
+
+    if (node.owner === componentInstanceMap[id]) {
+      if (typeof componentInstanceMap[id].componentWillUnmount === 'function') {
+        componentInstanceMap[id].componentWillUnmount();
+      }
+
+      removeEvents(node.owner.vdom.props.id);
+      delete componentInstanceMap[id];
+    }
+  }
+}; //------------------------------------------------------------------------------
+//STATEUPDATESTATEUPDATESTATEUPDATESTATEUPDATESTATEUPDATESTATEUPDATESTATEUPDATES
+//------------------------------------------------------------------------------app
+// Queue updates from components and batch update every so often
+
+
+var enqueueUpdate = function enqueueUpdate(id) {
+  (0, _LifecycleQueue.enqueueDidUpdate)(id);
+
+  if (!updateTimeOut) {
+    updateTimeOut = setTimeout(performUpdates, 10);
+  }
+};
+
+exports.enqueueUpdate = enqueueUpdate;
+
+var performUpdates = function performUpdates() {
+  var updatedVDOMTree = currentHostTree; //createInitialComponentVDOM(currentHostTree);
+
+  clearTimeout(updateTimeOut);
+  updateTimeOut = null;
+  (0, _LifecycleQueue.getDidUpdateQueue)().forEach(function (id) {
+    updatedVDOMTree = updateComponentVDOM(updatedVDOMTree, id);
+  });
+  updateElement($hostNode, updatedVDOMTree, currentHostTree);
+  currentHostTree = updatedVDOMTree;
+  (0, _LifecycleQueue.performDidMountQueue)();
+  (0, _LifecycleQueue.performDidUpdateQueue)(componentInstanceMap);
+}; // Rerenders the components from id down to a vdom tree for diffing w/ the original
+
+
+var updateComponentVDOM = function updateComponentVDOM(node, id) {
+  node = cloneNode(node);
+
+  if (_typeof(node) === 'object') {
+    if (hasOwnerComponent(node) && node.owner.props.id === id) {
+      var instance;
+
+      if (componentInstanceMap.hasOwnProperty(id)) {
+        instance = componentInstanceMap[id];
+      } else {
+        console.warn("updateComponentVDOM : ".concat(id, " hasn't been created"));
+        return node;
+      }
+
+      node = renderComponentNode(instance);
+    } else if (typeof node.type === 'function') {
+      // During the update of a parent node, a new component has been added to the child
+      node = createInitialComponentVDOM(node);
+    }
+
+    node.children = renderChildFunctions(node.children).map(function (child) {
+      return updateComponentVDOM(child, id);
+    });
+  }
+
+  return node;
+};
+/*
+______________ ______________ ________   ________      _____      ________________________ _________________________
+\__    ___/   |   \_   _____/ \______ \  \_____  \    /     \    /   _____/\__    ___/    |   \_   _____/\_   _____/
+  |    | /    ~    \    __)_   |    |  \  /   |   \  /  \ /  \   \_____  \   |    |  |    |   /|    __)   |    __)
+  |    | \    Y    /        \  |    `   \/    |    \/    Y    \  /        \  |    |  |    |  / |     \    |     \
+  |____|  \___|_  /_______  / /_______  /\_______  /\____|__  / /_______  /  |____|  |______/  \___  /    \___  /
+                \/        \/          \/         \/         \/          \/                         \/         \/
+
+ALL THE THINGS THAT TOUCH THE DOM
+ */
+
+
 var createElement = function createElement(node) {
-  var $el,
+  var $element,
       ownerComp = node.owner !== null && node.owner !== undefined ? node.owner : null; // This shouldn't happen ... but just in case ...
 
   if (node == null || node == undefined) {
@@ -38336,15 +38512,15 @@ var createElement = function createElement(node) {
 
   if (typeof node === 'string' || typeof node === 'number') {
     // Plain value of a tag
-    $el = document.createTextNode(node);
+    $element = document.createTextNode(node);
   } else if (typeof node.type === 'function') {
     // Stateless functional component
-    $el = createElement(new node.type(node.props, node.children));
+    $element = createElement(new node.type(node.props, node.children));
   } else if (_typeof(node) === 'object' && typeof node.type === 'string') {
-    $el = document.createElement(node.type);
+    $element = document.createElement(node.type);
 
     if (node.hasOwnProperty('children')) {
-      node.children.map(createElement).forEach($el.appendChild.bind($el));
+      node.children.map(createElement).forEach($element.appendChild.bind($element));
     }
   } else if (typeof node === 'function') {
     return document.createTextNode('createElement : expected vdom, node is a function', node);
@@ -38353,16 +38529,16 @@ var createElement = function createElement(node) {
   }
 
   if (ownerComp) {
-    ownerComp.current = $el;
+    ownerComp.current = $element;
 
     if (typeof ownerComp.componentDidMount === 'function') {
-      didMountQueue.push(ownerComp.componentDidMount.bind(ownerComp));
+      (0, _LifecycleQueue.enqueueDidMount)(ownerComp.componentDidMount.bind(ownerComp));
     }
   }
 
-  setProps($el, node.props || {});
-  setEvents(node, $el);
-  return $el;
+  setProps($element, node.props || {});
+  setEvents(node, $element);
+  return $element;
 }; //------------------------------------------------------------------------------
 //EVENTSEVENTSEVENTSEVENTSEVENTSEVENTSEVENTSEVENTSEVENTSEVENTSEVENTSEVENTSEVENTS
 //------------------------------------------------------------------------------
@@ -38415,123 +38591,75 @@ var removeEvents = function removeEvents(id) {
   }
 };
 
-var handleEventTrigger = function handleEventTrigger(evt, $src) {
+var handleEventTrigger = function handleEventTrigger(evt, $element) {
   return function (e) {
-    return evt.externalHandler(createEventObject(e, $src));
+    return evt.externalHandler(createEventObject(e, $element));
   };
 };
 
 var createEventObject = function createEventObject(e) {
-  var $src = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : null;
+  var $element = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : null;
   return {
     event: e,
-    target: $src
+    target: $element
   };
-}; //------------------------------------------------------------------------------
-//UPDATESUPDATESUPDATESUPDATESUPDATESUPDATESUPDATESUPDATESUPDATESUPDATESUPDATESU
-//------------------------------------------------------------------------------
-
-
-var changed = function changed(newNode, oldNode) {
-  return _typeof(newNode) !== _typeof(oldNode) || (typeof newNode === 'string' || typeof newNode === 'number' || typeof newNode === 'boolean') && newNode !== oldNode || newNode.type !== oldNode.type;
-};
-
-var updateElement = function updateElement($hostNode, newNode, oldNode) {
-  var index = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : 0;
-
-  if (oldNode !== 0 && !oldNode) {
-    $hostNode.appendChild(createElement(newNode));
-  } else if (!newNode) {
-    var $child = $hostNode.childNodes[index];
-
-    if ($child) {
-      removeComponentInstance(oldNode);
-      $hostNode.removeChild($child);
-    }
-  } else if (changed(newNode, oldNode)) {
-    // TODO need to test for a component and fix this!
-    $hostNode.replaceChild(createElement(newNode), $hostNode.childNodes[index]);
-  } else if (newNode.type) {
-    updateProps($hostNode.childNodes[index], newNode.props, oldNode.props);
-    var newLength = newNode.children.length;
-    var oldLength = oldNode.children.length;
-
-    for (var i = 0; i < newLength || i < oldLength; i++) {
-      updateElement($hostNode.childNodes[index], newNode.children[i], oldNode.children[i], i);
-    }
-  }
-}; // TODO what if about component children of components?
-
-
-var removeComponentInstance = function removeComponentInstance(node) {
-  if (hasOwnerComponent(node)) {
-    var id = node.owner.props.id;
-
-    if (node.owner === componentInstanceMap[id]) {
-      if (typeof componentInstanceMap[id].componentWillUnmount === 'function') {
-        componentInstanceMap[id].componentWillUnmount();
-      }
-
-      removeEvents(node.owner.vdom.props.id);
-      delete componentInstanceMap[id];
-    }
-  }
 }; //------------------------------------------------------------------------------
 //PROPSPROPSPROPSPROPSPROPSPROPSPROPSPROPSPROPSPROPSPROPSPROPSPROPSPROPSPROPSPRO
 //------------------------------------------------------------------------------
 
 
-var updateProp = function updateProp(element, key, newValue, oldVaue) {
+var updateProp = function updateProp($element, key, newValue, oldVaue) {
   if (!newValue) {
-    removeProp(element, key, oldVaue);
+    removeProp($element, key, oldVaue);
   } else if (!oldVaue || newValue !== oldVaue) {
-    setProp(element, key, newValue);
+    setProp($element, key, newValue);
   }
 };
 
-var updateProps = function updateProps(element, newProps) {
+var updateProps = function updateProps($element, newProps) {
   var oldProps = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
   var props = Object.assign({}, newProps, oldProps);
   Object.keys(props).forEach(function (key) {
-    updateProp(element, key, newProps[key], oldProps[key]);
+    updateProp($element, key, newProps[key], oldProps[key]);
   });
 };
 
-var setProps = function setProps(element, props) {
+var setProps = function setProps($element, props) {
   return Object.keys(props).forEach(function (key) {
     var value = props[key];
-    setProp(element, key, value);
-    return element;
+    setProp($element, key, value);
+    return $element;
   });
 };
 
-var setProp = function setProp(element, key, value) {
+var setProp = function setProp($element, key, value) {
   if (!isSpecialProp(key) && !isEvent(key)) {
     if (key === 'className') {
       key = 'class';
     } else if (key === 'id' && value.indexOf('element-id-') === 0) {
+      // Disabled, it's too noisy
       // key = 'data-nid';
       return;
     }
 
     if (typeof value === 'boolean') {
-      setBooleanProp(element, key, value);
+      setBooleanProp($element, key, value);
     } else {
-      element.setAttribute(key, value);
+      $element.setAttribute(key, value);
     }
   }
 };
 
-var setBooleanProp = function setBooleanProp(element, key, value) {
+var setBooleanProp = function setBooleanProp($element, key, value) {
   if (value) {
-    element.setAttribute(key, value);
-    element[key] = true;
+    $element.setAttribute(key, value);
+    $element[key] = true;
   } else {
-    element[key] = false;
+    $element[key] = false;
   }
 };
 
-var removeProp = function removeProp(element, key, value) {
+var removeProp = function removeProp($element, key, value) {
   if (!isSpecialProp(key)) {
     if (key === 'className') {
       key = 'class';
@@ -38540,96 +38668,18 @@ var removeProp = function removeProp(element, key, value) {
     }
 
     if (typeof value === 'boolean') {
-      removeBooleanProp(element, key);
+      removeBooleanProp($element, key);
     } else {
-      element.removeAttribute(key);
+      $element.removeAttribute(key);
     }
   }
 };
 
-var removeBooleanProp = function removeBooleanProp(element, key) {
-  element.removeAttribute(key);
-  element[key] = false;
-}; //------------------------------------------------------------------------------
-//LIFECYCLELIFECYCLELIFECYCLELIFECYCLELIFECYCLELIFECYCLELIFECYCLELIFECYCLELIFECY
-//------------------------------------------------------------------------------
-
-
-var performDidMountQueue = function performDidMountQueue() {
-  didMountQueue.forEach(function (fn) {
-    return fn();
-  });
-  didMountQueue = [];
+var removeBooleanProp = function removeBooleanProp($element, key) {
+  $element.removeAttribute(key);
+  $element[key] = false;
 };
-
-var performDidUpdateQueue = function performDidUpdateQueue() {
-  didUpdateQueue.forEach(function (id) {
-    if (!componentInstanceMap[id]) {
-      console.warn("performDidUpdateQueue : Can't get component instance ".concat(id, ", it's been removed."));
-    } else if (typeof componentInstanceMap[id].componentDidUpdate === 'function') {
-      componentInstanceMap[id].componentDidUpdate();
-    }
-  });
-  didUpdateQueue = [];
-}; //------------------------------------------------------------------------------
-//STATEUPDATESTATEUPDATESTATEUPDATESTATEUPDATESTATEUPDATESTATEUPDATESTATEUPDATES
-//------------------------------------------------------------------------------
-// Queue updates from components and batch update every so often
-
-
-var enqueueUpdate = function enqueueUpdate(id) {
-  didUpdateQueue.push(id);
-
-  if (!updateTimeOut) {
-    updateTimeOut = setTimeout(performUpdates, 10);
-  }
-};
-
-exports.enqueueUpdate = enqueueUpdate;
-
-var performUpdates = function performUpdates() {
-  var updatedVDOMTree = currentHostTree; //createInitialComponentVDOM(currentHostTree);
-
-  clearTimeout(updateTimeOut);
-  updateTimeOut = null;
-  didUpdateQueue.forEach(function (id) {
-    updatedVDOMTree = updateComponentVDOM(updatedVDOMTree, id);
-  });
-  updateElement($hostNode, updatedVDOMTree, currentHostTree);
-  currentHostTree = updatedVDOMTree;
-  performDidMountQueue();
-  performDidUpdateQueue();
-}; // Rerenders the components from id down to a vdom tree for diffing w/ the original
-
-
-var updateComponentVDOM = function updateComponentVDOM(node, id) {
-  node = cloneNode(node);
-
-  if (_typeof(node) === 'object') {
-    if (hasOwnerComponent(node) && node.owner.props.id === id) {
-      var instance;
-
-      if (componentInstanceMap.hasOwnProperty(id)) {
-        instance = componentInstanceMap[id];
-      } else {
-        console.warn("updateComponentVDOM : ".concat(id, " hasn't been created"));
-        return node;
-      }
-
-      node = renderComponentNode(instance);
-    } else if (typeof node.type === 'function') {
-      // During the update of a parent node, a new component has been added to the child
-      node = createInitialComponentVDOM(node);
-    }
-
-    node.children = renderChildFunctions(node.children).map(function (child) {
-      return updateComponentVDOM(child, id);
-    });
-  }
-
-  return node;
-};
-},{"./browser/DOMToolbox":"js/nori/browser/DOMToolbox.js","./util/ArrayUtils":"js/nori/util/ArrayUtils.js","./util/ElementIDCreator":"js/nori/util/ElementIDCreator.js","lodash":"../node_modules/lodash/lodash.js"}],"js/nori/util/is.js":[function(require,module,exports) {
+},{"./browser/DOMToolbox":"js/nori/browser/DOMToolbox.js","./util/ArrayUtils":"js/nori/util/ArrayUtils.js","./util/ElementIDCreator":"js/nori/util/ElementIDCreator.js","lodash":"../node_modules/lodash/lodash.js","./LifecycleQueue":"js/nori/LifecycleQueue.js"}],"js/nori/util/is.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
