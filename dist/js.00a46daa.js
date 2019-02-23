@@ -38592,6 +38592,35 @@ var renderComponentNode = function renderComponentNode(instance) {
     console.warn("renderComponentNode : No render() on instance");
     return null;
   }
+}; // Rerenders the components from id down to a vdom tree for diffing w/ the original
+
+
+var updateComponentVDOM = function updateComponentVDOM(node, id) {
+  node = cloneNode(node);
+
+  if (_typeof(node) === 'object') {
+    if (hasOwnerComponent(node) && node.owner.props.id === id) {
+      var instance;
+
+      if (componentInstanceMap.hasOwnProperty(id)) {
+        instance = componentInstanceMap[id];
+      } else {
+        console.warn("updateComponentVDOM : ".concat(id, " hasn't been created"));
+        return node;
+      }
+
+      node = renderComponentNode(instance);
+    } else if (typeof node.type === 'function') {
+      // During the update of a parent node, a new component has been added to the child
+      node = createInitialComponentVDOM(node);
+    }
+
+    node.children = renderChildFunctions(node.children).map(function (child) {
+      return updateComponentVDOM(child, id);
+    });
+  }
+
+  return node;
 }; //------------------------------------------------------------------------------
 //UPDATESUPDATESUPDATESUPDATESUPDATESUPDATESUPDATESUPDATESUPDATESUPDATESUPDATESU
 //------------------------------------------------------------------------------
@@ -38635,7 +38664,8 @@ var removeComponentInstance = function removeComponentInstance(node) {
     if (node.owner === componentInstanceMap[id]) {
       if (typeof componentInstanceMap[id].componentWillUnmount === 'function') {
         componentInstanceMap[id].componentWillUnmount();
-      }
+      } // TODO can I get the ID a better way?
+
 
       (0, _NoriDOM.removeEvents)(node.owner.vdom.props.id);
       delete componentInstanceMap[id];
@@ -38669,35 +38699,6 @@ var performUpdates = function performUpdates() {
   currentHostTree = updatedVDOMTree;
   (0, _LifecycleQueue.performDidMountQueue)();
   (0, _LifecycleQueue.performDidUpdateQueue)(componentInstanceMap);
-}; // Rerenders the components from id down to a vdom tree for diffing w/ the original
-
-
-var updateComponentVDOM = function updateComponentVDOM(node, id) {
-  node = cloneNode(node);
-
-  if (_typeof(node) === 'object') {
-    if (hasOwnerComponent(node) && node.owner.props.id === id) {
-      var instance;
-
-      if (componentInstanceMap.hasOwnProperty(id)) {
-        instance = componentInstanceMap[id];
-      } else {
-        console.warn("updateComponentVDOM : ".concat(id, " hasn't been created"));
-        return node;
-      }
-
-      node = renderComponentNode(instance);
-    } else if (typeof node.type === 'function') {
-      // During the update of a parent node, a new component has been added to the child
-      node = createInitialComponentVDOM(node);
-    }
-
-    node.children = renderChildFunctions(node.children).map(function (child) {
-      return updateComponentVDOM(child, id);
-    });
-  }
-
-  return node;
 };
 },{"./browser/DOMToolbox":"js/nori/browser/DOMToolbox.js","./util/ArrayUtils":"js/nori/util/ArrayUtils.js","./util/ElementIDCreator":"js/nori/util/ElementIDCreator.js","lodash":"../node_modules/lodash/lodash.js","./LifecycleQueue":"js/nori/LifecycleQueue.js","./NoriDOM":"js/nori/NoriDOM.js"}],"js/nori/util/is.js":[function(require,module,exports) {
 "use strict";

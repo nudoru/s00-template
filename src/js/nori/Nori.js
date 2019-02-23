@@ -123,6 +123,28 @@ const renderComponentNode = instance => {
   }
 };
 
+// Rerenders the components from id down to a vdom tree for diffing w/ the original
+const updateComponentVDOM = (node, id) => {
+  node = cloneNode(node);
+  if (typeof node === 'object') {
+    if (hasOwnerComponent(node) && node.owner.props.id === id) {
+      let instance;
+      if (componentInstanceMap.hasOwnProperty(id)) {
+        instance = componentInstanceMap[id]
+      } else {
+        console.warn(`updateComponentVDOM : ${id} hasn't been created`);
+        return node;
+      }
+      node = renderComponentNode(instance);
+    } else if (typeof node.type === 'function') {
+      // During the update of a parent node, a new component has been added to the child
+      node = createInitialComponentVDOM(node);
+    }
+    node.children = renderChildFunctions(node.children).map(child => updateComponentVDOM(child, id));
+  }
+  return node;
+};
+
 //------------------------------------------------------------------------------
 //UPDATESUPDATESUPDATESUPDATESUPDATESUPDATESUPDATESUPDATESUPDATESUPDATESUPDATESU
 //------------------------------------------------------------------------------
@@ -172,7 +194,7 @@ const removeComponentInstance = (node) => {
       if (typeof componentInstanceMap[id].componentWillUnmount === 'function') {
         componentInstanceMap[id].componentWillUnmount();
       }
-
+      // TODO can I get the ID a better way?
       removeEvents(node.owner.vdom.props.id);
       delete componentInstanceMap[id];
     }
@@ -202,26 +224,4 @@ const performUpdates = () => {
   currentHostTree = updatedVDOMTree;
   performDidMountQueue();
   performDidUpdateQueue(componentInstanceMap);
-};
-
-// Rerenders the components from id down to a vdom tree for diffing w/ the original
-const updateComponentVDOM = (node, id) => {
-  node = cloneNode(node);
-  if (typeof node === 'object') {
-    if (hasOwnerComponent(node) && node.owner.props.id === id) {
-      let instance;
-      if (componentInstanceMap.hasOwnProperty(id)) {
-        instance = componentInstanceMap[id]
-      } else {
-        console.warn(`updateComponentVDOM : ${id} hasn't been created`);
-        return node;
-      }
-      node = renderComponentNode(instance);
-    } else if (typeof node.type === 'function') {
-      // During the update of a parent node, a new component has been added to the child
-      node = createInitialComponentVDOM(node);
-    }
-    node.children = renderChildFunctions(node.children).map(child => updateComponentVDOM(child, id));
-  }
-  return node;
 };
