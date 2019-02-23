@@ -20,7 +20,7 @@ import {
   performDidMountQueue,
   performDidUpdateQueue
 } from './LifecycleQueue';
-import {createElement, updateProps, removeEvents} from './NoriDOM';
+import {updateDOM, removeEvents} from './NoriDOM';
 
 let currentHostTree,
     $hostNode,
@@ -55,7 +55,7 @@ export const render = (component, hostNode, removeExisting = true) => {
     removeAllElements(hostNode);
   }
   currentHostTree = createInitialComponentVDOM(component);
-  updateElement(hostNode, currentHostTree);
+  updateDOM(hostNode, currentHostTree);
   $hostNode = hostNode;
   performDidMountQueue();
 };
@@ -149,45 +149,9 @@ const updateComponentVDOM = (node, id) => {
 //UPDATESUPDATESUPDATESUPDATESUPDATESUPDATESUPDATESUPDATESUPDATESUPDATESUPDATESU
 //------------------------------------------------------------------------------
 
-const changed = (newNode, oldNode) => {
-  return typeof newNode !== typeof oldNode ||
-    (typeof newNode === 'string' || typeof newNode === 'number' || typeof newNode === 'boolean') && newNode !== oldNode ||
-    newNode.type !== oldNode.type
-};
-
-const updateElement = ($hostNode, newNode, oldNode, index = 0) => {
-  if (oldNode !== 0 && !oldNode) {
-    $hostNode.appendChild(
-      createElement(newNode)
-    );
-  } else if (!newNode) {
-    let $child = $hostNode.childNodes[index];
-    if ($child) {
-      removeComponentInstance(oldNode);
-      $hostNode.removeChild($child);
-    }
-  } else if (changed(newNode, oldNode)) {
-    // TODO need to test for a component and fix this!
-    $hostNode.replaceChild(
-      createElement(newNode),
-      $hostNode.childNodes[index]
-    );
-  } else if (newNode.type) {
-    updateProps(
-      $hostNode.childNodes[index],
-      newNode.props,
-      oldNode.props
-    );
-    const newLength = newNode.children.length;
-    const oldLength = oldNode.children.length;
-    for (let i = 0; i < newLength || i < oldLength; i++) {
-      updateElement($hostNode.childNodes[index], newNode.children[i], oldNode.children[i], i);
-    }
-  }
-};
 
 // TODO what if about component children of components?
-const removeComponentInstance = (node) => {
+export const removeComponentInstance = (node) => {
   if (hasOwnerComponent(node)) {
     let id = node.owner.props.id;
     if (node.owner === componentInstanceMap[id]) {
@@ -220,7 +184,7 @@ const performUpdates = () => {
   getDidUpdateQueue().forEach(id => {
     updatedVDOMTree = updateComponentVDOM(updatedVDOMTree, id);
   });
-  updateElement($hostNode, updatedVDOMTree, currentHostTree);
+  updateDOM($hostNode, updatedVDOMTree, currentHostTree);
   currentHostTree = updatedVDOMTree;
   performDidMountQueue();
   performDidUpdateQueue(componentInstanceMap);

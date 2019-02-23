@@ -1,4 +1,5 @@
 import {enqueueDidMount} from './LifecycleQueue';
+import {removeComponentInstance} from "./Nori";
 
 let eventMap             = {};
 
@@ -16,8 +17,48 @@ ______________ ______________ ________   ________      _____      ______________
   |____|  \___|_  /_______  / /_______  /\_______  /\____|__  / /_______  /  |____|  |______/  \___  /    \___  /
                 \/        \/          \/         \/         \/          \/                         \/         \/
 
-ALL THE THINGS THAT TOUCH THE DOM
+ALL THE THINGS THAT TOUCH THE DOM ...
+
  */
+
+
+
+export const updateDOM = ($hostNode, newNode, oldNode, index = 0) => {
+  if (oldNode !== 0 && !oldNode) {
+    $hostNode.appendChild(
+      createElement(newNode)
+    );
+  } else if (!newNode) {
+    let $child = $hostNode.childNodes[index];
+    if ($child) {
+      removeComponentInstance(oldNode);
+      $hostNode.removeChild($child);
+    }
+  } else if (changed(newNode, oldNode)) {
+    // TODO need to test for a component and fix this!
+    $hostNode.replaceChild(
+      createElement(newNode),
+      $hostNode.childNodes[index]
+    );
+  } else if (newNode.type) {
+    updateProps(
+      $hostNode.childNodes[index],
+      newNode.props,
+      oldNode.props
+    );
+    const newLength = newNode.children.length;
+    const oldLength = oldNode.children.length;
+    for (let i = 0; i < newLength || i < oldLength; i++) {
+      updateDOM($hostNode.childNodes[index], newNode.children[i], oldNode.children[i], i);
+    }
+  }
+};
+
+const changed = (newNode, oldNode) => {
+  return typeof newNode !== typeof oldNode ||
+    (typeof newNode === 'string' || typeof newNode === 'number' || typeof newNode === 'boolean') && newNode !== oldNode ||
+    newNode.type !== oldNode.type
+};
 
 export const createElement = node => {
   let $element,

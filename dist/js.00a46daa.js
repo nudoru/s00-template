@@ -38213,9 +38213,11 @@ exports.performDidUpdateQueue = performDidUpdateQueue;
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.updateProps = exports.removeEvents = exports.createElement = void 0;
+exports.updateProps = exports.removeEvents = exports.createElement = exports.updateDOM = void 0;
 
 var _LifecycleQueue = require("./LifecycleQueue");
+
+var _Nori = require("./Nori");
 
 function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
 
@@ -38243,9 +38245,42 @@ ______________ ______________ ________   ________      _____      ______________
   |____|  \___|_  /_______  / /_______  /\_______  /\____|__  / /_______  /  |____|  |______/  \___  /    \___  /
                 \/        \/          \/         \/         \/          \/                         \/         \/
 
-ALL THE THINGS THAT TOUCH THE DOM
+ALL THE THINGS THAT TOUCH THE DOM ...
+
  */
 
+
+var updateDOM = function updateDOM($hostNode, newNode, oldNode) {
+  var index = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : 0;
+
+  if (oldNode !== 0 && !oldNode) {
+    $hostNode.appendChild(createElement(newNode));
+  } else if (!newNode) {
+    var $child = $hostNode.childNodes[index];
+
+    if ($child) {
+      (0, _Nori.removeComponentInstance)(oldNode);
+      $hostNode.removeChild($child);
+    }
+  } else if (changed(newNode, oldNode)) {
+    // TODO need to test for a component and fix this!
+    $hostNode.replaceChild(createElement(newNode), $hostNode.childNodes[index]);
+  } else if (newNode.type) {
+    updateProps($hostNode.childNodes[index], newNode.props, oldNode.props);
+    var newLength = newNode.children.length;
+    var oldLength = oldNode.children.length;
+
+    for (var i = 0; i < newLength || i < oldLength; i++) {
+      updateDOM($hostNode.childNodes[index], newNode.children[i], oldNode.children[i], i);
+    }
+  }
+};
+
+exports.updateDOM = updateDOM;
+
+var changed = function changed(newNode, oldNode) {
+  return _typeof(newNode) !== _typeof(oldNode) || (typeof newNode === 'string' || typeof newNode === 'number' || typeof newNode === 'boolean') && newNode !== oldNode || newNode.type !== oldNode.type;
+};
 
 var createElement = function createElement(node) {
   var $element,
@@ -38431,13 +38466,13 @@ var removeBooleanProp = function removeBooleanProp($element, key) {
   $element.removeAttribute(key);
   $element[key] = false;
 };
-},{"./LifecycleQueue":"js/nori/LifecycleQueue.js"}],"js/nori/Nori.js":[function(require,module,exports) {
+},{"./LifecycleQueue":"js/nori/LifecycleQueue.js","./Nori":"js/nori/Nori.js"}],"js/nori/Nori.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.enqueueUpdate = exports.render = exports.h = exports.isNoriComponent = void 0;
+exports.enqueueUpdate = exports.removeComponentInstance = exports.render = exports.h = exports.isNoriComponent = void 0;
 
 var _DOMToolbox = require("./browser/DOMToolbox");
 
@@ -38519,7 +38554,7 @@ var render = function render(component, hostNode) {
   }
 
   currentHostTree = createInitialComponentVDOM(component);
-  updateElement(hostNode, currentHostTree);
+  (0, _NoriDOM.updateDOM)(hostNode, currentHostTree);
   $hostNode = hostNode;
   (0, _LifecycleQueue.performDidMountQueue)();
 }; //------------------------------------------------------------------------------
@@ -38624,37 +38659,7 @@ var updateComponentVDOM = function updateComponentVDOM(node, id) {
 }; //------------------------------------------------------------------------------
 //UPDATESUPDATESUPDATESUPDATESUPDATESUPDATESUPDATESUPDATESUPDATESUPDATESUPDATESU
 //------------------------------------------------------------------------------
-
-
-var changed = function changed(newNode, oldNode) {
-  return _typeof(newNode) !== _typeof(oldNode) || (typeof newNode === 'string' || typeof newNode === 'number' || typeof newNode === 'boolean') && newNode !== oldNode || newNode.type !== oldNode.type;
-};
-
-var updateElement = function updateElement($hostNode, newNode, oldNode) {
-  var index = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : 0;
-
-  if (oldNode !== 0 && !oldNode) {
-    $hostNode.appendChild((0, _NoriDOM.createElement)(newNode));
-  } else if (!newNode) {
-    var $child = $hostNode.childNodes[index];
-
-    if ($child) {
-      removeComponentInstance(oldNode);
-      $hostNode.removeChild($child);
-    }
-  } else if (changed(newNode, oldNode)) {
-    // TODO need to test for a component and fix this!
-    $hostNode.replaceChild((0, _NoriDOM.createElement)(newNode), $hostNode.childNodes[index]);
-  } else if (newNode.type) {
-    (0, _NoriDOM.updateProps)($hostNode.childNodes[index], newNode.props, oldNode.props);
-    var newLength = newNode.children.length;
-    var oldLength = oldNode.children.length;
-
-    for (var i = 0; i < newLength || i < oldLength; i++) {
-      updateElement($hostNode.childNodes[index], newNode.children[i], oldNode.children[i], i);
-    }
-  }
-}; // TODO what if about component children of components?
+// TODO what if about component children of components?
 
 
 var removeComponentInstance = function removeComponentInstance(node) {
@@ -38677,6 +38682,8 @@ var removeComponentInstance = function removeComponentInstance(node) {
 // Queue updates from components and batch update every so often
 
 
+exports.removeComponentInstance = removeComponentInstance;
+
 var enqueueUpdate = function enqueueUpdate(id) {
   (0, _LifecycleQueue.enqueueDidUpdate)(id);
 
@@ -38695,7 +38702,7 @@ var performUpdates = function performUpdates() {
   (0, _LifecycleQueue.getDidUpdateQueue)().forEach(function (id) {
     updatedVDOMTree = updateComponentVDOM(updatedVDOMTree, id);
   });
-  updateElement($hostNode, updatedVDOMTree, currentHostTree);
+  (0, _NoriDOM.updateDOM)($hostNode, updatedVDOMTree, currentHostTree);
   currentHostTree = updatedVDOMTree;
   (0, _LifecycleQueue.performDidMountQueue)();
   (0, _LifecycleQueue.performDidUpdateQueue)(componentInstanceMap);
