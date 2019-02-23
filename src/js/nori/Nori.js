@@ -1,6 +1,9 @@
 /*
 TODO
-  - test a renderProp
+  - ust createComponetVDOM fn rather than rerender
+  - use ImmutableJS data structures
+  - unify child render code
+  - test fn as prop value
   - test my mouse renderprops
   - what happens if an update is enququed while the update loop is updating vdom?
   - in component constructor, call super w/ only props
@@ -18,7 +21,6 @@ let currentHostTree,
     didUpdateQueue       = [],
     updateTimeOut,
     eventMap             = {};
-
 
 export const isNoriComponent = test => test.$$typeof && Symbol.keyFor(test.$$typeof) === 'nori.component';
 
@@ -68,33 +70,35 @@ const createComponentVDOM = node => {
   if (typeof node === 'object') {
     node = Object.assign({}, node);
   } else if (typeof node === 'function') {
-    // Function as child
     console.warn(`createComponentVDOM : node is a function`, node);
   }
   if (typeof node.type === 'function') {
     node = renderComponentNode(instantiateNewComponent(node));
   }
   if (node.hasOwnProperty('children')) {
-    let result      = [],
-        resultIndex = [];
-
-    node.children.forEach((child, i) => {
-      if (typeof child === 'function') {
-        let childResult = child();
-        result.unshift(childResult);
-        resultIndex.unshift(i);
-      }
-    });
-
-    resultIndex.forEach((idx, i) => {
-      node.children.splice(idx, 1, ...result[i]);
-    });
-
-    node.children = node.children.map(child => {
+    node.children = renderChildFunctions(node.children).map(child => {
       return createComponentVDOM(child);
     });
   }
   return node;
+};
+
+// If children are an inline fn, render and insert the resulting children in to the
+// child array at the location of the fn
+const renderChildFunctions = childArry => {
+  let result      = [],
+      resultIndex = [];
+  childArry.forEach((child, i) => {
+    if (typeof child === 'function') {
+      let childResult = child();
+      result.unshift(childResult);
+      resultIndex.unshift(i);
+    }
+  });
+  resultIndex.forEach((idx, i) => {
+    childArry.splice(idx, 1, ...result[i]);
+  });
+  return childArry;
 };
 
 const instantiateNewComponent = node => {
@@ -119,7 +123,7 @@ const renderComponentNode = instance => {
     if (isVDOMNode(instance)) {
       return instance;
     }
-    console.warn(`renderComponentNode : No render() on instance`)
+    console.warn(`renderComponentNode : No render() on instance`);
     return null;
   }
 };
@@ -375,7 +379,7 @@ export const enqueueUpdate = (id) => {
 };
 
 const performUpdates = () => {
-  let updatedVDOMTree = currentHostTree;
+  let updatedVDOMTree = currentHostTree; //createComponentVDOM(currentHostTree);
   clearTimeout(updateTimeOut);
   updateTimeOut = null;
   didUpdateQueue.forEach(id => {
@@ -406,22 +410,7 @@ const rerenderVDOMInTree = (node, id) => {
     node = createComponentVDOM(node);
   }
   if (node.hasOwnProperty('children')) {
-    let result      = [],
-        resultIndex = [];
-
-    node.children.forEach((child, i) => {
-      if (typeof child === 'function') {
-        let childResult = child();
-        result.unshift(childResult);
-        resultIndex.unshift(i);
-      }
-    });
-
-    resultIndex.forEach((idx, i) => {
-      node.children.splice(idx, 1, ...result[i]);
-    });
-
-    node.children = node.children.map(child => {
+    node.children = renderChildFunctions(node.children).map(child => {
       return rerenderVDOMInTree(child, id);
     });
   }

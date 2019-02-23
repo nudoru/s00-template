@@ -23,7 +23,7 @@ export default class Lister extends NoriComponent {
   // Subclasses should only take passed props and children
   constructor(props, children) {
     super('h1', props, []);
-    this.state = {counter: 3};
+    this.state = {counter: 1};
   }
 
   componentDidMount = () => {
@@ -49,6 +49,8 @@ export default class Lister extends NoriComponent {
     }
     this.state = {counter: --current}
   };
+
+
 
 // <ul>
 // {range(this.state.counter).map(i => <li>Item {i+1}</li>)}

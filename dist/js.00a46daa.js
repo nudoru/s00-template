@@ -19111,7 +19111,6 @@ var createComponentVDOM = function createComponentVDOM(node) {
   if (_typeof(node) === 'object') {
     node = Object.assign({}, node);
   } else if (typeof node === 'function') {
-    // Function as child
     console.warn("createComponentVDOM : node is a function", node);
   }
 
@@ -19120,26 +19119,30 @@ var createComponentVDOM = function createComponentVDOM(node) {
   }
 
   if (node.hasOwnProperty('children')) {
-    var result = [],
-        resultIndex = [];
-    node.children.forEach(function (child, i) {
-      if (typeof child === 'function') {
-        var childResult = child();
-        result.unshift(childResult);
-        resultIndex.unshift(i);
-      }
-    });
-    resultIndex.forEach(function (idx, i) {
-      var _node$children;
-
-      (_node$children = node.children).splice.apply(_node$children, [idx, 1].concat(_toConsumableArray(result[i])));
-    });
-    node.children = node.children.map(function (child) {
+    node.children = renderChildFunctions(node.children).map(function (child) {
       return createComponentVDOM(child);
     });
   }
 
   return node;
+}; // If children are an inline fn, render and insert the resulting children in to the
+// child array at the location of the fn
+
+
+var renderChildFunctions = function renderChildFunctions(childArry) {
+  var result = [],
+      resultIndex = [];
+  childArry.forEach(function (child, i) {
+    if (typeof child === 'function') {
+      var childResult = child();
+      result.unshift(childResult);
+      resultIndex.unshift(i);
+    }
+  });
+  resultIndex.forEach(function (idx, i) {
+    childArry.splice.apply(childArry, [idx, 1].concat(_toConsumableArray(result[i])));
+  });
+  return childArry;
 };
 
 var instantiateNewComponent = function instantiateNewComponent(node) {
@@ -19433,7 +19436,8 @@ var enqueueUpdate = function enqueueUpdate(id) {
 exports.enqueueUpdate = enqueueUpdate;
 
 var performUpdates = function performUpdates() {
-  var updatedVDOMTree = currentHostTree;
+  var updatedVDOMTree = currentHostTree; //createComponentVDOM(currentHostTree);
+
   clearTimeout(updateTimeOut);
   updateTimeOut = null;
   didUpdateQueue.forEach(function (id) {
@@ -19468,21 +19472,7 @@ var rerenderVDOMInTree = function rerenderVDOMInTree(node, id) {
   }
 
   if (node.hasOwnProperty('children')) {
-    var result = [],
-        resultIndex = [];
-    node.children.forEach(function (child, i) {
-      if (typeof child === 'function') {
-        var childResult = child();
-        result.unshift(childResult);
-        resultIndex.unshift(i);
-      }
-    });
-    resultIndex.forEach(function (idx, i) {
-      var _node$children2;
-
-      (_node$children2 = node.children).splice.apply(_node$children2, [idx, 1].concat(_toConsumableArray(result[i])));
-    });
-    node.children = node.children.map(function (child) {
+    node.children = renderChildFunctions(node.children).map(function (child) {
       return rerenderVDOMInTree(child, id);
     });
   }
@@ -20402,7 +20392,7 @@ function (_NoriComponent) {
     };
 
     _this.state = {
-      counter: 3
+      counter: 1
     };
     return _this;
   }
@@ -20521,7 +20511,7 @@ var testBox = (0, _Nori.h)(_Box.default, {
 }), (0, _Nori.h)(_Box.default, {
   className: whiteBox
 }, (0, _Nori.h)(Sfc, null), (0, _Nori.h)(_Ticker.default, null), (0, _Nori.h)(_Ticker.default, null), (0, _Nori.h)(_Greeter.default, null), (0, _Nori.h)(_Lister.default, null))));
-(0, _Nori.render)((0, _Nori.h)(_Lister.default, null), document.querySelector('#js-application'));
+(0, _Nori.render)(testBox, document.querySelector('#js-application'));
 },{"./theme/Global":"js/theme/Global.js","./theme/Theme":"js/theme/Theme.js","emotion":"../node_modules/emotion/dist/index.esm.js","./nori/Nori":"js/nori/Nori.js","./components/Box":"js/components/Box.js","./components/Lorem":"js/components/Lorem.js","./components/Ticker":"js/components/Ticker.js","./components/Greeter":"js/components/Greeter.js","./components/Lister":"js/components/Lister.js","../img/pattern/shattered.png":"img/pattern/shattered.png"}],"../node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
 var global = arguments[3];
 var OVERLAY_ID = '__parcel__error__overlay__';
