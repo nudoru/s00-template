@@ -1,13 +1,19 @@
-import {enqueueDidMount} from './LifecycleQueue';
-import {removeComponentInstance} from "./Nori";
+import {enqueueDidMount, performDidMountQueue} from './LifecycleQueue';
+import {
+  createInitialComponentVDOM,
+  removeComponentInstance,
+  setCurrentHostTree
+} from "./Nori";
+import {removeAllElements} from "./browser/DOMToolbox";
 
-let eventMap             = {};
+let eventMap = {},
+    $documentHostNode;
 
-const isEvent           = event => /^on/.test(event);
-const getEventName      = event => event.slice(2).toLowerCase();
+const isEvent       = event => /^on/.test(event);
+const getEventName  = event => event.slice(2).toLowerCase();
 // "Special props should be updated as new props are added to components.
-const specialProps      = ['tweens', 'state', 'actions', 'children', 'element', 'min', 'max', 'mode', 'key'];
-const isSpecialProp     = test => specialProps.includes(test);
+const specialProps  = ['tweens', 'state', 'actions', 'children', 'element', 'min', 'max', 'mode', 'key'];
+const isSpecialProp = test => specialProps.includes(test);
 
 /*
 ______________ ______________ ________   ________      _____      ________________________ _________________________
@@ -21,35 +27,49 @@ ALL THE THINGS THAT TOUCH THE DOM ...
 
  */
 
+export const render = (component, hostNode) => {
+  removeAllElements(hostNode);
 
+  let vdom = createInitialComponentVDOM(component);
 
-export const updateDOM = ($hostNode, newNode, oldNode, index = 0) => {
+  setCurrentHostTree(vdom);
+  $documentHostNode = hostNode;
+
+  updateDOM($documentHostNode, vdom);
+  performDidMountQueue();
+};
+
+export const patch = (newNode, oldNode) => {
+    updateDOM($documentHostNode, newNode, oldNode)
+};
+
+export const updateDOM = ($element, newNode, oldNode, index = 0) => {
   if (oldNode !== 0 && !oldNode) {
-    $hostNode.appendChild(
+    $element.appendChild(
       createElement(newNode)
     );
   } else if (!newNode) {
-    let $child = $hostNode.childNodes[index];
+    let $child = $element.childNodes[index];
     if ($child) {
       removeComponentInstance(oldNode);
-      $hostNode.removeChild($child);
+      $element.removeChild($child);
     }
   } else if (changed(newNode, oldNode)) {
     // TODO need to test for a component and fix this!
-    $hostNode.replaceChild(
+    $element.replaceChild(
       createElement(newNode),
-      $hostNode.childNodes[index]
+      $element.childNodes[index]
     );
   } else if (newNode.type) {
     updateProps(
-      $hostNode.childNodes[index],
+      $element.childNodes[index],
       newNode.props,
       oldNode.props
     );
     const newLength = newNode.children.length;
     const oldLength = oldNode.children.length;
     for (let i = 0; i < newLength || i < oldLength; i++) {
-      updateDOM($hostNode.childNodes[index], newNode.children[i], oldNode.children[i], i);
+      updateDOM($element.childNodes[index], newNode.children[i], oldNode.children[i], i);
     }
   }
 };

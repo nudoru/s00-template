@@ -3,7 +3,8 @@
 import {Global} from './theme/Global';
 import {theme} from './theme/Theme';
 import {css} from 'emotion';
-import {h, render,} from './nori/Nori';
+import {h} from './nori/Nori';
+import {render} from './nori/NoriDOM';
 import Box from './components/Box';
 import Lorem from './components/Lorem';
 import Ticker from './components/Ticker';

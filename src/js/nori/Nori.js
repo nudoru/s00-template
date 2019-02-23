@@ -1,8 +1,6 @@
 /*
 TODO
-  - ust createComponetVDOM fn rather than rerender
   - use ImmutableJS data structures
-  - unify child render code
   - test fn as prop value
   - test my mouse renderprops
   - what happens if an update is enququed while the update loop is updating vdom?
@@ -10,7 +8,6 @@ TODO
  */
 
 
-import {removeAllElements} from "./browser/DOMToolbox";
 import {flatten} from "./util/ArrayUtils";
 import {getNextId} from "./util/ElementIDCreator";
 import {cloneDeep} from 'lodash';
@@ -20,18 +17,18 @@ import {
   performDidMountQueue,
   performDidUpdateQueue
 } from './LifecycleQueue';
-import {updateDOM, removeEvents} from './NoriDOM';
+import {patch, removeEvents} from './NoriDOM';
 
 let currentHostTree,
-    $hostNode,
     componentInstanceMap = {},
     updateTimeOut;
 
-export const isNoriComponent = test => test.$$typeof && Symbol.keyFor(test.$$typeof) === 'nori.component';
-
-const isVDOMNode        = node => typeof node === 'object' && node.hasOwnProperty('type') && node.hasOwnProperty('props') && node.hasOwnProperty('children');
-const cloneNode         = node => cloneDeep(node); // Warning: Potentially expensive
-const hasOwnerComponent = node => node.hasOwnProperty('owner') && node.owner !== null;
+export const isNoriComponent    = test => test.$$typeof && Symbol.keyFor(test.$$typeof) === 'nori.component';
+export const setCurrentHostTree = tree => currentHostTree = tree;
+export const getCurrentHostTree = _ => cloneNode(currentHostTree);
+const isVDOMNode                = node => typeof node === 'object' && node.hasOwnProperty('type') && node.hasOwnProperty('props') && node.hasOwnProperty('children');
+const cloneNode                 = node => cloneDeep(node); // Warning: Potentially expensive
+const hasOwnerComponent         = node => node.hasOwnProperty('owner') && node.owner !== null;
 
 //------------------------------------------------------------------------------
 //PUBLICPUBLICPUBLICPUBLICPUBLICPUBLICPUBLICPUBLICPUBLICPUBLICPUBLICPUBLICPUBLIC
@@ -50,22 +47,13 @@ export const h = (type, props, ...args) => {
   };
 };
 
-export const render = (component, hostNode, removeExisting = true) => {
-  if (removeExisting) {
-    removeAllElements(hostNode);
-  }
-  currentHostTree = createInitialComponentVDOM(component);
-  updateDOM(hostNode, currentHostTree);
-  $hostNode = hostNode;
-  performDidMountQueue();
-};
 
 //------------------------------------------------------------------------------
 //CREATIONCREATIONCREATIONCREATIONCREATIONCREATIONCREATIONCREATIONCREATIONCREATI
 //------------------------------------------------------------------------------
 
 // Renders out components to get a vdom tree of just html
-const createInitialComponentVDOM = node => {
+export const createInitialComponentVDOM = node => {
   node = cloneNode(node);
   if (typeof node === 'object') {
     if (typeof node.type === 'function') {
@@ -149,7 +137,6 @@ const updateComponentVDOM = (node, id) => {
 //UPDATESUPDATESUPDATESUPDATESUPDATESUPDATESUPDATESUPDATESUPDATESUPDATESUPDATESU
 //------------------------------------------------------------------------------
 
-
 // TODO what if about component children of components?
 export const removeComponentInstance = (node) => {
   if (hasOwnerComponent(node)) {
@@ -178,14 +165,14 @@ export const enqueueUpdate = (id) => {
 };
 
 const performUpdates = () => {
-  let updatedVDOMTree = currentHostTree; //createInitialComponentVDOM(currentHostTree);
+  let updatedVDOMTree = getCurrentHostTree();
   clearTimeout(updateTimeOut);
   updateTimeOut = null;
   getDidUpdateQueue().forEach(id => {
     updatedVDOMTree = updateComponentVDOM(updatedVDOMTree, id);
   });
-  updateDOM($hostNode, updatedVDOMTree, currentHostTree);
-  currentHostTree = updatedVDOMTree;
+  patch(updatedVDOMTree, getCurrentHostTree());
+  setCurrentHostTree(updatedVDOMTree);
   performDidMountQueue();
   performDidUpdateQueue(componentInstanceMap);
 };
