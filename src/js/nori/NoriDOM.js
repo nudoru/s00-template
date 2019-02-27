@@ -37,8 +37,8 @@ export const render = (component, hostNode) => {
   setCurrentHostTree(vdom);
   $documentHostNode = hostNode;
 
-  //updateDOM($documentHostNode, vdom);
-  $documentHostNode.appendChild(createElement(vdom));
+  patch(vdom, null);
+  // $documentHostNode.appendChild(createElement(vdom));
   performDidMountQueue();
   console.timeEnd('render');
 };
@@ -85,7 +85,6 @@ const updateDOM = ($element, newvdom, currentvdom, index = 0, patches) => {
     }
   } else if (changed(newvdom, currentvdom)) {
     // TODO need to test for a component and fix this!
-    // console.log(`updateDOM : replacing??`,currentvdom);
     const $newElement = createElement(newvdom);
     removeComponentInstance(currentvdom);
 
@@ -134,14 +133,12 @@ const createElement = node => {
   // This shouldn't happen ... but just in case ...
   if (node == null || node == undefined) {
     console.warn(`createElement: Error, ${node} was undefined`);
-    return document.createTextNode(`createElement: Error, ${node} was undefined`);
+    return createTextNode(`createElement: Error, ${node} was undefined`);
   }
 
   if (typeof node === 'string' || typeof node === 'number') {
-    // Plain value of a tag
-    $element = document.createTextNode(node);
-    //}else if(node.type === '__string') {
-    //$element = document.createTextNode(node.children[0]);
+    // Plain text value
+    $element = createTextNode(node);
   } else if (typeof node.type === 'function') {
     // Stateless functional component
     $element = createElement(new node.type(node.props, node.children));
@@ -153,15 +150,15 @@ const createElement = node => {
         .forEach($element.appendChild.bind($element));
     }
   } else if (typeof node === 'function') {
-    return document.createTextNode('createElement : expected vdom, node is a function', node);
+    return createTextNode('createElement : expected vdom, node is a function', node);
   } else {
-    return document.createTextNode(`createElement: Unknown node type ${node} : ${node.type}`);
+    return createTextNode(`createElement: Unknown node type ${node} : ${node.type}`);
   }
 
   if (ownerComp) {
     ownerComp.current = $element;
     if (typeof ownerComp.componentDidMount === 'function') {
-      enqueueDidMount(ownerComp.componentDidMount.bind(ownerComp));
+      enqueueDidMount(ownerComp.componentDidMount); //.bind(ownerComp)
     }
   }
 
@@ -206,6 +203,8 @@ const mapActions = props => Object.keys(props).reduce((acc, key) => {
   return acc;
 }, []);
 
+const handleEventTrigger = (evt, $element) => e => evt.externalHandler(createEventObject(e, $element));
+
 // Nori calls into this
 export const removeEvents = id => {
   if (eventMap.hasOwnProperty(id)) {
@@ -216,8 +215,6 @@ export const removeEvents = id => {
     delete eventMap[id];
   }
 };
-
-const handleEventTrigger = (evt, $element) => e => evt.externalHandler(createEventObject(e, $element));
 
 const createEventObject = (e, $element = null) => ({
   event : e,
@@ -236,10 +233,6 @@ const updateProps = ($element, newProps, oldProps = {}) => {
 };
 
 const updateProp = ($element, key, newValue, oldValue) => {
-  // if(key === 'id' && newValue !== oldValue) {
-  //   console.log(`updateProp ${key} = ${oldValue} -> ${newValue}`);
-  // }
-
   if (!newValue) {
     removeProp($element, key, oldValue);
   } else if (!oldValue || newValue !== oldValue) {

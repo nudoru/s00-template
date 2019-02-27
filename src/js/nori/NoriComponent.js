@@ -1,4 +1,5 @@
 import Is from './util/is';
+import {equals} from "ramda";
 import {getNextId} from './util/ElementIDCreator';
 import {enqueueUpdate} from "./Nori";
 
@@ -21,6 +22,7 @@ export default class NoriComponent {
       console.warn('Component state must be an object');
       return;
     }
+
 
     if(this.shouldComponentUpdate({}, nextState)) {
       this.internalState = Object.assign({}, this.internalState, nextState);

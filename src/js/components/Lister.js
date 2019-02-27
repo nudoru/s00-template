@@ -57,14 +57,24 @@ export default class Lister extends NoriComponent {
 // </ul>
   //return <Greeter key={'listitem-'+i}/>;
 
+  /*
+  {() => (range(this.state.counter).map(i => {
+        return <Greeter key={'listitem-'+i}/>;
+      }))}
+      <hr/>
+      {() => (range(this.state.counter).map(i => {
+        return <Greeter key={'listitem-2'+i}/>;
+      }))}
+  */
+
   render() {
     //console.log('render lister');
     return <div className={bordered} key={this.props.id}>
       <button onClick={this.$onAddClick}>Add</button><button onClick={this.$onRemoveClick}>Remove</button>
       <hr/>
-      {() => (range(this.state.counter).map(i => {
+      {range(this.state.counter).map(i => {
         return <Greeter key={'listitem-'+i}/>;
-      }))}
+      })}
       <hr/>
       {() => (range(this.state.counter).map(i => {
         return <Greeter key={'listitem-2'+i}/>;

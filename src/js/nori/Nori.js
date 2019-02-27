@@ -84,14 +84,12 @@ const renderChildFunctions = node => {
 
   childArry.forEach((child, i) => {
     if (typeof child === 'function') {
-      let childResult = child();
-
+      let childResult = child.call(node);
       childResult.forEach((c, i) => {
         if(typeof c === 'object' && !c.props.id) {
           c.props.id = c.props.id ? c.props.id : node.props.id+`.${i}.${index++}`;
         }
       });
-
       result.unshift(childResult);
       resultIndex.unshift(i);
     }
@@ -120,12 +118,9 @@ const renderComponentNode = instance => {
     if(!node.props.hasOwnProperty('id') || node.props.id.indexOf('element-id-') === 0) {
       node.props.id = instance.props.id;
     }
-    // console.log(`renderComponentNode : ${node.props.id}(${instance.props.id})`);
     node.children.forEach((child, i) => {
       if(typeof child === 'object' && !child.props.id) {
-        // child.props.id = nodeIDorKey(child)+`.${i}`;
         child.props.id = child.props.id ? child.props.id : node.props.id+`.${i}`;
-        // console.log(`${node.props.id} -> ${child.props.id}`);
       }
     });
     instance.vdom = node;
@@ -162,10 +157,7 @@ const updateComponentVDOM = (node, id) => {
       node = createInitialComponentVDOM(node);
     }
     node.children = node.children.map(child => updateComponentVDOM(child, id));
-  } //else if(typeof node === 'string' || typeof node === 'number') {
-    //const nodeval = node;
-   // node = {type: '__string', props: {}, children: [nodeval], owner: null}
-  //}
+  }
   return node;
 };
 
@@ -202,99 +194,20 @@ export const enqueueUpdate = (id) => {
 
 const performUpdates = () => {
   //console.time('update');
-  let updatedVDOMTree = getCurrentHostTree();
   clearTimeout(updateTimeOut);
   updateTimeOut = null;
+
+  let updatedVDOMTree = getCurrentHostTree();
+
   getDidUpdateQueue().forEach(id => {
     updatedVDOMTree = updateComponentVDOM(updatedVDOMTree, id);
   });
 
-
-
   let result = patch(updatedVDOMTree, getCurrentHostTree());
-  //console.log('DOM Patches: ', result);
-
+  // console.log('DOM Patches: ', result);
 
   setCurrentHostTree(updatedVDOMTree);
   performDidMountQueue();
   performDidUpdateQueue(componentInstanceMap);
   //console.timeEnd('update');
-};
-
-/*
-// let pat = [];
-  // vdiff(getCurrentHostTree(), updatedVDOMTree, pat);
-  // pat.forEach(patch => applyPatch(patch));
--------
-// let vdiff =diff(getCurrentHostTree(), updatedVDOMTree);
-  // patch(vdiff, getCurrentHostTree(), updatedVDOMTree);
- */
-
-// https://blog.javascripting.com/2016/10/05/building-your-own-react-clone-in-five-easy-steps/
-const vdiff = (left, right, patches, parent = null) => {
-  // For text nodes
-  if(!left && !right) {
-    //console.log('was text node i assume', parent.children[0]);
-  } else if (!left) {
-    patches.push({
-      parent,
-      type: 'CREATE',
-      node: right
-    });
-  } else if (!right) {
-    patches.push({
-      type: 'REMOVE',
-      node: left
-    });
-  } else if (left.type !== right.type) {
-    patches.push({
-      type: 'REPLACE',
-      replacingNode: left,
-      node: right
-    });
-  } else {
-    // Text nodes don't have children
-    let leftChildren = left.hasOwnProperty('children') ? left.children.length : 0,
-        rightChildren = right.hasOwnProperty('children') ? right.children.length : 0;
-
-    const children = leftChildren >= rightChildren ? left.children : right.children;
-
-    // Handle text nodes
-    if(!children) {
-      //console.log(parent,'has no children');
-      if(left && right) {
-        if(left !== right) {
-          patches.push({
-            parent,
-            type: 'REPLACE',
-            replacingNode: left,
-            node: right,
-            isText: true
-          });
-        }
-      } else if(left && !right) {
-        patches.push({
-          parent,
-          type: 'REMOVE',
-          node: left,
-          isText: true
-        });
-      } else if(!left && right) {
-        patches.push({
-          parent,
-          type: 'CREATE',
-          node: right,
-          isText: true
-        });
-      }
-      vdiff(null, null, patches, parent);
-    } else {
-      children.forEach((child, index) => vdiff(
-        (leftChildren ? left.children[index] : null),
-        (rightChildren ? right.children[index] : null),
-        patches,
-        left
-      ));
-    }
-  }
 };

@@ -20,7 +20,6 @@ export default class Greeter extends NoriComponent {
   }
 
   $onClick = evt => {
-    console.log('Greet click!',evt, this);
     this.state = {name:L.firstLastName()};
   };
 
@@ -29,7 +28,7 @@ export default class Greeter extends NoriComponent {
   };
 
   componentDidMount   = () => {
-    console.log('Greet did mount');
+    // console.log('Greet did mount');
   };
 
   componentWillUnmount = () => {
@@ -44,8 +43,8 @@ export default class Greeter extends NoriComponent {
     // console.log('Greet did update');
   };
 
-  onOver = () => {
-    //console.log('Greeter over');
+  onOver = (e) => {
+    //console.log('Greeter over', e, this);
   };
 
   onOut = () => {
@@ -53,6 +52,7 @@ export default class Greeter extends NoriComponent {
   };
 
   render() {
+    //console.log(`Greeter ${this.props.id} render with ${this.state.name}`);
     return <h1 onClick={this.$onClick} onMouseOver={this.onOver} onMouseOut={this.onOut}>Hello, <em className={blue}>{this.state.name}</em></h1>;
   }
 }

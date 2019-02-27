@@ -38259,9 +38259,9 @@ var render = function render(component, hostNode) {
   (0, _DOMToolbox.removeAllElements)(hostNode);
   var vdom = (0, _Nori.createInitialComponentVDOM)(component);
   (0, _Nori.setCurrentHostTree)(vdom);
-  $documentHostNode = hostNode; //updateDOM($documentHostNode, vdom);
+  $documentHostNode = hostNode;
+  patch(vdom, null); // $documentHostNode.appendChild(createElement(vdom));
 
-  $documentHostNode.appendChild(createElement(vdom));
   (0, _LifecycleQueue.performDidMountQueue)();
   console.timeEnd('render');
 };
@@ -38318,7 +38318,6 @@ var updateDOM = function updateDOM($element, newvdom, currentvdom) {
     }
   } else if (changed(newvdom, currentvdom)) {
     // TODO need to test for a component and fix this!
-    // console.log(`updateDOM : replacing??`,currentvdom);
     var _$newElement = createElement(newvdom);
 
     (0, _Nori.removeComponentInstance)(currentvdom);
@@ -38358,13 +38357,12 @@ var createElement = function createElement(node) {
 
   if (node == null || node == undefined) {
     console.warn("createElement: Error, ".concat(node, " was undefined"));
-    return document.createTextNode("createElement: Error, ".concat(node, " was undefined"));
+    return createTextNode("createElement: Error, ".concat(node, " was undefined"));
   }
 
   if (typeof node === 'string' || typeof node === 'number') {
-    // Plain value of a tag
-    $element = document.createTextNode(node); //}else if(node.type === '__string') {
-    //$element = document.createTextNode(node.children[0]);
+    // Plain text value
+    $element = createTextNode(node);
   } else if (typeof node.type === 'function') {
     // Stateless functional component
     $element = createElement(new node.type(node.props, node.children));
@@ -38375,16 +38373,16 @@ var createElement = function createElement(node) {
       node.children.map(createElement).forEach($element.appendChild.bind($element));
     }
   } else if (typeof node === 'function') {
-    return document.createTextNode('createElement : expected vdom, node is a function', node);
+    return createTextNode('createElement : expected vdom, node is a function', node);
   } else {
-    return document.createTextNode("createElement: Unknown node type ".concat(node, " : ").concat(node.type));
+    return createTextNode("createElement: Unknown node type ".concat(node, " : ").concat(node.type));
   }
 
   if (ownerComp) {
     ownerComp.current = $element;
 
     if (typeof ownerComp.componentDidMount === 'function') {
-      (0, _LifecycleQueue.enqueueDidMount)(ownerComp.componentDidMount.bind(ownerComp));
+      (0, _LifecycleQueue.enqueueDidMount)(ownerComp.componentDidMount); //.bind(ownerComp)
     }
   }
 
@@ -38435,6 +38433,12 @@ var mapActions = function mapActions(props) {
 
     return acc;
   }, []);
+};
+
+var handleEventTrigger = function handleEventTrigger(evt, $element) {
+  return function (e) {
+    return evt.externalHandler(createEventObject(e, $element));
+  };
 }; // Nori calls into this
 
 
@@ -38449,12 +38453,6 @@ var removeEvents = function removeEvents(id) {
 };
 
 exports.removeEvents = removeEvents;
-
-var handleEventTrigger = function handleEventTrigger(evt, $element) {
-  return function (e) {
-    return evt.externalHandler(createEventObject(e, $element));
-  };
-};
 
 var createEventObject = function createEventObject(e) {
   var $element = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : null;
@@ -38476,9 +38474,6 @@ var updateProps = function updateProps($element, newProps) {
 };
 
 var updateProp = function updateProp($element, key, newValue, oldValue) {
-  // if(key === 'id' && newValue !== oldValue) {
-  //   console.log(`updateProp ${key} = ${oldValue} -> ${newValue}`);
-  // }
   if (!newValue) {
     removeProp($element, key, oldValue);
   } else if (!oldValue || newValue !== oldValue) {
@@ -38668,7 +38663,7 @@ var renderChildFunctions = function renderChildFunctions(node) {
       index = 0;
   childArry.forEach(function (child, i) {
     if (typeof child === 'function') {
-      var childResult = child();
+      var childResult = child.call(node);
       childResult.forEach(function (c, i) {
         if (_typeof(c) === 'object' && !c.props.id) {
           c.props.id = c.props.id ? c.props.id : node.props.id + ".".concat(i, ".").concat(index++);
@@ -38703,13 +38698,11 @@ var renderComponentNode = function renderComponentNode(instance) {
 
     if (!node.props.hasOwnProperty('id') || node.props.id.indexOf('element-id-') === 0) {
       node.props.id = instance.props.id;
-    } // console.log(`renderComponentNode : ${node.props.id}(${instance.props.id})`);
-
+    }
 
     node.children.forEach(function (child, i) {
       if (_typeof(child) === 'object' && !child.props.id) {
-        // child.props.id = nodeIDorKey(child)+`.${i}`;
-        child.props.id = child.props.id ? child.props.id : node.props.id + ".".concat(i); // console.log(`${node.props.id} -> ${child.props.id}`);
+        child.props.id = child.props.id ? child.props.id : node.props.id + ".".concat(i);
       }
     });
     instance.vdom = node;
@@ -38753,11 +38746,7 @@ var updateComponentVDOM = function updateComponentVDOM(node, id) {
     node.children = node.children.map(function (child) {
       return updateComponentVDOM(child, id);
     });
-  } //else if(typeof node === 'string' || typeof node === 'number') {
-  //const nodeval = node;
-  // node = {type: '__string', props: {}, children: [nodeval], owner: null}
-  //}
-
+  }
 
   return node;
 }; //------------------------------------------------------------------------------
@@ -38800,92 +38789,17 @@ exports.enqueueUpdate = enqueueUpdate;
 
 var performUpdates = function performUpdates() {
   //console.time('update');
-  var updatedVDOMTree = getCurrentHostTree();
   clearTimeout(updateTimeOut);
   updateTimeOut = null;
+  var updatedVDOMTree = getCurrentHostTree();
   (0, _LifecycleQueue.getDidUpdateQueue)().forEach(function (id) {
     updatedVDOMTree = updateComponentVDOM(updatedVDOMTree, id);
   });
-  var result = (0, _NoriDOM.patch)(updatedVDOMTree, getCurrentHostTree()); //console.log('DOM Patches: ', result);
+  var result = (0, _NoriDOM.patch)(updatedVDOMTree, getCurrentHostTree()); // console.log('DOM Patches: ', result);
 
   setCurrentHostTree(updatedVDOMTree);
   (0, _LifecycleQueue.performDidMountQueue)();
   (0, _LifecycleQueue.performDidUpdateQueue)(componentInstanceMap); //console.timeEnd('update');
-};
-/*
-// let pat = [];
-  // vdiff(getCurrentHostTree(), updatedVDOMTree, pat);
-  // pat.forEach(patch => applyPatch(patch));
--------
-// let vdiff =diff(getCurrentHostTree(), updatedVDOMTree);
-  // patch(vdiff, getCurrentHostTree(), updatedVDOMTree);
- */
-// https://blog.javascripting.com/2016/10/05/building-your-own-react-clone-in-five-easy-steps/
-
-
-var vdiff = function vdiff(left, right, patches) {
-  var parent = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : null;
-
-  // For text nodes
-  if (!left && !right) {//console.log('was text node i assume', parent.children[0]);
-  } else if (!left) {
-    patches.push({
-      parent: parent,
-      type: 'CREATE',
-      node: right
-    });
-  } else if (!right) {
-    patches.push({
-      type: 'REMOVE',
-      node: left
-    });
-  } else if (left.type !== right.type) {
-    patches.push({
-      type: 'REPLACE',
-      replacingNode: left,
-      node: right
-    });
-  } else {
-    // Text nodes don't have children
-    var leftChildren = left.hasOwnProperty('children') ? left.children.length : 0,
-        rightChildren = right.hasOwnProperty('children') ? right.children.length : 0;
-    var children = leftChildren >= rightChildren ? left.children : right.children; // Handle text nodes
-
-    if (!children) {
-      //console.log(parent,'has no children');
-      if (left && right) {
-        if (left !== right) {
-          patches.push({
-            parent: parent,
-            type: 'REPLACE',
-            replacingNode: left,
-            node: right,
-            isText: true
-          });
-        }
-      } else if (left && !right) {
-        patches.push({
-          parent: parent,
-          type: 'REMOVE',
-          node: left,
-          isText: true
-        });
-      } else if (!left && right) {
-        patches.push({
-          parent: parent,
-          type: 'CREATE',
-          node: right,
-          isText: true
-        });
-      }
-
-      vdiff(null, null, patches, parent);
-    } else {
-      children.forEach(function (child, index) {
-        return vdiff(leftChildren ? left.children[index] : null, rightChildren ? right.children[index] : null, patches, left);
-      });
-    }
-  }
 };
 },{"./util/ArrayUtils":"js/nori/util/ArrayUtils.js","./util/ElementIDCreator":"js/nori/util/ElementIDCreator.js","lodash":"../node_modules/lodash/lodash.js","./LifecycleQueue":"js/nori/LifecycleQueue.js","./NoriDOM":"js/nori/NoriDOM.js"}],"js/nori/util/is.js":[function(require,module,exports) {
 "use strict";
@@ -38952,6 +38866,8 @@ Object.defineProperty(exports, "__esModule", {
 exports.default = void 0;
 
 var _is = _interopRequireDefault(require("./util/is"));
+
+var _ramda = require("ramda");
 
 var _ElementIDCreator = require("./util/ElementIDCreator");
 
@@ -39045,7 +38961,7 @@ function () {
 }();
 
 exports.default = NoriComponent;
-},{"./util/is":"js/nori/util/is.js","./util/ElementIDCreator":"js/nori/util/ElementIDCreator.js","./Nori":"js/nori/Nori.js"}],"js/components/Box.js":[function(require,module,exports) {
+},{"./util/is":"js/nori/util/is.js","ramda":"../node_modules/ramda/es/index.js","./util/ElementIDCreator":"js/nori/util/ElementIDCreator.js","./Nori":"js/nori/Nori.js"}],"js/components/Box.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -39618,13 +39534,13 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
 
 function _possibleConstructorReturn(self, call) { if (call && (_typeof(call) === "object" || typeof call === "function")) { return call; } return _assertThisInitialized(self); }
 
+function _assertThisInitialized(self) { if (self === void 0) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return self; }
+
 function _getPrototypeOf(o) { _getPrototypeOf = Object.setPrototypeOf ? Object.getPrototypeOf : function _getPrototypeOf(o) { return o.__proto__ || Object.getPrototypeOf(o); }; return _getPrototypeOf(o); }
 
 function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function"); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, writable: true, configurable: true } }); if (superClass) _setPrototypeOf(subClass, superClass); }
 
 function _setPrototypeOf(o, p) { _setPrototypeOf = Object.setPrototypeOf || function _setPrototypeOf(o, p) { o.__proto__ = p; return o; }; return _setPrototypeOf(o, p); }
-
-function _assertThisInitialized(self) { if (self === void 0) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return self; }
 
 function _templateObject() {
   var data = _taggedTemplateLiteral(["color: blue;"]);
@@ -39654,7 +39570,6 @@ function (_NoriComponent) {
     _this = _possibleConstructorReturn(this, _getPrototypeOf(Greeter).call(this, 'h1', props, []));
 
     _this.$onClick = function (evt) {
-      console.log('Greet click!', evt, _assertThisInitialized(_assertThisInitialized(_this)));
       _this.state = {
         name: L.firstLastName()
       };
@@ -39663,8 +39578,7 @@ function (_NoriComponent) {
     _this.$onRender = function (evt) {//console.log('Greet rendered!', evt);
     };
 
-    _this.componentDidMount = function () {
-      console.log('Greet did mount');
+    _this.componentDidMount = function () {// console.log('Greet did mount');
     };
 
     _this.componentWillUnmount = function () {//console.log('Greet will remove');
@@ -39676,7 +39590,7 @@ function (_NoriComponent) {
     _this.componentDidUpdate = function () {// console.log('Greet did update');
     };
 
-    _this.onOver = function () {//console.log('Greeter over');
+    _this.onOver = function (e) {//console.log('Greeter over', e, this);
     };
 
     _this.onOut = function () {//console.log('Greeter out');
@@ -39691,6 +39605,7 @@ function (_NoriComponent) {
   _createClass(Greeter, [{
     key: "render",
     value: function render() {
+      //console.log(`Greeter ${this.props.id} render with ${this.state.name}`);
       return (0, _Nori.h)("h1", {
         onClick: this.$onClick,
         onMouseOver: this.onOver,
@@ -39813,6 +39728,16 @@ function (_NoriComponent) {
     // {range(this.state.counter).map(i => <li>Item {i+1}</li>)}
     // </ul>
     //return <Greeter key={'listitem-'+i}/>;
+
+    /*
+    {() => (range(this.state.counter).map(i => {
+          return <Greeter key={'listitem-'+i}/>;
+        }))}
+        <hr/>
+        {() => (range(this.state.counter).map(i => {
+          return <Greeter key={'listitem-2'+i}/>;
+        }))}
+    */
     value: function render() {
       var _this2 = this;
 
@@ -39824,13 +39749,11 @@ function (_NoriComponent) {
         onClick: this.$onAddClick
       }, "Add"), (0, _Nori.h)("button", {
         onClick: this.$onRemoveClick
-      }, "Remove"), (0, _Nori.h)("hr", null), function () {
-        return (0, _ArrayUtils.range)(_this2.state.counter).map(function (i) {
-          return (0, _Nori.h)(_Greeter.default, {
-            key: 'listitem-' + i
-          });
+      }, "Remove"), (0, _Nori.h)("hr", null), (0, _ArrayUtils.range)(this.state.counter).map(function (i) {
+        return (0, _Nori.h)(_Greeter.default, {
+          key: 'listitem-' + i
         });
-      }, (0, _Nori.h)("hr", null), function () {
+      }), (0, _Nori.h)("hr", null), function () {
         return (0, _ArrayUtils.range)(_this2.state.counter).map(function (i) {
           return (0, _Nori.h)(_Greeter.default, {
             key: 'listitem-2' + i
