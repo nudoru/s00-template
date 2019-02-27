@@ -6,15 +6,6 @@ import {
 } from "./Nori";
 import {removeAllElements} from "./browser/DOMToolbox";
 
-let eventMap = {},
-    $documentHostNode;
-
-const isEvent       = event => /^on/.test(event);
-const getEventName  = event => event.slice(2).toLowerCase();
-// "Special props should be updated as new props are added to components.
-const specialProps  = ['tweens', 'state', 'actions', 'children', 'element', 'min', 'max', 'mode', 'key'];
-const isSpecialProp = test => specialProps.includes(test);
-
 /*
 ______________ ______________ ________   ________      _____      ________________________ _________________________
 \__    ___/   |   \_   _____/ \______ \  \_____  \    /     \    /   _____/\__    ___/    |   \_   _____/\_   _____/
@@ -27,7 +18,18 @@ ALL THE THINGS THAT TOUCH THE DOM ...
 
  */
 
+const ID_KEY        = 'data-nori-id';
+const isEvent       = event => /^on/.test(event);
+const getEventName  = event => event.slice(2).toLowerCase();
+// "Special props should be updated as new props are added to components.
+const specialProps  = ['tweens', 'state', 'actions', 'children', 'element', 'min', 'max', 'mode', 'key'];
+const isSpecialProp = test => specialProps.includes(test);
+
+let eventMap = {},
+    $documentHostNode;
+
 export const render = (component, hostNode) => {
+  console.time('render');
   removeAllElements(hostNode);
 
   let vdom = createInitialComponentVDOM(component);
@@ -35,41 +37,86 @@ export const render = (component, hostNode) => {
   setCurrentHostTree(vdom);
   $documentHostNode = hostNode;
 
-  updateDOM($documentHostNode, vdom);
+  //updateDOM($documentHostNode, vdom);
+  $documentHostNode.appendChild(createElement(vdom));
   performDidMountQueue();
+  console.timeEnd('render');
 };
 
-export const patch = (newNode, oldNode) => {
-    updateDOM($documentHostNode, newNode, oldNode)
-};
-
-const updateDOM = ($element, newNode, oldNode, index = 0) => {
-  if (oldNode !== 0 && !oldNode) {
-    $element.appendChild(
-      createElement(newNode)
-    );
-  } else if (!newNode) {
-    let $child = $element.childNodes[index];
-    if ($child) {
-      removeComponentInstance(oldNode);
-      $element.removeChild($child);
+const correlateVDOMNode = (vdomNode, $domRoot) => {
+  if (vdomNode === null) {
+    return $domRoot;
+  } else {
+    let $element = document.querySelector(`[${ID_KEY}="${vdomNode.props.id}"]`);
+    if (!$element) {
+      console.warn(`correlateVDOMNode : Couldn't get [${ID_KEY}="${vdomNode.props.id}"]`);
     }
-  } else if (changed(newNode, oldNode)) {
+    return $element;
+  }
+};
+
+export const patch = (newvdom, currentvdom) => {
+  let patches = [];
+  updateDOM($documentHostNode, newvdom, currentvdom, 0, patches);
+  return patches;
+};
+
+const updateDOM = ($element, newvdom, currentvdom, index = 0, patches) => {
+  if (currentvdom !== 0 && !currentvdom) {
+    const $newElement = createElement(newvdom);
+    $element.appendChild($newElement);
+    patches.push({
+      type  : 'APPEND',
+      node  : $newElement,
+      parent: $element,
+      vnode : newvdom
+    });
+  } else if (!newvdom) {
+    let $toRemove = correlateVDOMNode(currentvdom, $element);
+    patches.push({
+      type  : 'REMOVE',
+      node  : $toRemove,
+      parent: $element,
+      vnode : currentvdom
+    });
+    if ($toRemove) {
+      removeComponentInstance(currentvdom);
+      $element.removeChild($toRemove);
+    }
+  } else if (changed(newvdom, currentvdom)) {
     // TODO need to test for a component and fix this!
-    $element.replaceChild(
-      createElement(newNode),
-      $element.childNodes[index]
-    );
-  } else if (newNode.type) {
+    // console.log(`updateDOM : replacing??`,currentvdom);
+    const $newElement = createElement(newvdom);
+    removeComponentInstance(currentvdom);
+
+    patches.push({
+      type   : 'REPLACE',
+      oldNode: $element.childNodes[index],
+      node   : $newElement,
+      parent : $element,
+      vnode  : newvdom
+    });
+
+    $element.replaceChild($newElement, $element.childNodes[index]);
+  } else if (newvdom.type) {
+    // !== currentvdom.type
     updateProps(
       $element.childNodes[index],
-      newNode.props,
-      oldNode.props
+      newvdom.props,
+      currentvdom.props
     );
-    const newLength = newNode.children.length;
-    const oldLength = oldNode.children.length;
+
+    patches.push({
+      type  : 'NEW',
+      node  : $element.childNodes[index],
+      parent: $element,
+      vnode : newvdom
+    });
+
+    const newLength = newvdom.children.length;
+    const oldLength = currentvdom.children.length;
     for (let i = 0; i < newLength || i < oldLength; i++) {
-      updateDOM($element.childNodes[index], newNode.children[i], oldNode.children[i], i);
+      updateDOM($element.childNodes[index], newvdom.children[i], currentvdom.children[i], i, patches);
     }
   }
 };
@@ -93,6 +140,8 @@ const createElement = node => {
   if (typeof node === 'string' || typeof node === 'number') {
     // Plain value of a tag
     $element = document.createTextNode(node);
+    //}else if(node.type === '__string') {
+    //$element = document.createTextNode(node.children[0]);
   } else if (typeof node.type === 'function') {
     // Stateless functional component
     $element = createElement(new node.type(node.props, node.children));
@@ -118,9 +167,10 @@ const createElement = node => {
 
   setProps($element, node.props || {});
   setEvents(node, $element);
-
   return $element;
 };
+
+const createTextNode = string => document.createTextNode(string);
 
 //------------------------------------------------------------------------------
 //EVENTSEVENTSEVENTSEVENTSEVENTSEVENTSEVENTSEVENTSEVENTSEVENTSEVENTSEVENTSEVENTS
@@ -185,10 +235,14 @@ const updateProps = ($element, newProps, oldProps = {}) => {
   });
 };
 
-const updateProp = ($element, key, newValue, oldVaue) => {
+const updateProp = ($element, key, newValue, oldValue) => {
+  // if(key === 'id' && newValue !== oldValue) {
+  //   console.log(`updateProp ${key} = ${oldValue} -> ${newValue}`);
+  // }
+
   if (!newValue) {
-    removeProp($element, key, oldVaue);
-  } else if (!oldVaue || newValue !== oldVaue) {
+    removeProp($element, key, oldValue);
+  } else if (!oldValue || newValue !== oldValue) {
     setProp($element, key, newValue);
   }
 };
@@ -203,10 +257,8 @@ const setProp = ($element, key, value) => {
   if (!isSpecialProp(key) && !isEvent(key)) {
     if (key === 'className') {
       key = 'class';
-    } else if (key === 'id' && value.indexOf('element-id-') === 0) {
-      // Disabled, it's too noisy
-      // key = 'data-nid';
-      return;
+    } else if (key === 'id') {
+      key = ID_KEY;
     }
     if (typeof value === 'boolean') {
       setBooleanProp($element, key, value);
@@ -232,7 +284,6 @@ const removeProp = ($element, key, value) => {
     } else if (key === 'id') {
       key = 'data-nid';
     }
-
     if (typeof value === 'boolean') {
       removeBooleanProp($element, key);
     } else {

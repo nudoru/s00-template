@@ -38223,8 +38223,18 @@ var _DOMToolbox = require("./browser/DOMToolbox");
 
 function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
 
-var eventMap = {},
-    $documentHostNode;
+/*
+______________ ______________ ________   ________      _____      ________________________ _________________________
+\__    ___/   |   \_   _____/ \______ \  \_____  \    /     \    /   _____/\__    ___/    |   \_   _____/\_   _____/
+  |    | /    ~    \    __)_   |    |  \  /   |   \  /  \ /  \   \_____  \   |    |  |    |   /|    __)   |    __)
+  |    | \    Y    /        \  |    `   \/    |    \/    Y    \  /        \  |    |  |    |  / |     \    |     \
+  |____|  \___|_  /_______  / /_______  /\_______  /\____|__  / /_______  /  |____|  |______/  \___  /    \___  /
+                \/        \/          \/         \/         \/          \/                         \/         \/
+
+ALL THE THINGS THAT TOUCH THE DOM ...
+
+ */
+var ID_KEY = 'data-nori-id';
 
 var isEvent = function isEvent(event) {
   return /^on/.test(event);
@@ -38240,58 +38250,100 @@ var specialProps = ['tweens', 'state', 'actions', 'children', 'element', 'min', 
 var isSpecialProp = function isSpecialProp(test) {
   return specialProps.includes(test);
 };
-/*
-______________ ______________ ________   ________      _____      ________________________ _________________________
-\__    ___/   |   \_   _____/ \______ \  \_____  \    /     \    /   _____/\__    ___/    |   \_   _____/\_   _____/
-  |    | /    ~    \    __)_   |    |  \  /   |   \  /  \ /  \   \_____  \   |    |  |    |   /|    __)   |    __)
-  |    | \    Y    /        \  |    `   \/    |    \/    Y    \  /        \  |    |  |    |  / |     \    |     \
-  |____|  \___|_  /_______  / /_______  /\_______  /\____|__  / /_______  /  |____|  |______/  \___  /    \___  /
-                \/        \/          \/         \/         \/          \/                         \/         \/
 
-ALL THE THINGS THAT TOUCH THE DOM ...
-
- */
-
+var eventMap = {},
+    $documentHostNode;
 
 var render = function render(component, hostNode) {
+  console.time('render');
   (0, _DOMToolbox.removeAllElements)(hostNode);
   var vdom = (0, _Nori.createInitialComponentVDOM)(component);
   (0, _Nori.setCurrentHostTree)(vdom);
-  $documentHostNode = hostNode;
-  updateDOM($documentHostNode, vdom);
+  $documentHostNode = hostNode; //updateDOM($documentHostNode, vdom);
+
+  $documentHostNode.appendChild(createElement(vdom));
   (0, _LifecycleQueue.performDidMountQueue)();
+  console.timeEnd('render');
 };
 
 exports.render = render;
 
-var patch = function patch(newNode, oldNode) {
-  updateDOM($documentHostNode, newNode, oldNode);
+var correlateVDOMNode = function correlateVDOMNode(vdomNode, $domRoot) {
+  if (vdomNode === null) {
+    return $domRoot;
+  } else {
+    var $element = document.querySelector("[".concat(ID_KEY, "=\"").concat(vdomNode.props.id, "\"]"));
+
+    if (!$element) {
+      console.warn("correlateVDOMNode : Couldn't get [".concat(ID_KEY, "=\"").concat(vdomNode.props.id, "\"]"));
+    }
+
+    return $element;
+  }
+};
+
+var patch = function patch(newvdom, currentvdom) {
+  var patches = [];
+  updateDOM($documentHostNode, newvdom, currentvdom, 0, patches);
+  return patches;
 };
 
 exports.patch = patch;
 
-var updateDOM = function updateDOM($element, newNode, oldNode) {
+var updateDOM = function updateDOM($element, newvdom, currentvdom) {
   var index = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : 0;
+  var patches = arguments.length > 4 ? arguments[4] : undefined;
 
-  if (oldNode !== 0 && !oldNode) {
-    $element.appendChild(createElement(newNode));
-  } else if (!newNode) {
-    var $child = $element.childNodes[index];
+  if (currentvdom !== 0 && !currentvdom) {
+    var $newElement = createElement(newvdom);
+    $element.appendChild($newElement);
+    patches.push({
+      type: 'APPEND',
+      node: $newElement,
+      parent: $element,
+      vnode: newvdom
+    });
+  } else if (!newvdom) {
+    var $toRemove = correlateVDOMNode(currentvdom, $element);
+    patches.push({
+      type: 'REMOVE',
+      node: $toRemove,
+      parent: $element,
+      vnode: currentvdom
+    });
 
-    if ($child) {
-      (0, _Nori.removeComponentInstance)(oldNode);
-      $element.removeChild($child);
+    if ($toRemove) {
+      (0, _Nori.removeComponentInstance)(currentvdom);
+      $element.removeChild($toRemove);
     }
-  } else if (changed(newNode, oldNode)) {
+  } else if (changed(newvdom, currentvdom)) {
     // TODO need to test for a component and fix this!
-    $element.replaceChild(createElement(newNode), $element.childNodes[index]);
-  } else if (newNode.type) {
-    updateProps($element.childNodes[index], newNode.props, oldNode.props);
-    var newLength = newNode.children.length;
-    var oldLength = oldNode.children.length;
+    // console.log(`updateDOM : replacing??`,currentvdom);
+    var _$newElement = createElement(newvdom);
+
+    (0, _Nori.removeComponentInstance)(currentvdom);
+    patches.push({
+      type: 'REPLACE',
+      oldNode: $element.childNodes[index],
+      node: _$newElement,
+      parent: $element,
+      vnode: newvdom
+    });
+    $element.replaceChild(_$newElement, $element.childNodes[index]);
+  } else if (newvdom.type) {
+    // !== currentvdom.type
+    updateProps($element.childNodes[index], newvdom.props, currentvdom.props);
+    patches.push({
+      type: 'NEW',
+      node: $element.childNodes[index],
+      parent: $element,
+      vnode: newvdom
+    });
+    var newLength = newvdom.children.length;
+    var oldLength = currentvdom.children.length;
 
     for (var i = 0; i < newLength || i < oldLength; i++) {
-      updateDOM($element.childNodes[index], newNode.children[i], oldNode.children[i], i);
+      updateDOM($element.childNodes[index], newvdom.children[i], currentvdom.children[i], i, patches);
     }
   }
 };
@@ -38311,7 +38363,8 @@ var createElement = function createElement(node) {
 
   if (typeof node === 'string' || typeof node === 'number') {
     // Plain value of a tag
-    $element = document.createTextNode(node);
+    $element = document.createTextNode(node); //}else if(node.type === '__string') {
+    //$element = document.createTextNode(node.children[0]);
   } else if (typeof node.type === 'function') {
     // Stateless functional component
     $element = createElement(new node.type(node.props, node.children));
@@ -38338,6 +38391,10 @@ var createElement = function createElement(node) {
   setProps($element, node.props || {});
   setEvents(node, $element);
   return $element;
+};
+
+var createTextNode = function createTextNode(string) {
+  return document.createTextNode(string);
 }; //------------------------------------------------------------------------------
 //EVENTSEVENTSEVENTSEVENTSEVENTSEVENTSEVENTSEVENTSEVENTSEVENTSEVENTSEVENTSEVENTS
 //------------------------------------------------------------------------------
@@ -38418,10 +38475,13 @@ var updateProps = function updateProps($element, newProps) {
   });
 };
 
-var updateProp = function updateProp($element, key, newValue, oldVaue) {
+var updateProp = function updateProp($element, key, newValue, oldValue) {
+  // if(key === 'id' && newValue !== oldValue) {
+  //   console.log(`updateProp ${key} = ${oldValue} -> ${newValue}`);
+  // }
   if (!newValue) {
-    removeProp($element, key, oldVaue);
-  } else if (!oldVaue || newValue !== oldVaue) {
+    removeProp($element, key, oldValue);
+  } else if (!oldValue || newValue !== oldValue) {
     setProp($element, key, newValue);
   }
 };
@@ -38438,10 +38498,8 @@ var setProp = function setProp($element, key, value) {
   if (!isSpecialProp(key) && !isEvent(key)) {
     if (key === 'className') {
       key = 'class';
-    } else if (key === 'id' && value.indexOf('element-id-') === 0) {
-      // Disabled, it's too noisy
-      // key = 'data-nid';
-      return;
+    } else if (key === 'id') {
+      key = ID_KEY;
     }
 
     if (typeof value === 'boolean') {
@@ -38509,6 +38567,7 @@ function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
 
 function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
 
+//import {diff} from 'deep-diff';
 var currentHostTree,
     componentInstanceMap = {},
     updateTimeOut;
@@ -38549,8 +38608,7 @@ var hasOwnerComponent = function hasOwnerComponent(node) {
 
 
 var h = function h(type, props) {
-  props = props || {};
-  props.id = props.key ? '' + props.key : (0, _ElementIDCreator.getNextId)(); // TODO fix this
+  props = props || {}; // TODO fix this
 
   if (props.key === 0) {
     console.warn("Component key can't be '0' : ".concat(type, " ").concat(props));
@@ -38582,24 +38640,40 @@ var createInitialComponentVDOM = function createInitialComponentVDOM(node) {
       node = renderComponentNode(instantiateNewComponent(node));
     }
 
-    node.children = renderChildFunctions(node.children).map(createInitialComponentVDOM);
+    node.children = renderChildFunctions(node).map(createInitialComponentVDOM);
   } else if (typeof node === 'function') {
     console.warn("createComponentVDOM : node is a function", node);
-  }
+  } //else if(typeof node === 'string' || typeof node === 'number') {
+  //const nodeval = node;
+  //node = {type: '__string', props: {}, children: [nodeval], owner: null}
+  // }
+
 
   return node;
-}; // If children are an inline fn, render and insert the resulting children in to the
-// child array at the location of the fn
-
+};
 
 exports.createInitialComponentVDOM = createInitialComponentVDOM;
 
-var renderChildFunctions = function renderChildFunctions(childArry) {
-  var result = [],
-      resultIndex = [];
+var nodeIDorKey = function nodeIDorKey(node) {
+  return node.props.key ? '' + node.props.key : (0, _ElementIDCreator.getNextId)();
+}; // If children are an inline fn, render and insert the resulting children in to the
+// child array at the location of the fn
+// works backwards so the insertion indices are correct
+
+
+var renderChildFunctions = function renderChildFunctions(node) {
+  var childArry = node.children,
+      result = [],
+      resultIndex = [],
+      index = 0;
   childArry.forEach(function (child, i) {
     if (typeof child === 'function') {
       var childResult = child();
+      childResult.forEach(function (c, i) {
+        if (_typeof(c) === 'object' && !c.props.id) {
+          c.props.id = c.props.id ? c.props.id : node.props.id + ".".concat(i, ".").concat(index++);
+        }
+      });
       result.unshift(childResult);
       resultIndex.unshift(i);
     }
@@ -38625,16 +38699,30 @@ var instantiateNewComponent = function instantiateNewComponent(node) {
 
 var renderComponentNode = function renderComponentNode(instance) {
   if (typeof instance.render === 'function') {
-    var node = instance.render();
+    var node = instance.render(); // Assign the instance id on to the node if it didn't have one
+
+    if (!node.props.hasOwnProperty('id') || node.props.id.indexOf('element-id-') === 0) {
+      node.props.id = instance.props.id;
+    } // console.log(`renderComponentNode : ${node.props.id}(${instance.props.id})`);
+
+
+    node.children.forEach(function (child, i) {
+      if (_typeof(child) === 'object' && !child.props.id) {
+        // child.props.id = nodeIDorKey(child)+`.${i}`;
+        child.props.id = child.props.id ? child.props.id : node.props.id + ".".concat(i); // console.log(`${node.props.id} -> ${child.props.id}`);
+      }
+    });
     instance.vdom = node;
     node.owner = instance;
     return node;
-  } else {
-    // Stateless functional component
-    if (isVDOMNode(instance)) {
-      return instance;
+  } else if (isVDOMNode(instance)) {
+    // SFC
+    if (!instance.props.id) {
+      instance.props.id = nodeIDorKey(instance);
     }
 
+    return instance;
+  } else {
     console.warn("renderComponentNode : No render() on instance");
     return null;
   }
@@ -38656,15 +38744,20 @@ var updateComponentVDOM = function updateComponentVDOM(node, id) {
       }
 
       node = renderComponentNode(instance);
+      node.children = renderChildFunctions(node);
     } else if (typeof node.type === 'function') {
       // During the update of a parent node, a new component has been added to the child
       node = createInitialComponentVDOM(node);
     }
 
-    node.children = renderChildFunctions(node.children).map(function (child) {
+    node.children = node.children.map(function (child) {
       return updateComponentVDOM(child, id);
     });
-  }
+  } //else if(typeof node === 'string' || typeof node === 'number') {
+  //const nodeval = node;
+  // node = {type: '__string', props: {}, children: [nodeval], owner: null}
+  //}
+
 
   return node;
 }; //------------------------------------------------------------------------------
@@ -38706,16 +38799,93 @@ var enqueueUpdate = function enqueueUpdate(id) {
 exports.enqueueUpdate = enqueueUpdate;
 
 var performUpdates = function performUpdates() {
+  //console.time('update');
   var updatedVDOMTree = getCurrentHostTree();
   clearTimeout(updateTimeOut);
   updateTimeOut = null;
   (0, _LifecycleQueue.getDidUpdateQueue)().forEach(function (id) {
     updatedVDOMTree = updateComponentVDOM(updatedVDOMTree, id);
   });
-  (0, _NoriDOM.patch)(updatedVDOMTree, getCurrentHostTree());
+  var result = (0, _NoriDOM.patch)(updatedVDOMTree, getCurrentHostTree()); //console.log('DOM Patches: ', result);
+
   setCurrentHostTree(updatedVDOMTree);
   (0, _LifecycleQueue.performDidMountQueue)();
-  (0, _LifecycleQueue.performDidUpdateQueue)(componentInstanceMap);
+  (0, _LifecycleQueue.performDidUpdateQueue)(componentInstanceMap); //console.timeEnd('update');
+};
+/*
+// let pat = [];
+  // vdiff(getCurrentHostTree(), updatedVDOMTree, pat);
+  // pat.forEach(patch => applyPatch(patch));
+-------
+// let vdiff =diff(getCurrentHostTree(), updatedVDOMTree);
+  // patch(vdiff, getCurrentHostTree(), updatedVDOMTree);
+ */
+// https://blog.javascripting.com/2016/10/05/building-your-own-react-clone-in-five-easy-steps/
+
+
+var vdiff = function vdiff(left, right, patches) {
+  var parent = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : null;
+
+  // For text nodes
+  if (!left && !right) {//console.log('was text node i assume', parent.children[0]);
+  } else if (!left) {
+    patches.push({
+      parent: parent,
+      type: 'CREATE',
+      node: right
+    });
+  } else if (!right) {
+    patches.push({
+      type: 'REMOVE',
+      node: left
+    });
+  } else if (left.type !== right.type) {
+    patches.push({
+      type: 'REPLACE',
+      replacingNode: left,
+      node: right
+    });
+  } else {
+    // Text nodes don't have children
+    var leftChildren = left.hasOwnProperty('children') ? left.children.length : 0,
+        rightChildren = right.hasOwnProperty('children') ? right.children.length : 0;
+    var children = leftChildren >= rightChildren ? left.children : right.children; // Handle text nodes
+
+    if (!children) {
+      //console.log(parent,'has no children');
+      if (left && right) {
+        if (left !== right) {
+          patches.push({
+            parent: parent,
+            type: 'REPLACE',
+            replacingNode: left,
+            node: right,
+            isText: true
+          });
+        }
+      } else if (left && !right) {
+        patches.push({
+          parent: parent,
+          type: 'REMOVE',
+          node: left,
+          isText: true
+        });
+      } else if (!left && right) {
+        patches.push({
+          parent: parent,
+          type: 'CREATE',
+          node: right,
+          isText: true
+        });
+      }
+
+      vdiff(null, null, patches, parent);
+    } else {
+      children.forEach(function (child, index) {
+        return vdiff(leftChildren ? left.children[index] : null, rightChildren ? right.children[index] : null, patches, left);
+      });
+    }
+  }
 };
 },{"./util/ArrayUtils":"js/nori/util/ArrayUtils.js","./util/ElementIDCreator":"js/nori/util/ElementIDCreator.js","lodash":"../node_modules/lodash/lodash.js","./LifecycleQueue":"js/nori/LifecycleQueue.js","./NoriDOM":"js/nori/NoriDOM.js"}],"js/nori/util/is.js":[function(require,module,exports) {
 "use strict";
@@ -39448,13 +39618,13 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
 
 function _possibleConstructorReturn(self, call) { if (call && (_typeof(call) === "object" || typeof call === "function")) { return call; } return _assertThisInitialized(self); }
 
-function _assertThisInitialized(self) { if (self === void 0) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return self; }
-
 function _getPrototypeOf(o) { _getPrototypeOf = Object.setPrototypeOf ? Object.getPrototypeOf : function _getPrototypeOf(o) { return o.__proto__ || Object.getPrototypeOf(o); }; return _getPrototypeOf(o); }
 
 function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function"); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, writable: true, configurable: true } }); if (superClass) _setPrototypeOf(subClass, superClass); }
 
 function _setPrototypeOf(o, p) { _setPrototypeOf = Object.setPrototypeOf || function _setPrototypeOf(o, p) { o.__proto__ = p; return o; }; return _setPrototypeOf(o, p); }
+
+function _assertThisInitialized(self) { if (self === void 0) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return self; }
 
 function _templateObject() {
   var data = _taggedTemplateLiteral(["color: blue;"]);
@@ -39484,13 +39654,17 @@ function (_NoriComponent) {
     _this = _possibleConstructorReturn(this, _getPrototypeOf(Greeter).call(this, 'h1', props, []));
 
     _this.$onClick = function (evt) {
-      // console.log('Greet click!',evt, this);
+      console.log('Greet click!', evt, _assertThisInitialized(_assertThisInitialized(_this)));
       _this.state = {
         name: L.firstLastName()
       };
     };
 
     _this.$onRender = function (evt) {//console.log('Greet rendered!', evt);
+    };
+
+    _this.componentDidMount = function () {
+      console.log('Greet did mount');
     };
 
     _this.componentWillUnmount = function () {//console.log('Greet will remove');
@@ -39502,12 +39676,10 @@ function (_NoriComponent) {
     _this.componentDidUpdate = function () {// console.log('Greet did update');
     };
 
-    _this.onOver = function () {
-      console.log('Greeter over');
+    _this.onOver = function () {//console.log('Greeter over');
     };
 
-    _this.onOut = function () {
-      console.log('Greeter out');
+    _this.onOut = function () {//console.log('Greeter out');
     };
 
     _this.state = {
@@ -39640,6 +39812,7 @@ function (_NoriComponent) {
     // <ul>
     // {range(this.state.counter).map(i => <li>Item {i+1}</li>)}
     // </ul>
+    //return <Greeter key={'listitem-'+i}/>;
     value: function render() {
       var _this2 = this;
 
@@ -39653,14 +39826,14 @@ function (_NoriComponent) {
         onClick: this.$onRemoveClick
       }, "Remove"), (0, _Nori.h)("hr", null), function () {
         return (0, _ArrayUtils.range)(_this2.state.counter).map(function (i) {
-          return (0, _Nori.h)(_Ticker.default, {
+          return (0, _Nori.h)(_Greeter.default, {
             key: 'listitem-' + i
           });
         });
       }, (0, _Nori.h)("hr", null), function () {
         return (0, _ArrayUtils.range)(_this2.state.counter).map(function (i) {
-          return (0, _Nori.h)(_Ticker.default, {
-            key: 'listitem-' + i
+          return (0, _Nori.h)(_Greeter.default, {
+            key: 'listitem-2' + i
           });
         });
       });
@@ -39750,8 +39923,8 @@ var testBox = (0, _Nori.h)(_Box.default, {
   mode: _Lorem.default.TITLE
 }), (0, _Nori.h)(_Box.default, {
   className: whiteBox
-}, (0, _Nori.h)(Sfc, null), (0, _Nori.h)(_Ticker.default, null), (0, _Nori.h)(_Ticker.default, null), (0, _Nori.h)(_Greeter.default, null), (0, _Nori.h)(_Lister.default, null))));
-(0, _NoriDOM.render)(testBox, document.querySelector('#js-application'));
+}, (0, _Nori.h)(Sfc, null), (0, _Nori.h)(_Ticker.default, null), (0, _Nori.h)(_Greeter.default, null), (0, _Nori.h)(_Lister.default, null))));
+(0, _NoriDOM.render)((0, _Nori.h)(_Lister.default, null), document.querySelector('#js-application'));
 },{"./theme/Global":"js/theme/Global.js","./theme/Theme":"js/theme/Theme.js","emotion":"../node_modules/emotion/dist/index.esm.js","./nori/Nori":"js/nori/Nori.js","./nori/NoriDOM":"js/nori/NoriDOM.js","./components/Box":"js/components/Box.js","./components/Lorem":"js/components/Lorem.js","./components/Ticker":"js/components/Ticker.js","./components/Greeter":"js/components/Greeter.js","./components/Lister":"js/components/Lister.js","../img/pattern/shattered.png":"img/pattern/shattered.png"}],"../node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
 var global = arguments[3];
 var OVERLAY_ID = '__parcel__error__overlay__';

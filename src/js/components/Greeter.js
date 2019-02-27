@@ -20,12 +20,16 @@ export default class Greeter extends NoriComponent {
   }
 
   $onClick = evt => {
-    // console.log('Greet click!',evt, this);
+    console.log('Greet click!',evt, this);
     this.state = {name:L.firstLastName()};
   };
 
   $onRender = evt => {
     //console.log('Greet rendered!', evt);
+  };
+
+  componentDidMount   = () => {
+    console.log('Greet did mount');
   };
 
   componentWillUnmount = () => {
@@ -41,11 +45,11 @@ export default class Greeter extends NoriComponent {
   };
 
   onOver = () => {
-    console.log('Greeter over');
+    //console.log('Greeter over');
   };
 
   onOut = () => {
-    console.log('Greeter out');
+    //console.log('Greeter out');
   };
 
   render() {
