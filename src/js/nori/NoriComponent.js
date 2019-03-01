@@ -8,12 +8,14 @@ export default class NoriComponent {
   constructor(type, props, children) {
     this.type            = type;
     this.props           = props || {};
-    this.props.id        = props.key || getNextId();
+    this.props.id        = props.key ? props.key : getNextId();
     this.props.children  = Is.array(children) ? children : [children];
     this.tweens          = props.hasOwnProperty('tweens') ? props.tweens : {};
     this.internalState   = props.hasOwnProperty('state') ? props.state : {};
+    this.isDirty         = true;
     this.internalCurrent = null;
-    this.internalVDOM = null;
+    this.internalVDOM    = null;
+    this.memoRenderResult = null;
     this.$$typeof        = Symbol.for('nori.component');
   }
 
@@ -23,12 +25,12 @@ export default class NoriComponent {
       return;
     }
 
-
-    if(this.shouldComponentUpdate({}, nextState)) {
+    if (this.shouldComponentUpdate({}, nextState)) {
       this.internalState = Object.assign({}, this.internalState, nextState);
-      if(typeof this.componentWillUpdate === 'function')  {
+      if (typeof this.componentWillUpdate === 'function') {
         this.componentWillUpdate();
       }
+      this.isDirty = true;
       enqueueUpdate(this.props.id);
     }
   }
@@ -65,9 +67,24 @@ export default class NoriComponent {
     enqueueUpdate(this.props.id);
   }
 
+  // Memoize last render result and return if not dirty?
+  internalRender() {
+
+    if (typeof this.render === 'function') {
+      //console.log(`${this.props.id} internalRender ${this.isDirty}`);
+      if(this.isDirty) {
+        this.memoRenderResult =  this.render();
+        this.isDirty = false;
+      }
+      return this.memoRenderResult;
+    } else {
+      console.error(`Component ${this.props.id} has no render()!`)
+    }
+  }
+
   remove() {
     this.internalCurrent = null;
-    this.internalVDOM = null;
+    this.internalVDOM    = null;
   }
 
 }

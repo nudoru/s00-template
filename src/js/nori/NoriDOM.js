@@ -1,8 +1,7 @@
 import {enqueueDidMount, performDidMountQueue} from './LifecycleQueue';
 import {
-  createInitialComponentVDOM,
-  removeComponentInstance,
-  setCurrentHostTree
+  renderVDOM,
+  removeComponentInstance
 } from "./Nori";
 import {removeAllElements} from "./browser/DOMToolbox";
 
@@ -32,9 +31,8 @@ export const render = (component, hostNode) => {
   console.time('render');
   removeAllElements(hostNode);
 
-  let vdom = createInitialComponentVDOM(component);
+  let vdom = renderVDOM(component);
 
-  setCurrentHostTree(vdom);
   $documentHostNode = hostNode;
 
   patch(vdom, null);
@@ -205,7 +203,7 @@ const mapActions = props => Object.keys(props).reduce((acc, key) => {
 
 const handleEventTrigger = (evt, $element) => e => evt.externalHandler(createEventObject(e, $element));
 
-// Nori calls into this
+// Nori calls this
 export const removeEvents = id => {
   if (eventMap.hasOwnProperty(id)) {
     eventMap[id].map(fn => {

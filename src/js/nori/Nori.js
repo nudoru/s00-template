@@ -21,7 +21,7 @@ import {
   performDidUpdateQueue
 } from './LifecycleQueue';
 import {patch, removeEvents, applyPatch} from './NoriDOM';
-//import {diff} from 'deep-diff';
+import {diff} from 'deep-diff';
 
 let currentHostTree,
     componentInstanceMap = {},
@@ -34,13 +34,25 @@ const isVDOMNode                = node => typeof node === 'object' && node.hasOw
 const cloneNode                 = node => cloneDeep(node); // Warning: Potentially expensive
 const hasOwnerComponent         = node => node.hasOwnProperty('owner') && node.owner !== null;
 
+const STAGE_UNITIALIZED = 'uninitialized';
+const STAGE_RENDERING = 'rendering';
+const STAGE_UPDATING = 'updating';
+const STAGE_STEADY = 'steady';
+
+let currentStage = STAGE_UNITIALIZED;
+
+export const isInitialized  = _ => currentStage !== STAGE_UNITIALIZED;
+export const isRendering = _ => currentStage === STAGE_RENDERING;
+export const isUpdating = _ => currentStage === STAGE_UPDATING;
+export const isSteady = _ => currentStage === STAGE_STEADY;
+
 //------------------------------------------------------------------------------
 //PUBLICPUBLICPUBLICPUBLICPUBLICPUBLICPUBLICPUBLICPUBLICPUBLICPUBLICPUBLICPUBLIC
 //------------------------------------------------------------------------------
 
 // Create VDOM from JSX. Used by the Babel/JSX transpiler
 export const h = (type, props, ...args) => {
-  props    = props || {};
+  props = props || {};
   // TODO fix this
   if (props.key === 0) {
     console.warn(`Component key can't be '0' : ${type} ${props}`)
@@ -50,44 +62,99 @@ export const h = (type, props, ...args) => {
   };
 };
 
+// Called from NoriDOM to render the first vdom
+export const renderVDOM = node => {
+  currentStage = STAGE_RENDERING;
+  const vdom = renderComponentVDOM(node);
+  setCurrentHostTree(vdom);
+  currentStage = STAGE_STEADY;
+  return vdom;
+};
+
+//------------------------------------------------------------------------------
+//STATEUPDATESTATEUPDATESTATEUPDATESTATEUPDATESTATEUPDATESTATEUPDATESTATEUPDATES
+//------------------------------------------------------------------------------
+
+// Queue updates from components and batch update every so often
+// Called from NoriComponent set state
+export const enqueueUpdate = (id) => {
+  enqueueDidUpdate(id);
+  if (!updateTimeOut) {
+    updateTimeOut = setTimeout(performUpdates, 10);
+  }
+};
+
+const performUpdates = () => {
+  if(isRendering()) {
+    console.log(`>>> Update called while rendering`);
+    return;
+  }
+
+  // console.time('update');
+  clearTimeout(updateTimeOut);
+  updateTimeOut = null;
+
+  currentStage = STAGE_RENDERING;
+  let updatedVDOMTree = getCurrentHostTree();
+  getDidUpdateQueue().forEach(id => {
+    updatedVDOMTree = updateComponentVDOM(updatedVDOMTree, id);
+  });
+  patch(updatedVDOMTree, getCurrentHostTree());
+
+  setCurrentHostTree(updatedVDOMTree);
+  performDidMountQueue();
+
+  currentStage = STAGE_UPDATING;
+  performDidUpdateQueue(componentInstanceMap);
+  // console.timeEnd('update');
+  currentStage = STAGE_STEADY;
+};
+
 //------------------------------------------------------------------------------
 //CREATIONCREATIONCREATIONCREATIONCREATIONCREATIONCREATIONCREATIONCREATIONCREATI
 //------------------------------------------------------------------------------
 
-// Renders out components to get a vdom tree of just html
-export const createInitialComponentVDOM = node => {
+// Renders out components to get a vdom tree for the first render of a component or tree
+const renderComponentVDOM = node => {
   node = cloneNode(node);
-  if (typeof node === 'object') {
-    if (typeof node.type === 'function') {
-      node = renderComponentNode(instantiateNewComponent(node));
-    }
-    node.children = renderChildFunctions(node).map(createInitialComponentVDOM);
-  } else if (typeof node === 'function') {
-    console.warn(`createComponentVDOM : node is a function`, node);
-  } //else if(typeof node === 'string' || typeof node === 'number') {
-    //const nodeval = node;
-    //node = {type: '__string', props: {}, children: [nodeval], owner: null}
- // }
+  if (typeof node === 'object' && typeof node.type === 'function') {
+    node = renderComponentNode(instantiateNewComponent(node));
+    node.children = renderChildFunctions(node).map(child => renderComponentVDOM(child));
+  }
   return node;
 };
 
-const nodeIDorKey = node => node.props.key ? '' + node.props.key : getNextId();
+// Updates the vdom rerendering only the nodes that match an id
+const updateComponentVDOM = (node, id) => {
+  node = cloneNode(node);
+  if (typeof node === 'object') {
+    if (hasOwnerComponent(node) && node.owner.props.id === id) { //
+      //console.log(`Updating ${node.owner.props.id}`, node);
+      node = renderComponentNode(instantiateNewComponent(node)); // node
+    } else if (typeof node.type === 'function') {
+      console.log('New component', node);
+      node = renderComponentVDOM(node); // new component added
+    }
+    node.children = renderChildFunctions(node).map(child => updateComponentVDOM(child, id));
+  }
+  return node;
+};
 
 // If children are an inline fn, render and insert the resulting children in to the
 // child array at the location of the fn
 // works backwards so the insertion indices are correct
 const renderChildFunctions = node => {
-  let childArry = node.children,
+  let children    = node.children,
       result      = [],
       resultIndex = [],
-      index = 0;
+      index       = 0;
 
-  childArry.forEach((child, i) => {
+  children.forEach((child, i) => {
     if (typeof child === 'function') {
-      let childResult = child.call(node);
+      let childResult = child(node);
       childResult.forEach((c, i) => {
-        if(typeof c === 'object' && !c.props.id) {
-          c.props.id = c.props.id ? c.props.id : node.props.id+`.${i}.${index++}`;
+        if (typeof c === 'object' && !c.props.id) {
+          c.props.id = c.props.id ? c.props.id : node.props.id + `.${i}.${index++}`;
         }
       });
       result.unshift(childResult);
@@ -95,10 +162,12 @@ const renderChildFunctions = node => {
     }
   });
   resultIndex.forEach((idx, i) => {
-    childArry.splice(idx, 1, ...result[i]);
+    children.splice(idx, 1, ...result[i]);
   });
-  return childArry;
+  return children;
 };
+
+const getNodeKeyOrID = node => node.props.key ? '' + node.props.key : node.props.id;
 
 const instantiateNewComponent = node => {
   let instance;
@@ -111,16 +180,37 @@ const instantiateNewComponent = node => {
   return instance;
 };
 
+// const instantiateNewComponent = node => {
+//   const ID = getNodeKeyOrID(node);
+//   if (componentInstanceMap.hasOwnProperty(ID)) {
+//     console.log(`instantiateNewComponent : REUSE ${node.props.id} ${getNodeKeyOrID(node)}`);
+//     return componentInstanceMap[ID];
+//   } else if(typeof node.type === 'function') {
+//     console.log(`instantiateNewComponent : CREATE ${ID}`);
+//     let instance                            = new node.type(node.props, node.children);
+//     componentInstanceMap[ID] = instance;
+//     return instance;
+//   } else if (hasOwnerComponent(node)) {
+//     console.log('node has an owner',ID, node);
+//     console.log('>>>> ',componentInstanceMap.hasOwnProperty(ID));
+//     return node.owner;
+//   }
+//   console.log(`instantiateNewComponent : NODE? `,node);
+//
+//   return node;
+// };
+
+
 const renderComponentNode = instance => {
-  if (typeof instance.render === 'function') {
-    let node      = instance.render();
+  if (typeof instance.internalRender === 'function') {
+    let node = instance.internalRender();
     // Assign the instance id on to the node if it didn't have one
-    if(!node.props.hasOwnProperty('id') || node.props.id.indexOf('element-id-') === 0) {
+    if (!node.props.hasOwnProperty('id') || node.props.id.indexOf('element-id-') === 0) {
       node.props.id = instance.props.id;
     }
     node.children.forEach((child, i) => {
-      if(typeof child === 'object' && !child.props.id) {
-        child.props.id = child.props.id ? child.props.id : node.props.id+`.${i}`;
+      if (typeof child === 'object' && !child.props.id) {
+        child.props.id = child.props.id ? child.props.id : node.props.id + `.${i}`;
       }
     });
     instance.vdom = node;
@@ -128,37 +218,15 @@ const renderComponentNode = instance => {
     return node;
   } else if (isVDOMNode(instance)) {
     // SFC
-    if(!instance.props.id) {
-      instance.props.id = nodeIDorKey(instance)
+    if (!instance.props.id) {
+      // instance.props.id = nodeIDorKey(instance)
+      instance.props.id = instance.props.key ? '' + instance.props.key : getNextId();
     }
     return instance;
   } else {
     console.warn(`renderComponentNode : No render() on instance`);
     return null;
   }
-};
-
-// Rerenders the components from id down to a vdom tree for diffing w/ the original
-const updateComponentVDOM = (node, id) => {
-  node = cloneNode(node);
-  if (typeof node === 'object') {
-    if (hasOwnerComponent(node) && node.owner.props.id === id) {
-      let instance;
-      if (componentInstanceMap.hasOwnProperty(id)) {
-        instance = componentInstanceMap[id]
-      } else {
-        console.warn(`updateComponentVDOM : ${id} hasn't been created`);
-        return node;
-      }
-      node = renderComponentNode(instance);
-      node.children = renderChildFunctions(node);
-    } else if (typeof node.type === 'function') {
-      // During the update of a parent node, a new component has been added to the child
-      node = createInitialComponentVDOM(node);
-    }
-    node.children = node.children.map(child => updateComponentVDOM(child, id));
-  }
-  return node;
 };
 
 //------------------------------------------------------------------------------
@@ -178,36 +246,4 @@ export const removeComponentInstance = (node) => {
       delete componentInstanceMap[id];
     }
   }
-};
-
-//------------------------------------------------------------------------------
-//STATEUPDATESTATEUPDATESTATEUPDATESTATEUPDATESTATEUPDATESTATEUPDATESTATEUPDATES
-//------------------------------------------------------------------------------app
-
-// Queue updates from components and batch update every so often
-export const enqueueUpdate = (id) => {
-  enqueueDidUpdate(id);
-  if (!updateTimeOut) {
-    updateTimeOut = setTimeout(performUpdates, 10);
-  }
-};
-
-const performUpdates = () => {
-  //console.time('update');
-  clearTimeout(updateTimeOut);
-  updateTimeOut = null;
-
-  let updatedVDOMTree = getCurrentHostTree();
-
-  getDidUpdateQueue().forEach(id => {
-    updatedVDOMTree = updateComponentVDOM(updatedVDOMTree, id);
-  });
-
-  let result = patch(updatedVDOMTree, getCurrentHostTree());
-  // console.log('DOM Patches: ', result);
-
-  setCurrentHostTree(updatedVDOMTree);
-  performDidMountQueue();
-  performDidUpdateQueue(componentInstanceMap);
-  //console.timeEnd('update');
 };

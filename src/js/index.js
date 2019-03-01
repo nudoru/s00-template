@@ -62,4 +62,4 @@ let testBox = <Box key='main' className={appContainer}>
   </Box>
 </Box>;
 
-render(<Lister/>, document.querySelector('#js-application'));
+render(testBox, document.querySelector('#js-application'));
