@@ -69,12 +69,21 @@ export default class NoriComponent {
 
   // Memoize last render result and return if not dirty?
   internalRender() {
-
     if (typeof this.render === 'function') {
-      //console.log(`${this.props.id} internalRender ${this.isDirty}`);
-      if(this.isDirty) {
-        this.memoRenderResult =  this.render();
+      if(this.isDirty || !this.memoRenderResult) {
+        let result =  this.render();
+        if(!result.props.id) {
+          result.props.id = this.props.id;
+        }
+
+        result.children.forEach((child, i) => {
+          if (typeof child === 'object' && !child.props.id) {
+            child.props.id = this.props.id + `.${i}`;
+          }
+        });
+
         this.isDirty = false;
+        this.memoRenderResult = result;
       }
       return this.memoRenderResult;
     } else {

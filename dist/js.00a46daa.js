@@ -38533,536 +38533,7 @@ var removeBooleanProp = function removeBooleanProp($element, key) {
   $element.removeAttribute(key);
   $element[key] = false;
 };
-},{"./LifecycleQueue":"js/nori/LifecycleQueue.js","./Nori":"js/nori/Nori.js","./browser/DOMToolbox":"js/nori/browser/DOMToolbox.js"}],"../node_modules/deep-diff/index.js":[function(require,module,exports) {
-var define;
-;(function(root, factory) { // eslint-disable-line no-extra-semi
-  var deepDiff = factory(root);
-  // eslint-disable-next-line no-undef
-  if (typeof define === 'function' && define.amd) {
-      // AMD
-      define('DeepDiff', function() { // eslint-disable-line no-undef
-          return deepDiff;
-      });
-  } else if (typeof exports === 'object' || typeof navigator === 'object' && navigator.product.match(/ReactNative/i)) {
-      // Node.js or ReactNative
-      module.exports = deepDiff;
-  } else {
-      // Browser globals
-      var _deepdiff = root.DeepDiff;
-      deepDiff.noConflict = function() {
-          if (root.DeepDiff === deepDiff) {
-              root.DeepDiff = _deepdiff;
-          }
-          return deepDiff;
-      };
-      root.DeepDiff = deepDiff;
-  }
-}(this, function(root) {
-  var validKinds = ['N', 'E', 'A', 'D'];
-
-  // nodejs compatible on server side and in the browser.
-  function inherits(ctor, superCtor) {
-    ctor.super_ = superCtor;
-    ctor.prototype = Object.create(superCtor.prototype, {
-      constructor: {
-        value: ctor,
-        enumerable: false,
-        writable: true,
-        configurable: true
-      }
-    });
-  }
-
-  function Diff(kind, path) {
-    Object.defineProperty(this, 'kind', {
-      value: kind,
-      enumerable: true
-    });
-    if (path && path.length) {
-      Object.defineProperty(this, 'path', {
-        value: path,
-        enumerable: true
-      });
-    }
-  }
-
-  function DiffEdit(path, origin, value) {
-    DiffEdit.super_.call(this, 'E', path);
-    Object.defineProperty(this, 'lhs', {
-      value: origin,
-      enumerable: true
-    });
-    Object.defineProperty(this, 'rhs', {
-      value: value,
-      enumerable: true
-    });
-  }
-  inherits(DiffEdit, Diff);
-
-  function DiffNew(path, value) {
-    DiffNew.super_.call(this, 'N', path);
-    Object.defineProperty(this, 'rhs', {
-      value: value,
-      enumerable: true
-    });
-  }
-  inherits(DiffNew, Diff);
-
-  function DiffDeleted(path, value) {
-    DiffDeleted.super_.call(this, 'D', path);
-    Object.defineProperty(this, 'lhs', {
-      value: value,
-      enumerable: true
-    });
-  }
-  inherits(DiffDeleted, Diff);
-
-  function DiffArray(path, index, item) {
-    DiffArray.super_.call(this, 'A', path);
-    Object.defineProperty(this, 'index', {
-      value: index,
-      enumerable: true
-    });
-    Object.defineProperty(this, 'item', {
-      value: item,
-      enumerable: true
-    });
-  }
-  inherits(DiffArray, Diff);
-
-  function arrayRemove(arr, from, to) {
-    var rest = arr.slice((to || from) + 1 || arr.length);
-    arr.length = from < 0 ? arr.length + from : from;
-    arr.push.apply(arr, rest);
-    return arr;
-  }
-
-  function realTypeOf(subject) {
-    var type = typeof subject;
-    if (type !== 'object') {
-      return type;
-    }
-
-    if (subject === Math) {
-      return 'math';
-    } else if (subject === null) {
-      return 'null';
-    } else if (Array.isArray(subject)) {
-      return 'array';
-    } else if (Object.prototype.toString.call(subject) === '[object Date]') {
-      return 'date';
-    } else if (typeof subject.toString === 'function' && /^\/.*\//.test(subject.toString())) {
-      return 'regexp';
-    }
-    return 'object';
-  }
-
-  // http://werxltd.com/wp/2010/05/13/javascript-implementation-of-javas-string-hashcode-method/
-  function hashThisString(string) {
-    var hash = 0;
-    if (string.length === 0) { return hash; }
-    for (var i = 0; i < string.length; i++) {
-      var char = string.charCodeAt(i);
-      hash = ((hash << 5) - hash) + char;
-      hash = hash & hash; // Convert to 32bit integer
-    }
-    return hash;
-  }
-
-  // Gets a hash of the given object in an array order-independent fashion
-  // also object key order independent (easier since they can be alphabetized)
-  function getOrderIndependentHash(object) {
-    var accum = 0;
-    var type = realTypeOf(object);
-
-    if (type === 'array') {
-      object.forEach(function (item) {
-        // Addition is commutative so this is order indep
-        accum += getOrderIndependentHash(item);
-      });
-
-      var arrayString = '[type: array, hash: ' + accum + ']';
-      return accum + hashThisString(arrayString);
-    }
-
-    if (type === 'object') {
-      for (var key in object) {
-        if (object.hasOwnProperty(key)) {
-          var keyValueString = '[ type: object, key: ' + key + ', value hash: ' + getOrderIndependentHash(object[key]) + ']';
-          accum += hashThisString(keyValueString);
-        }
-      }
-
-      return accum;
-    }
-
-    // Non object, non array...should be good?
-    var stringToHash = '[ type: ' + type + ' ; value: ' + object + ']';
-    return accum + hashThisString(stringToHash);
-  }
-
-  function deepDiff(lhs, rhs, changes, prefilter, path, key, stack, orderIndependent) {
-    changes = changes || [];
-    path = path || [];
-    stack = stack || [];
-    var currentPath = path.slice(0);
-    if (typeof key !== 'undefined' && key !== null) {
-      if (prefilter) {
-        if (typeof (prefilter) === 'function' && prefilter(currentPath, key)) {
-          return;
-        } else if (typeof (prefilter) === 'object') {
-          if (prefilter.prefilter && prefilter.prefilter(currentPath, key)) {
-            return;
-          }
-          if (prefilter.normalize) {
-            var alt = prefilter.normalize(currentPath, key, lhs, rhs);
-            if (alt) {
-              lhs = alt[0];
-              rhs = alt[1];
-            }
-          }
-        }
-      }
-      currentPath.push(key);
-    }
-
-    // Use string comparison for regexes
-    if (realTypeOf(lhs) === 'regexp' && realTypeOf(rhs) === 'regexp') {
-      lhs = lhs.toString();
-      rhs = rhs.toString();
-    }
-
-    var ltype = typeof lhs;
-    var rtype = typeof rhs;
-    var i, j, k, other;
-
-    var ldefined = ltype !== 'undefined' ||
-      (stack && (stack.length > 0) && stack[stack.length - 1].lhs &&
-        Object.getOwnPropertyDescriptor(stack[stack.length - 1].lhs, key));
-    var rdefined = rtype !== 'undefined' ||
-      (stack && (stack.length > 0) && stack[stack.length - 1].rhs &&
-        Object.getOwnPropertyDescriptor(stack[stack.length - 1].rhs, key));
-
-    if (!ldefined && rdefined) {
-      changes.push(new DiffNew(currentPath, rhs));
-    } else if (!rdefined && ldefined) {
-      changes.push(new DiffDeleted(currentPath, lhs));
-    } else if (realTypeOf(lhs) !== realTypeOf(rhs)) {
-      changes.push(new DiffEdit(currentPath, lhs, rhs));
-    } else if (realTypeOf(lhs) === 'date' && (lhs - rhs) !== 0) {
-      changes.push(new DiffEdit(currentPath, lhs, rhs));
-    } else if (ltype === 'object' && lhs !== null && rhs !== null) {
-      for (i = stack.length - 1; i > -1; --i) {
-        if (stack[i].lhs === lhs) {
-          other = true;
-          break;
-        }
-      }
-      if (!other) {
-        stack.push({ lhs: lhs, rhs: rhs });
-        if (Array.isArray(lhs)) {
-          // If order doesn't matter, we need to sort our arrays
-          if (orderIndependent) {
-            lhs.sort(function (a, b) {
-              return getOrderIndependentHash(a) - getOrderIndependentHash(b);
-            });
-
-            rhs.sort(function (a, b) {
-              return getOrderIndependentHash(a) - getOrderIndependentHash(b);
-            });
-          }
-          i = rhs.length - 1;
-          j = lhs.length - 1;
-          while (i > j) {
-            changes.push(new DiffArray(currentPath, i, new DiffNew(undefined, rhs[i--])));
-          }
-          while (j > i) {
-            changes.push(new DiffArray(currentPath, j, new DiffDeleted(undefined, lhs[j--])));
-          }
-          for (; i >= 0; --i) {
-            deepDiff(lhs[i], rhs[i], changes, prefilter, currentPath, i, stack, orderIndependent);
-          }
-        } else {
-          var akeys = Object.keys(lhs);
-          var pkeys = Object.keys(rhs);
-          for (i = 0; i < akeys.length; ++i) {
-            k = akeys[i];
-            other = pkeys.indexOf(k);
-            if (other >= 0) {
-              deepDiff(lhs[k], rhs[k], changes, prefilter, currentPath, k, stack, orderIndependent);
-              pkeys[other] = null;
-            } else {
-              deepDiff(lhs[k], undefined, changes, prefilter, currentPath, k, stack, orderIndependent);
-            }
-          }
-          for (i = 0; i < pkeys.length; ++i) {
-            k = pkeys[i];
-            if (k) {
-              deepDiff(undefined, rhs[k], changes, prefilter, currentPath, k, stack, orderIndependent);
-            }
-          }
-        }
-        stack.length = stack.length - 1;
-      } else if (lhs !== rhs) {
-        // lhs is contains a cycle at this element and it differs from rhs
-        changes.push(new DiffEdit(currentPath, lhs, rhs));
-      }
-    } else if (lhs !== rhs) {
-      if (!(ltype === 'number' && isNaN(lhs) && isNaN(rhs))) {
-        changes.push(new DiffEdit(currentPath, lhs, rhs));
-      }
-    }
-  }
-
-  function observableDiff(lhs, rhs, observer, prefilter, orderIndependent) {
-    var changes = [];
-    deepDiff(lhs, rhs, changes, prefilter, null, null, null, orderIndependent);
-    if (observer) {
-      for (var i = 0; i < changes.length; ++i) {
-        observer(changes[i]);
-      }
-    }
-    return changes;
-  }
-
-  function orderIndependentDeepDiff(lhs, rhs, changes, prefilter, path, key, stack) {
-    return deepDiff(lhs, rhs, changes, prefilter, path, key, stack, true);
-  }
-
-  function accumulateDiff(lhs, rhs, prefilter, accum) {
-    var observer = (accum) ?
-      function (difference) {
-        if (difference) {
-          accum.push(difference);
-        }
-      } : undefined;
-    var changes = observableDiff(lhs, rhs, observer, prefilter);
-    return (accum) ? accum : (changes.length) ? changes : undefined;
-  }
-
-  function accumulateOrderIndependentDiff(lhs, rhs, prefilter, accum) {
-    var observer = (accum) ?
-      function (difference) {
-        if (difference) {
-          accum.push(difference);
-        }
-      } : undefined;
-    var changes = observableDiff(lhs, rhs, observer, prefilter, true);
-    return (accum) ? accum : (changes.length) ? changes : undefined;
-  }
-
-  function applyArrayChange(arr, index, change) {
-    if (change.path && change.path.length) {
-      var it = arr[index],
-        i, u = change.path.length - 1;
-      for (i = 0; i < u; i++) {
-        it = it[change.path[i]];
-      }
-      switch (change.kind) {
-        case 'A':
-          applyArrayChange(it[change.path[i]], change.index, change.item);
-          break;
-        case 'D':
-          delete it[change.path[i]];
-          break;
-        case 'E':
-        case 'N':
-          it[change.path[i]] = change.rhs;
-          break;
-      }
-    } else {
-      switch (change.kind) {
-        case 'A':
-          applyArrayChange(arr[index], change.index, change.item);
-          break;
-        case 'D':
-          arr = arrayRemove(arr, index);
-          break;
-        case 'E':
-        case 'N':
-          arr[index] = change.rhs;
-          break;
-      }
-    }
-    return arr;
-  }
-
-  function applyChange(target, source, change) {
-    if (typeof change === 'undefined' && source && ~validKinds.indexOf(source.kind)) {
-      change = source;
-    }
-    if (target && change && change.kind) {
-      var it = target,
-        i = -1,
-        last = change.path ? change.path.length - 1 : 0;
-      while (++i < last) {
-        if (typeof it[change.path[i]] === 'undefined') {
-          it[change.path[i]] = (typeof change.path[i + 1] !== 'undefined' && typeof change.path[i + 1] === 'number') ? [] : {};
-        }
-        it = it[change.path[i]];
-      }
-      switch (change.kind) {
-        case 'A':
-          if (change.path && typeof it[change.path[i]] === 'undefined') {
-            it[change.path[i]] = [];
-          }
-          applyArrayChange(change.path ? it[change.path[i]] : it, change.index, change.item);
-          break;
-        case 'D':
-          delete it[change.path[i]];
-          break;
-        case 'E':
-        case 'N':
-          it[change.path[i]] = change.rhs;
-          break;
-      }
-    }
-  }
-
-  function revertArrayChange(arr, index, change) {
-    if (change.path && change.path.length) {
-      // the structure of the object at the index has changed...
-      var it = arr[index],
-        i, u = change.path.length - 1;
-      for (i = 0; i < u; i++) {
-        it = it[change.path[i]];
-      }
-      switch (change.kind) {
-        case 'A':
-          revertArrayChange(it[change.path[i]], change.index, change.item);
-          break;
-        case 'D':
-          it[change.path[i]] = change.lhs;
-          break;
-        case 'E':
-          it[change.path[i]] = change.lhs;
-          break;
-        case 'N':
-          delete it[change.path[i]];
-          break;
-      }
-    } else {
-      // the array item is different...
-      switch (change.kind) {
-        case 'A':
-          revertArrayChange(arr[index], change.index, change.item);
-          break;
-        case 'D':
-          arr[index] = change.lhs;
-          break;
-        case 'E':
-          arr[index] = change.lhs;
-          break;
-        case 'N':
-          arr = arrayRemove(arr, index);
-          break;
-      }
-    }
-    return arr;
-  }
-
-  function revertChange(target, source, change) {
-    if (target && source && change && change.kind) {
-      var it = target,
-        i, u;
-      u = change.path.length - 1;
-      for (i = 0; i < u; i++) {
-        if (typeof it[change.path[i]] === 'undefined') {
-          it[change.path[i]] = {};
-        }
-        it = it[change.path[i]];
-      }
-      switch (change.kind) {
-        case 'A':
-          // Array was modified...
-          // it will be an array...
-          revertArrayChange(it[change.path[i]], change.index, change.item);
-          break;
-        case 'D':
-          // Item was deleted...
-          it[change.path[i]] = change.lhs;
-          break;
-        case 'E':
-          // Item was edited...
-          it[change.path[i]] = change.lhs;
-          break;
-        case 'N':
-          // Item is new...
-          delete it[change.path[i]];
-          break;
-      }
-    }
-  }
-
-  function applyDiff(target, source, filter) {
-    if (target && source) {
-      var onChange = function (change) {
-        if (!filter || filter(target, source, change)) {
-          applyChange(target, source, change);
-        }
-      };
-      observableDiff(target, source, onChange);
-    }
-  }
-
-  Object.defineProperties(accumulateDiff, {
-
-    diff: {
-      value: accumulateDiff,
-      enumerable: true
-    },
-    orderIndependentDiff: {
-      value: accumulateOrderIndependentDiff,
-      enumerable: true
-    },
-    observableDiff: {
-      value: observableDiff,
-      enumerable: true
-    },
-    orderIndependentObservableDiff: {
-      value: orderIndependentDeepDiff,
-      enumerable: true
-    },
-    orderIndepHash: {
-      value: getOrderIndependentHash,
-      enumerable: true
-    },
-    applyDiff: {
-      value: applyDiff,
-      enumerable: true
-    },
-    applyChange: {
-      value: applyChange,
-      enumerable: true
-    },
-    revertChange: {
-      value: revertChange,
-      enumerable: true
-    },
-    isConflict: {
-      value: function () {
-        return typeof $conflict !== 'undefined';
-      },
-      enumerable: true
-    }
-  });
-
-  // hackish...
-  accumulateDiff.DeepDiff = accumulateDiff;
-  // ...but works with:
-  // import DeepDiff from 'deep-diff'
-  // import { DeepDiff } from 'deep-diff'
-  // const DeepDiff = require('deep-diff');
-  // const { DeepDiff } = require('deep-diff');
-
-  if (root) {
-    root.DeepDiff = accumulateDiff;
-  }
-
-  return accumulateDiff;
-}));
-
-},{}],"js/nori/Nori.js":[function(require,module,exports) {
+},{"./LifecycleQueue":"js/nori/LifecycleQueue.js","./Nori":"js/nori/Nori.js","./browser/DOMToolbox":"js/nori/browser/DOMToolbox.js"}],"js/nori/Nori.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -39080,8 +38551,6 @@ var _LifecycleQueue = require("./LifecycleQueue");
 
 var _NoriDOM = require("./NoriDOM");
 
-var _deepDiff = require("deep-diff");
-
 function _toConsumableArray(arr) { return _arrayWithoutHoles(arr) || _iterableToArray(arr) || _nonIterableSpread(); }
 
 function _nonIterableSpread() { throw new TypeError("Invalid attempt to spread non-iterable instance"); }
@@ -39092,9 +38561,28 @@ function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
 
 function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
 
+var STAGE_UNITIALIZED = 'uninitialized';
+var STAGE_RENDERING = 'rendering';
+var STAGE_UPDATING = 'updating';
+var STAGE_STEADY = 'steady';
+var UPDATE_TIMEOUT = 1;
 var currentHostTree,
     componentInstanceMap = {},
-    updateTimeOut;
+    updateTimeOut,
+    currentStage = STAGE_UNITIALIZED;
+
+var isVDOMNode = function isVDOMNode(node) {
+  return _typeof(node) === 'object' && node.hasOwnProperty('type') && node.hasOwnProperty('props') && node.hasOwnProperty('children');
+};
+
+var cloneNode = function cloneNode(node) {
+  return (0, _lodash.cloneDeep)(node);
+}; // Warning: Potentially expensive
+
+
+var hasOwnerComponent = function hasOwnerComponent(node) {
+  return node.hasOwnProperty('owner') && node.owner !== null;
+};
 
 var isNoriComponent = function isNoriComponent(test) {
   return test.$$typeof && Symbol.keyFor(test.$$typeof) === 'nori.component';
@@ -39113,25 +38601,6 @@ var getCurrentHostTree = function getCurrentHostTree(_) {
 };
 
 exports.getCurrentHostTree = getCurrentHostTree;
-
-var isVDOMNode = function isVDOMNode(node) {
-  return _typeof(node) === 'object' && node.hasOwnProperty('type') && node.hasOwnProperty('props') && node.hasOwnProperty('children');
-};
-
-var cloneNode = function cloneNode(node) {
-  return (0, _lodash.cloneDeep)(node);
-}; // Warning: Potentially expensive
-
-
-var hasOwnerComponent = function hasOwnerComponent(node) {
-  return node.hasOwnProperty('owner') && node.owner !== null;
-};
-
-var STAGE_UNITIALIZED = 'uninitialized';
-var STAGE_RENDERING = 'rendering';
-var STAGE_UPDATING = 'updating';
-var STAGE_STEADY = 'steady';
-var currentStage = STAGE_UNITIALIZED;
 
 var isInitialized = function isInitialized(_) {
   return currentStage !== STAGE_UNITIALIZED;
@@ -39162,11 +38631,7 @@ var isSteady = function isSteady(_) {
 exports.isSteady = isSteady;
 
 var h = function h(type, props) {
-  props = props || {}; // TODO fix this
-
-  if (props.key === 0) {
-    console.warn("Component key can't be '0' : ".concat(type, " ").concat(props));
-  }
+  props = props || {};
 
   for (var _len = arguments.length, args = new Array(_len > 2 ? _len - 2 : 0), _key = 2; _key < _len; _key++) {
     args[_key - 2] = arguments[_key];
@@ -39202,7 +38667,7 @@ var enqueueUpdate = function enqueueUpdate(id) {
   (0, _LifecycleQueue.enqueueDidUpdate)(id);
 
   if (!updateTimeOut) {
-    updateTimeOut = setTimeout(performUpdates, 10);
+    updateTimeOut = setTimeout(performUpdates, UPDATE_TIMEOUT);
   }
 };
 
@@ -39218,7 +38683,8 @@ var performUpdates = function performUpdates() {
   clearTimeout(updateTimeOut);
   updateTimeOut = null;
   currentStage = STAGE_RENDERING;
-  var updatedVDOMTree = getCurrentHostTree();
+  var updatedVDOMTree = getCurrentHostTree(); //TODO FOPT
+
   (0, _LifecycleQueue.getDidUpdateQueue)().forEach(function (id) {
     updatedVDOMTree = updateComponentVDOM(updatedVDOMTree, id);
   });
@@ -39255,16 +38721,16 @@ var updateComponentVDOM = function updateComponentVDOM(node, id) {
   if (_typeof(node) === 'object') {
     if (hasOwnerComponent(node) && node.owner.props.id === id) {
       //
-      //console.log(`Updating ${node.owner.props.id}`, node);
       node = renderComponentNode(instantiateNewComponent(node)); // node
     } else if (typeof node.type === 'function') {
-      console.log('New component', node);
       node = renderComponentVDOM(node); // new component added
     }
 
-    node.children = renderChildFunctions(node).map(function (child) {
-      return updateComponentVDOM(child, id);
-    });
+    if (node.hasOwnProperty('children')) {
+      node.children = renderChildFunctions(node).map(function (child) {
+        return updateComponentVDOM(child, id);
+      });
+    }
   }
 
   return node;
@@ -39277,7 +38743,8 @@ var renderChildFunctions = function renderChildFunctions(node) {
   var children = node.children,
       result = [],
       resultIndex = [],
-      index = 0;
+      index = 0; //TODO FOPT
+
   children.forEach(function (child, i) {
     if (typeof child === 'function') {
       var childResult = child(node);
@@ -39296,70 +38763,33 @@ var renderChildFunctions = function renderChildFunctions(node) {
   return children;
 };
 
-var getNodeKeyOrID = function getNodeKeyOrID(node) {
-  return node.props.key ? '' + node.props.key : node.props.id;
-};
-
 var instantiateNewComponent = function instantiateNewComponent(node) {
-  var instance;
-
   if (componentInstanceMap.hasOwnProperty(node.props.id)) {
-    instance = componentInstanceMap[node.props.id];
-  } else {
-    instance = new node.type(node.props, node.children);
-    componentInstanceMap[node.props.id] = instance;
+    return componentInstanceMap[node.props.id];
   }
 
+  var instance = new node.type(node.props, node.children);
+  componentInstanceMap[node.props.id] = instance;
   return instance;
-}; // const instantiateNewComponent = node => {
-//   const ID = getNodeKeyOrID(node);
-//   if (componentInstanceMap.hasOwnProperty(ID)) {
-//     console.log(`instantiateNewComponent : REUSE ${node.props.id} ${getNodeKeyOrID(node)}`);
-//     return componentInstanceMap[ID];
-//   } else if(typeof node.type === 'function') {
-//     console.log(`instantiateNewComponent : CREATE ${ID}`);
-//     let instance                            = new node.type(node.props, node.children);
-//     componentInstanceMap[ID] = instance;
-//     return instance;
-//   } else if (hasOwnerComponent(node)) {
-//     console.log('node has an owner',ID, node);
-//     console.log('>>>> ',componentInstanceMap.hasOwnProperty(ID));
-//     return node.owner;
-//   }
-//   console.log(`instantiateNewComponent : NODE? `,node);
-//
-//   return node;
-// };
-
+};
 
 var renderComponentNode = function renderComponentNode(instance) {
   if (typeof instance.internalRender === 'function') {
-    var node = instance.internalRender(); // Assign the instance id on to the node if it didn't have one
-
-    if (!node.props.hasOwnProperty('id') || node.props.id.indexOf('element-id-') === 0) {
-      node.props.id = instance.props.id;
-    }
-
-    node.children.forEach(function (child, i) {
-      if (_typeof(child) === 'object' && !child.props.id) {
-        child.props.id = child.props.id ? child.props.id : node.props.id + ".".concat(i);
-      }
-    });
-    instance.vdom = node;
-    node.owner = instance;
-    return node;
+    var vnode = instance.internalRender();
+    instance.vdom = vnode;
+    vnode.owner = instance;
+    return vnode;
   } else if (isVDOMNode(instance)) {
     // SFC
     if (!instance.props.id) {
-      // instance.props.id = nodeIDorKey(instance)
       instance.props.id = instance.props.key ? '' + instance.props.key : (0, _ElementIDCreator.getNextId)();
     }
 
     return instance;
-  } else {
-    console.warn("renderComponentNode : No render() on instance");
-    return null;
   }
+
+  console.warn("renderComponentNode : No render() on instance");
+  return null;
 }; //------------------------------------------------------------------------------
 //UPDATESUPDATESUPDATESUPDATESUPDATESUPDATESUPDATESUPDATESUPDATESUPDATESUPDATESU
 //------------------------------------------------------------------------------
@@ -39376,6 +38806,7 @@ var removeComponentInstance = function removeComponentInstance(node) {
       } // TODO can I get the ID a better way?
 
 
+      console.log("remove events : owner ".concat(id, " vdom ").concat(node.owner.vdom.props.id));
       (0, _NoriDOM.removeEvents)(node.owner.vdom.props.id);
       delete componentInstanceMap[id];
     }
@@ -39383,7 +38814,7 @@ var removeComponentInstance = function removeComponentInstance(node) {
 };
 
 exports.removeComponentInstance = removeComponentInstance;
-},{"./util/ArrayUtils":"js/nori/util/ArrayUtils.js","./util/ElementIDCreator":"js/nori/util/ElementIDCreator.js","lodash":"../node_modules/lodash/lodash.js","./LifecycleQueue":"js/nori/LifecycleQueue.js","./NoriDOM":"js/nori/NoriDOM.js","deep-diff":"../node_modules/deep-diff/index.js"}],"js/nori/util/is.js":[function(require,module,exports) {
+},{"./util/ArrayUtils":"js/nori/util/ArrayUtils.js","./util/ElementIDCreator":"js/nori/util/ElementIDCreator.js","lodash":"../node_modules/lodash/lodash.js","./LifecycleQueue":"js/nori/LifecycleQueue.js","./NoriDOM":"js/nori/NoriDOM.js"}],"js/nori/util/is.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -39457,6 +38888,8 @@ var _Nori = require("./Nori");
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
+function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
+
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
 function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
@@ -39500,11 +38933,23 @@ function () {
   }, {
     key: "internalRender",
     value: function internalRender() {
+      var _this = this;
+
       if (typeof this.render === 'function') {
-        //console.log(`${this.props.id} internalRender ${this.isDirty}`);
-        if (this.isDirty) {
-          this.memoRenderResult = this.render();
+        if (this.isDirty || !this.memoRenderResult) {
+          var result = this.render();
+
+          if (!result.props.id) {
+            result.props.id = this.props.id;
+          }
+
+          result.children.forEach(function (child, i) {
+            if (_typeof(child) === 'object' && !child.props.id) {
+              child.props.id = _this.props.id + ".".concat(i);
+            }
+          });
           this.isDirty = false;
+          this.memoRenderResult = result;
         }
 
         return this.memoRenderResult;
