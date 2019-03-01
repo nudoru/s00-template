@@ -18,9 +18,7 @@ export const getDidUpdateQueue = _ => clone(didUpdateQueue);
 
 export const performDidUpdateQueue = map => {
   didUpdateQueue.forEach(id => {
-    if (!map[id]) {
-      console.warn(`performDidUpdateQueue : Can't get component instance ${id}, it's been removed.`);
-    } else if (typeof map[id].componentDidUpdate === 'function') {
+    if (map[id] && typeof map[id].componentDidUpdate === 'function') {
       map[id].componentDidUpdate()
     }
   });

@@ -21014,9 +21014,7 @@ exports.getDidUpdateQueue = getDidUpdateQueue;
 
 var performDidUpdateQueue = function performDidUpdateQueue(map) {
   didUpdateQueue.forEach(function (id) {
-    if (!map[id]) {
-      console.warn("performDidUpdateQueue : Can't get component instance ".concat(id, ", it's been removed."));
-    } else if (typeof map[id].componentDidUpdate === 'function') {
+    if (map[id] && typeof map[id].componentDidUpdate === 'function') {
       map[id].componentDidUpdate();
     }
   });
@@ -38213,7 +38211,7 @@ exports.centerElementInViewPort = centerElementInViewPort;
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.removeEvents = exports.patch = exports.render = void 0;
+exports.patch = exports.render = void 0;
 
 var _LifecycleQueue = require("./LifecycleQueue");
 
@@ -38223,17 +38221,6 @@ var _DOMToolbox = require("./browser/DOMToolbox");
 
 function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
 
-/*
-______________ ______________ ________   ________      _____      ________________________ _________________________
-\__    ___/   |   \_   _____/ \______ \  \_____  \    /     \    /   _____/\__    ___/    |   \_   _____/\_   _____/
-  |    | /    ~    \    __)_   |    |  \  /   |   \  /  \ /  \   \_____  \   |    |  |    |   /|    __)   |    __)
-  |    | \    Y    /        \  |    `   \/    |    \/    Y    \  /        \  |    |  |    |  / |     \    |     \
-  |____|  \___|_  /_______  / /_______  /\_______  /\____|__  / /_______  /  |____|  |______/  \___  /    \___  /
-                \/        \/          \/         \/         \/          \/                         \/         \/
-
-ALL THE THINGS THAT TOUCH THE DOM ...
-
- */
 var ID_KEY = 'data-nori-id';
 
 var isEvent = function isEvent(event) {
@@ -38252,13 +38239,14 @@ var isSpecialProp = function isSpecialProp(test) {
 };
 
 var eventMap = {},
+    domElMap = {},
     $documentHostNode;
 
 var render = function render(component, hostNode) {
   console.time('render');
   (0, _DOMToolbox.removeAllElements)(hostNode);
-  var vdom = (0, _Nori.renderVDOM)(component);
   $documentHostNode = hostNode;
+  var vdom = (0, _Nori.renderVDOM)(component);
   patch(vdom, null); // $documentHostNode.appendChild(createElement(vdom));
 
   (0, _LifecycleQueue.performDidMountQueue)();
@@ -38267,14 +38255,14 @@ var render = function render(component, hostNode) {
 
 exports.render = render;
 
-var correlateVDOMNode = function correlateVDOMNode(vdomNode, $domRoot) {
-  if (vdomNode === null) {
+var correlateVDOMNode = function correlateVDOMNode(vnode, $domRoot) {
+  if (!vnode) {
     return $domRoot;
   } else {
-    var $element = document.querySelector("[".concat(ID_KEY, "=\"").concat(vdomNode.props.id, "\"]"));
+    var $element = document.querySelector("[".concat(ID_KEY, "=\"").concat(vnode.props.id, "\"]"));
 
     if (!$element) {
-      console.warn("correlateVDOMNode : Couldn't get [".concat(ID_KEY, "=\"").concat(vdomNode.props.id, "\"]"));
+      console.warn("correlateVDOMNode : Couldn't get [".concat(ID_KEY, "=\"").concat(vnode.props.id, "\"]"));
     }
 
     return $element;
@@ -38296,6 +38284,7 @@ var updateDOM = function updateDOM($element, newvdom, currentvdom) {
   if (currentvdom !== 0 && !currentvdom) {
     var $newElement = createElement(newvdom);
     $element.appendChild($newElement);
+    console.log('Append', newvdom, $newElement);
     patches.push({
       type: 'APPEND',
       node: $newElement,
@@ -38304,22 +38293,32 @@ var updateDOM = function updateDOM($element, newvdom, currentvdom) {
     });
   } else if (!newvdom) {
     var $toRemove = correlateVDOMNode(currentvdom, $element);
-    patches.push({
-      type: 'REMOVE',
-      node: $toRemove,
-      parent: $element,
-      vnode: currentvdom
-    });
 
     if ($toRemove) {
-      (0, _Nori.removeComponentInstance)(currentvdom);
+      console.log('Remove', currentvdom, $toRemove); // removeComponentInstance(currentvdom);
+
+      if (currentvdom.hasOwnProperty('props')) {
+        removeEvents(currentvdom.props.id);
+      }
+
       $element.removeChild($toRemove);
+      patches.push({
+        type: 'REMOVE',
+        node: $toRemove,
+        parent: $element,
+        vnode: currentvdom
+      });
+    } else {
+      console.warn("wanted to remove", currentvdom, "but it wasn't there");
     }
   } else if (changed(newvdom, currentvdom)) {
-    // TODO need to test for a component and fix this!
     var _$newElement = createElement(newvdom);
 
-    (0, _Nori.removeComponentInstance)(currentvdom);
+    if (newvdom.type) {
+      console.log('Replace', newvdom, currentvdom, _$newElement);
+    }
+
+    $element.replaceChild(_$newElement, $element.childNodes[index]);
     patches.push({
       type: 'REPLACE',
       oldNode: $element.childNodes[index],
@@ -38327,20 +38326,13 @@ var updateDOM = function updateDOM($element, newvdom, currentvdom) {
       parent: $element,
       vnode: newvdom
     });
-    $element.replaceChild(_$newElement, $element.childNodes[index]);
   } else if (newvdom.type) {
-    // !== currentvdom.type
     updateProps($element.childNodes[index], newvdom.props, currentvdom.props);
-    patches.push({
-      type: 'NEW',
-      node: $element.childNodes[index],
-      parent: $element,
-      vnode: newvdom
-    });
     var newLength = newvdom.children.length;
     var oldLength = currentvdom.children.length;
+    var len = Math.max(newLength, oldLength);
 
-    for (var i = 0; i < newLength || i < oldLength; i++) {
+    for (var i = 0; i < len; i++) {
       updateDOM($element.childNodes[index], newvdom.children[i], currentvdom.children[i], i, patches);
     }
   }
@@ -38352,12 +38344,7 @@ var changed = function changed(newNode, oldNode) {
 
 var createElement = function createElement(node) {
   var $element,
-      ownerComp = node.owner !== null && node.owner !== undefined ? node.owner : null; // This shouldn't happen ... but just in case ...
-
-  if (node == null || node == undefined) {
-    console.warn("createElement: Error, ".concat(node, " was undefined"));
-    return createTextNode("createElement: Error, ".concat(node, " was undefined"));
-  }
+      ownerComp = node.owner !== null && node.owner !== undefined ? node.owner : null;
 
   if (typeof node === 'string' || typeof node === 'number') {
     // Plain text value
@@ -38366,15 +38353,23 @@ var createElement = function createElement(node) {
     // Stateless functional component
     $element = createElement(new node.type(node.props, node.children));
   } else if (_typeof(node) === 'object' && typeof node.type === 'string') {
+    //if(domElMap.hasOwnProperty(node.props.id)){
+    //$element = domElMap[node.props.id];
+    //console.log('recycling',$element);
+    //} else {
     $element = document.createElement(node.type);
 
     if (node.hasOwnProperty('children')) {
-      node.children.map(createElement).forEach($element.appendChild.bind($element));
-    }
+      node.children.map(createElement).forEach(function (child) {
+        return $element.appendChild(child);
+      });
+    } //domElMap[node.props.id] = $element;
+    //}
+
   } else if (typeof node === 'function') {
     return createTextNode('createElement : expected vdom, node is a function', node);
   } else {
-    return createTextNode("createElement: Unknown node type ".concat(node, " : ").concat(node.type));
+    return createTextNode("createElement: Unknown node type ".concat(_typeof(node), " : ").concat(node.type));
   }
 
   if (ownerComp) {
@@ -38450,8 +38445,6 @@ var removeEvents = function removeEvents(id) {
     delete eventMap[id];
   }
 };
-
-exports.removeEvents = removeEvents;
 
 var createEventObject = function createEventObject(e) {
   var $element = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : null;
@@ -38790,26 +38783,15 @@ var renderComponentNode = function renderComponentNode(instance) {
 
   console.warn("renderComponentNode : No render() on instance");
   return null;
-}; //------------------------------------------------------------------------------
-//UPDATESUPDATESUPDATESUPDATESUPDATESUPDATESUPDATESUPDATESUPDATESUPDATESUPDATESU
-//------------------------------------------------------------------------------
-// TODO what if about component children of components?
+};
 
-
-var removeComponentInstance = function removeComponentInstance(node) {
-  if (hasOwnerComponent(node)) {
-    var id = node.owner.props.id;
-
-    if (node.owner === componentInstanceMap[id]) {
-      if (typeof componentInstanceMap[id].componentWillUnmount === 'function') {
-        componentInstanceMap[id].componentWillUnmount();
-      } // TODO can I get the ID a better way?
-
-
-      console.log("remove events : owner ".concat(id, " vdom ").concat(node.owner.vdom.props.id));
-      (0, _NoriDOM.removeEvents)(node.owner.vdom.props.id);
-      delete componentInstanceMap[id];
+var removeComponentInstance = function removeComponentInstance(vnode) {
+  if (hasOwnerComponent(vnode)) {
+    if (typeof vnode.owner.componentWillUnmount === 'function') {
+      vnode.owner.componentWillUnmount();
     }
+
+    delete componentInstanceMap[vnode.owner.props.id];
   }
 };
 

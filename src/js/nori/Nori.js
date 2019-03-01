@@ -188,25 +188,13 @@ const renderComponentNode = instance => {
   }
   console.warn(`renderComponentNode : No render() on instance`);
   return null;
-
 };
 
-//------------------------------------------------------------------------------
-//UPDATESUPDATESUPDATESUPDATESUPDATESUPDATESUPDATESUPDATESUPDATESUPDATESUPDATESU
-//------------------------------------------------------------------------------
-
-// TODO what if about component children of components?
-export const removeComponentInstance = (node) => {
-  if (hasOwnerComponent(node)) {
-    let id = node.owner.props.id;
-    if (node.owner === componentInstanceMap[id]) {
-      if (typeof componentInstanceMap[id].componentWillUnmount === 'function') {
-        componentInstanceMap[id].componentWillUnmount();
-      }
-      // TODO can I get the ID a better way?
-      console.log(`remove events : owner ${id} vdom ${node.owner.vdom.props.id}`);
-      removeEvents(node.owner.vdom.props.id);
-      delete componentInstanceMap[id];
+export const removeComponentInstance = vnode => {
+  if (hasOwnerComponent(vnode)) {
+    if (typeof vnode.owner.componentWillUnmount === 'function') {
+      vnode.owner.componentWillUnmount();
     }
+    delete componentInstanceMap[vnode.owner.props.id];
   }
 };

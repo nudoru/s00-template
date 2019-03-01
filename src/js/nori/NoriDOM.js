@@ -1,21 +1,7 @@
 import {enqueueDidMount, performDidMountQueue} from './LifecycleQueue';
-import {
-  renderVDOM,
-  removeComponentInstance
-} from "./Nori";
+import {removeComponentInstance, renderVDOM} from "./Nori";
 import {removeAllElements} from "./browser/DOMToolbox";
 
-/*
-______________ ______________ ________   ________      _____      ________________________ _________________________
-\__    ___/   |   \_   _____/ \______ \  \_____  \    /     \    /   _____/\__    ___/    |   \_   _____/\_   _____/
-  |    | /    ~    \    __)_   |    |  \  /   |   \  /  \ /  \   \_____  \   |    |  |    |   /|    __)   |    __)
-  |    | \    Y    /        \  |    `   \/    |    \/    Y    \  /        \  |    |  |    |  / |     \    |     \
-  |____|  \___|_  /_______  / /_______  /\_______  /\____|__  / /_______  /  |____|  |______/  \___  /    \___  /
-                \/        \/          \/         \/         \/          \/                         \/         \/
-
-ALL THE THINGS THAT TOUCH THE DOM ...
-
- */
 
 const ID_KEY        = 'data-nori-id';
 const isEvent       = event => /^on/.test(event);
@@ -25,29 +11,27 @@ const specialProps  = ['tweens', 'state', 'actions', 'children', 'element', 'min
 const isSpecialProp = test => specialProps.includes(test);
 
 let eventMap = {},
+    domElMap = {},
     $documentHostNode;
 
 export const render = (component, hostNode) => {
   console.time('render');
   removeAllElements(hostNode);
-
-  let vdom = renderVDOM(component);
-
   $documentHostNode = hostNode;
-
+  const vdom        = renderVDOM(component);
   patch(vdom, null);
   // $documentHostNode.appendChild(createElement(vdom));
   performDidMountQueue();
   console.timeEnd('render');
 };
 
-const correlateVDOMNode = (vdomNode, $domRoot) => {
-  if (vdomNode === null) {
+const correlateVDOMNode = (vnode, $domRoot) => {
+  if (!vnode) {
     return $domRoot;
   } else {
-    let $element = document.querySelector(`[${ID_KEY}="${vdomNode.props.id}"]`);
+    const $element = document.querySelector(`[${ID_KEY}="${vnode.props.id}"]`);
     if (!$element) {
-      console.warn(`correlateVDOMNode : Couldn't get [${ID_KEY}="${vdomNode.props.id}"]`);
+      console.warn(`correlateVDOMNode : Couldn't get [${ID_KEY}="${vnode.props.id}"]`);
     }
     return $element;
   }
@@ -63,6 +47,7 @@ const updateDOM = ($element, newvdom, currentvdom, index = 0, patches) => {
   if (currentvdom !== 0 && !currentvdom) {
     const $newElement = createElement(newvdom);
     $element.appendChild($newElement);
+    console.log('Append', newvdom, $newElement);
     patches.push({
       type  : 'APPEND',
       node  : $newElement,
@@ -70,22 +55,29 @@ const updateDOM = ($element, newvdom, currentvdom, index = 0, patches) => {
       vnode : newvdom
     });
   } else if (!newvdom) {
-    let $toRemove = correlateVDOMNode(currentvdom, $element);
-    patches.push({
-      type  : 'REMOVE',
-      node  : $toRemove,
-      parent: $element,
-      vnode : currentvdom
-    });
+    const $toRemove = correlateVDOMNode(currentvdom, $element);
     if ($toRemove) {
-      removeComponentInstance(currentvdom);
+      console.log('Remove', currentvdom, $toRemove);
+      // removeComponentInstance(currentvdom);
+      if(currentvdom.hasOwnProperty('props')) {
+        removeEvents(currentvdom.props.id);
+      }
       $element.removeChild($toRemove);
+      patches.push({
+        type  : 'REMOVE',
+        node  : $toRemove,
+        parent: $element,
+        vnode : currentvdom
+      });
+    } else {
+      console.warn(`wanted to remove`,currentvdom,`but it wasn't there`);
     }
   } else if (changed(newvdom, currentvdom)) {
-    // TODO need to test for a component and fix this!
     const $newElement = createElement(newvdom);
-    removeComponentInstance(currentvdom);
-
+    if(newvdom.type) {
+      console.log('Replace', newvdom, currentvdom, $newElement);
+    }
+    $element.replaceChild($newElement, $element.childNodes[index]);
     patches.push({
       type   : 'REPLACE',
       oldNode: $element.childNodes[index],
@@ -93,26 +85,16 @@ const updateDOM = ($element, newvdom, currentvdom, index = 0, patches) => {
       parent : $element,
       vnode  : newvdom
     });
-
-    $element.replaceChild($newElement, $element.childNodes[index]);
   } else if (newvdom.type) {
-    // !== currentvdom.type
     updateProps(
       $element.childNodes[index],
       newvdom.props,
       currentvdom.props
     );
-
-    patches.push({
-      type  : 'NEW',
-      node  : $element.childNodes[index],
-      parent: $element,
-      vnode : newvdom
-    });
-
     const newLength = newvdom.children.length;
     const oldLength = currentvdom.children.length;
-    for (let i = 0; i < newLength || i < oldLength; i++) {
+    const len = Math.max(newLength, oldLength);
+    for (let i = 0; i < len; i++) {
       updateDOM($element.childNodes[index], newvdom.children[i], currentvdom.children[i], i, patches);
     }
   }
@@ -128,12 +110,6 @@ const createElement = node => {
   let $element,
       ownerComp = node.owner !== null && node.owner !== undefined ? node.owner : null;
 
-  // This shouldn't happen ... but just in case ...
-  if (node == null || node == undefined) {
-    console.warn(`createElement: Error, ${node} was undefined`);
-    return createTextNode(`createElement: Error, ${node} was undefined`);
-  }
-
   if (typeof node === 'string' || typeof node === 'number') {
     // Plain text value
     $element = createTextNode(node);
@@ -141,16 +117,25 @@ const createElement = node => {
     // Stateless functional component
     $element = createElement(new node.type(node.props, node.children));
   } else if (typeof node === 'object' && typeof node.type === 'string') {
-    $element = document.createElement(node.type);
-    if (node.hasOwnProperty('children')) {
-      node.children
-        .map(createElement)
-        .forEach($element.appendChild.bind($element));
-    }
+
+    //if(domElMap.hasOwnProperty(node.props.id)){
+      //$element = domElMap[node.props.id];
+      //console.log('recycling',$element);
+    //} else {
+      $element = document.createElement(node.type);
+      if (node.hasOwnProperty('children')) {
+        node.children
+          .map(createElement)
+          .forEach(child => $element.appendChild(child));
+      }
+      //domElMap[node.props.id] = $element;
+    //}
+
+
   } else if (typeof node === 'function') {
     return createTextNode('createElement : expected vdom, node is a function', node);
   } else {
-    return createTextNode(`createElement: Unknown node type ${node} : ${node.type}`);
+    return createTextNode(`createElement: Unknown node type ${typeof node} : ${node.type}`);
   }
 
   if (ownerComp) {
@@ -162,6 +147,7 @@ const createElement = node => {
 
   setProps($element, node.props || {});
   setEvents(node, $element);
+
   return $element;
 };
 
@@ -189,7 +175,6 @@ const setEvents = (node, $element) => {
 const mapActions = props => Object.keys(props).reduce((acc, key) => {
   let value = props[key],
       evt   = isEvent(key) ? getEventName(key) : null;
-
   if (evt !== null) {
     acc.push({
       type           : 'event',
@@ -204,7 +189,7 @@ const mapActions = props => Object.keys(props).reduce((acc, key) => {
 const handleEventTrigger = (evt, $element) => e => evt.externalHandler(createEventObject(e, $element));
 
 // Nori calls this
-export const removeEvents = id => {
+const removeEvents = id => {
   if (eventMap.hasOwnProperty(id)) {
     eventMap[id].map(fn => {
       fn();
