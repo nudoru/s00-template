@@ -46,18 +46,15 @@ const blackBox = css`
   box-shadow: ${theme.shadows.dropShadow.bigsoft};
 `;
 
-
-const Sfc = _ => <h1>I'm a stateless functional component</h1>;
-
-
-
+const Sfc = props => <span><h1>{props.message}</h1><Greeter/></span>;
+  
 let testBox = <Box key='main' className={appContainer}>
   <Box className={blackBox}>
     <Lorem mode={Lorem.TITLE}/>
     <Box className={whiteBox}>
-      <Sfc/>
+      <Sfc message='IMA sfc'/>
       <Ticker/>
-      <ColorSwatch/>
+      <span><ColorSwatch/></span>
       <Greeter/>
       <Lister/>
     </Box>

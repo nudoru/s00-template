@@ -42793,13 +42793,134 @@ var removeBooleanProp = function removeBooleanProp($element, key) {
   $element.removeAttribute(key);
   $element[key] = false;
 };
-},{"decamelize":"../node_modules/decamelize/index.js","./LifecycleQueue":"js/nori/LifecycleQueue.js","./Nori":"js/nori/Nori.js","./browser/DOMToolbox":"js/nori/browser/DOMToolbox.js"}],"js/nori/Nori.js":[function(require,module,exports) {
+},{"decamelize":"../node_modules/decamelize/index.js","./LifecycleQueue":"js/nori/LifecycleQueue.js","./Nori":"js/nori/Nori.js","./browser/DOMToolbox":"js/nori/browser/DOMToolbox.js"}],"js/nori/NoriComponent.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.removeComponentInstance = exports.renderComponentVDOM = exports.enqueueUpdate = exports.renderVDOM = exports.h = exports.isSteady = exports.isUpdating = exports.isRendering = exports.isInitialized = exports.getCurrentVDOM = exports.setCurrentVDOM = exports.isNoriComponent = void 0;
+exports.default = void 0;
+
+var _lodash = require("lodash");
+
+var _is = _interopRequireDefault(require("./util/is"));
+
+var _ElementIDCreator = require("./util/ElementIDCreator");
+
+var _Nori = require("./Nori");
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
+
+function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
+
+var NoriComponent =
+/*#__PURE__*/
+function () {
+  function NoriComponent(props) {
+    _classCallCheck(this, NoriComponent);
+
+    this.props = props || {};
+    this.props.id = props.key ? props.key : props.id ? props.id : (0, _ElementIDCreator.getNextId)();
+    this.props.key = props.key || null;
+    this._internalState = props.hasOwnProperty('state') ? props.state : {};
+    this._isDirty = true;
+    this._memoRenderResult = null;
+    this._lastRenderedDOMEl = null;
+    this.$$typeof = Symbol.for('nori.component');
+
+    if (typeof this.render !== 'function') {
+      console.error("Component ".concat(this.props.id, " doesn't have a render() method!"));
+    }
+  }
+
+  _createClass(NoriComponent, [{
+    key: "shouldComponentUpdate",
+    value: function shouldComponentUpdate(nextProps, nextState) {
+      // Deep compare using Ramda !equals(nextState, this._internalState);
+      return !(nextState === this._internalState) || !(nextProps === this.props);
+    }
+  }, {
+    key: "forceUpdate",
+    value: function forceUpdate() {
+      (0, _Nori.enqueueUpdate)(this.props.id);
+    }
+  }, {
+    key: "internalRender",
+    value: function internalRender() {
+      var _this = this;
+
+      if (this._isDirty || !this._memoRenderResult) {
+        var result = this.render();
+
+        if (!result.props.id) {
+          result.props.id = this.props.id;
+        }
+
+        result.children.forEach(function (child, i) {
+          if (_typeof(child) === 'object' && !child.props.id) {
+            child.props.id = _this.props.id + ".".concat(i);
+          }
+        });
+        this._isDirty = false;
+        this._memoRenderResult = result;
+      }
+
+      return this._memoRenderResult;
+    }
+  }, {
+    key: "remove",
+    value: function remove() {// Nothing here
+    }
+  }, {
+    key: "state",
+    set: function set(nextState) {
+      if (!_is.default.object(nextState)) {
+        console.warn('Component state must be an object');
+        return;
+      }
+
+      if (this.shouldComponentUpdate({}, nextState)) {
+        this._internalState = Object.assign({}, this._internalState, nextState);
+
+        if (typeof this.componentWillUpdate === 'function') {
+          this.componentWillUpdate();
+        }
+
+        this._isDirty = true;
+        (0, _Nori.enqueueUpdate)(this.props.id);
+      }
+    },
+    get: function get() {
+      // return Object.assign({}, this._internalState);
+      return (0, _lodash.cloneDeep)(this._internalState);
+    }
+  }, {
+    key: "$current",
+    set: function set($el) {
+      this._lastRenderedDOMEl = $el;
+    },
+    get: function get() {
+      return this._lastRenderedDOMEl;
+    }
+  }]);
+
+  return NoriComponent;
+}();
+
+exports.default = NoriComponent;
+},{"lodash":"../node_modules/lodash/lodash.js","./util/is":"js/nori/util/is.js","./util/ElementIDCreator":"js/nori/util/ElementIDCreator.js","./Nori":"js/nori/Nori.js"}],"js/nori/Nori.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.removeComponentInstance = exports.renderComponentVDOM = exports.enqueueUpdate = exports.renderVDOM = exports.h = exports.isSteady = exports.isUpdating = exports.isRendering = exports.isInitialized = exports.getCurrentVDOM = exports.setCurrentVDOM = exports.isNoriComponentInstance = exports.isNoriComponent = void 0;
 
 var _is = _interopRequireDefault(require("./util/is"));
 
@@ -42814,6 +42935,8 @@ var _LifecycleQueue = require("./LifecycleQueue");
 var _NoriDOM = require("./NoriDOM");
 
 var _ramda = require("ramda");
+
+var _NoriComponent = _interopRequireDefault(require("./NoriComponent"));
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -42855,11 +42978,17 @@ var getKeyOrId = function getKeyOrId(vnode) {
   return vnode.props.key ? vnode.props.key : vnode.props.id;
 };
 
-var isNoriComponent = function isNoriComponent(test) {
-  return test.$$typeof && Symbol.keyFor(test.$$typeof) === 'nori.component';
+var isNoriComponent = function isNoriComponent(vnode) {
+  return Object.getPrototypeOf(vnode.type) === _NoriComponent.default;
 };
 
 exports.isNoriComponent = isNoriComponent;
+
+var isNoriComponentInstance = function isNoriComponentInstance(test) {
+  return test.$$typeof && Symbol.keyFor(test.$$typeof) === 'nori.component';
+};
+
+exports.isNoriComponentInstance = isNoriComponentInstance;
 
 var setCurrentVDOM = function setCurrentVDOM(tree) {
   return currentVDOM = tree;
@@ -43051,11 +43180,14 @@ var instantiateNewComponent = function instantiateNewComponent(vnode) {
     instance = componentInstanceMap[id];
   } else if (typeof vnode.type === 'function') {
     vnode.props.children = _is.default.array(vnode.children) ? vnode.children : [vnode.children];
-    instance = new vnode.type(vnode.props); //, vnode.children
+    instance = new vnode.type(vnode.props);
 
-    id = instance.props.id; // id could change during construction
+    if (isNoriComponent(vnode)) {
+      // Stateless functional components fail this
+      id = instance.props.id; // id could change during construction
 
-    componentInstanceMap[id] = instance;
+      componentInstanceMap[id] = instance;
+    }
   } else if (vnode.hasOwnProperty('_owner')) {
     instance = vnode._owner;
     id = instance.props.id; // id could change during construction
@@ -43098,128 +43230,7 @@ var removeComponentInstance = function removeComponentInstance(vnode) {
 };
 
 exports.removeComponentInstance = removeComponentInstance;
-},{"./util/is":"js/nori/util/is.js","./util/ArrayUtils":"js/nori/util/ArrayUtils.js","./util/ElementIDCreator":"js/nori/util/ElementIDCreator.js","lodash":"../node_modules/lodash/lodash.js","./LifecycleQueue":"js/nori/LifecycleQueue.js","./NoriDOM":"js/nori/NoriDOM.js","ramda":"../node_modules/ramda/es/index.js"}],"js/nori/NoriComponent.js":[function(require,module,exports) {
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.default = void 0;
-
-var _lodash = require("lodash");
-
-var _is = _interopRequireDefault(require("./util/is"));
-
-var _ElementIDCreator = require("./util/ElementIDCreator");
-
-var _Nori = require("./Nori");
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
-
-function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
-
-var NoriComponent =
-/*#__PURE__*/
-function () {
-  function NoriComponent(props) {
-    _classCallCheck(this, NoriComponent);
-
-    this.props = props || {};
-    this.props.id = props.key ? props.key : props.id ? props.id : (0, _ElementIDCreator.getNextId)();
-    this.props.key = props.key || null;
-    this._internalState = props.hasOwnProperty('state') ? props.state : {};
-    this._isDirty = true;
-    this._memoRenderResult = null;
-    this._lastRenderedDOMEl = null;
-    this.$$typeof = Symbol.for('nori.component');
-
-    if (typeof this.render !== 'function') {
-      console.error("Component ".concat(this.props.id, " doesn't have a render() method!"));
-    }
-  }
-
-  _createClass(NoriComponent, [{
-    key: "shouldComponentUpdate",
-    value: function shouldComponentUpdate(nextProps, nextState) {
-      // Deep compare using Ramda !equals(nextState, this._internalState);
-      return !(nextState === this._internalState) || !(nextProps === this.props);
-    }
-  }, {
-    key: "forceUpdate",
-    value: function forceUpdate() {
-      (0, _Nori.enqueueUpdate)(this.props.id);
-    }
-  }, {
-    key: "internalRender",
-    value: function internalRender() {
-      var _this = this;
-
-      if (this._isDirty || !this._memoRenderResult) {
-        var result = this.render();
-
-        if (!result.props.id) {
-          result.props.id = this.props.id;
-        }
-
-        result.children.forEach(function (child, i) {
-          if (_typeof(child) === 'object' && !child.props.id) {
-            child.props.id = _this.props.id + ".".concat(i);
-          }
-        });
-        this._isDirty = false;
-        this._memoRenderResult = result;
-      }
-
-      return this._memoRenderResult;
-    }
-  }, {
-    key: "remove",
-    value: function remove() {// Nothing here
-    }
-  }, {
-    key: "state",
-    set: function set(nextState) {
-      if (!_is.default.object(nextState)) {
-        console.warn('Component state must be an object');
-        return;
-      }
-
-      if (this.shouldComponentUpdate({}, nextState)) {
-        this._internalState = Object.assign({}, this._internalState, nextState);
-
-        if (typeof this.componentWillUpdate === 'function') {
-          this.componentWillUpdate();
-        }
-
-        this._isDirty = true;
-        (0, _Nori.enqueueUpdate)(this.props.id);
-      }
-    },
-    get: function get() {
-      // return Object.assign({}, this._internalState);
-      return (0, _lodash.cloneDeep)(this._internalState);
-    }
-  }, {
-    key: "$current",
-    set: function set($el) {
-      this._lastRenderedDOMEl = $el;
-    },
-    get: function get() {
-      return this._lastRenderedDOMEl;
-    }
-  }]);
-
-  return NoriComponent;
-}();
-
-exports.default = NoriComponent;
-},{"lodash":"../node_modules/lodash/lodash.js","./util/is":"js/nori/util/is.js","./util/ElementIDCreator":"js/nori/util/ElementIDCreator.js","./Nori":"js/nori/Nori.js"}],"js/components/Box.js":[function(require,module,exports) {
+},{"./util/is":"js/nori/util/is.js","./util/ArrayUtils":"js/nori/util/ArrayUtils.js","./util/ElementIDCreator":"js/nori/util/ElementIDCreator.js","lodash":"../node_modules/lodash/lodash.js","./LifecycleQueue":"js/nori/LifecycleQueue.js","./NoriDOM":"js/nori/NoriDOM.js","ramda":"../node_modules/ramda/es/index.js","./NoriComponent":"js/nori/NoriComponent.js"}],"js/components/Box.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -44149,8 +44160,8 @@ var appContainer = (0, _emotion.css)(_templateObject(), appContainerBG);
 var whiteBox = (0, _emotion.css)(_templateObject2(), _Theme.theme.gradients['premium-white'], _Theme.theme.shadows.dropShadow.bigsoft);
 var blackBox = (0, _emotion.css)(_templateObject3(), _Theme.theme.gradients['premium-dark'], _Theme.theme.shadows.dropShadow.bigsoft);
 
-var Sfc = function Sfc(_) {
-  return (0, _Nori.h)("h1", null, "I'm a stateless functional component");
+var Sfc = function Sfc(props) {
+  return (0, _Nori.h)("span", null, (0, _Nori.h)("h1", null, props.message), (0, _Nori.h)(_Greeter.default, null));
 };
 
 var testBox = (0, _Nori.h)(_Box.default, {
@@ -44162,7 +44173,9 @@ var testBox = (0, _Nori.h)(_Box.default, {
   mode: _Lorem.default.TITLE
 }), (0, _Nori.h)(_Box.default, {
   className: whiteBox
-}, (0, _Nori.h)(Sfc, null), (0, _Nori.h)(_Ticker.default, null), (0, _Nori.h)(_ColorSwatch.default, null), (0, _Nori.h)(_Greeter.default, null), (0, _Nori.h)(_Lister.default, null))));
+}, (0, _Nori.h)(Sfc, {
+  message: "IMA sfc"
+}), (0, _Nori.h)(_Ticker.default, null), (0, _Nori.h)("span", null, (0, _Nori.h)(_ColorSwatch.default, null)), (0, _Nori.h)(_Greeter.default, null), (0, _Nori.h)(_Lister.default, null))));
 (0, _NoriDOM.render)(testBox, document.querySelector('#js-application'));
 },{"./theme/Global":"js/theme/Global.js","./theme/Theme":"js/theme/Theme.js","emotion":"../node_modules/emotion/dist/index.esm.js","./nori/Nori":"js/nori/Nori.js","./nori/NoriDOM":"js/nori/NoriDOM.js","./components/Box":"js/components/Box.js","./components/Lorem":"js/components/Lorem.js","./components/Ticker":"js/components/Ticker.js","./components/Greeter":"js/components/Greeter.js","./components/Lister":"js/components/Lister.js","./components/ColorSwatch":"js/components/ColorSwatch.js","../img/pattern/shattered.png":"img/pattern/shattered.png"}],"../node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
 var global = arguments[3];

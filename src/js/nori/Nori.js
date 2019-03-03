@@ -2,9 +2,7 @@
 TODO
   - create a fn that will determine if the vnode has been rendered and call render or update as appropriate
   - test form input
-  - test props on SFC
-  - test component children on SFC
-  - Element or wrapper for text nodes
+  - Element or wrapper for text nodes?
   - use ImmutableJS data structures
   - test fn as prop value
   - test my mouse renderprops
@@ -24,6 +22,7 @@ import {
 } from './LifecycleQueue';
 import {patch} from './NoriDOM';
 import {compose} from 'ramda';
+import NoriComponent from "./NoriComponent";
 
 const STAGE_UNITIALIZED = 'uninitialized';
 const STAGE_RENDERING   = 'rendering';
@@ -42,13 +41,14 @@ const cloneNode         = vnode => cloneDeep(vnode); // Warning: Potentially exp
 const hasOwnerComponent = vnode => vnode.hasOwnProperty('_owner') && vnode._owner !== null;
 const getKeyOrId        = vnode => vnode.props.key ? vnode.props.key : vnode.props.id;
 
-export const isNoriComponent = test => test.$$typeof && Symbol.keyFor(test.$$typeof) === 'nori.component';
-export const setCurrentVDOM  = tree => currentVDOM = tree;
-export const getCurrentVDOM  = _ => cloneNode(currentVDOM);
-export const isInitialized   = _ => currentStage !== STAGE_UNITIALIZED;
-export const isRendering     = _ => currentStage === STAGE_RENDERING;
-export const isUpdating      = _ => currentStage === STAGE_UPDATING;
-export const isSteady        = _ => currentStage === STAGE_STEADY;
+export const isNoriComponent         = vnode => Object.getPrototypeOf(vnode.type) === NoriComponent;
+export const isNoriComponentInstance = test => test.$$typeof && Symbol.keyFor(test.$$typeof) === 'nori.component';
+export const setCurrentVDOM          = tree => currentVDOM = tree;
+export const getCurrentVDOM          = _ => cloneNode(currentVDOM);
+export const isInitialized           = _ => currentStage !== STAGE_UNITIALIZED;
+export const isRendering             = _ => currentStage === STAGE_RENDERING;
+export const isUpdating              = _ => currentStage === STAGE_UPDATING;
+export const isSteady                = _ => currentStage === STAGE_STEADY;
 
 //------------------------------------------------------------------------------
 //PUBLICPUBLICPUBLICPUBLICPUBLICPUBLICPUBLICPUBLICPUBLICPUBLICPUBLICPUBLICPUBLIC
@@ -155,7 +155,6 @@ const renderChildFunctions = vnode => {
   children = children.map((child, i) => {
     if (typeof child === 'function') {
       let childResult = child();
-
       childResult = childResult.map((c, i) => {
         if (typeof c.type === 'function') {
           c = renderComponentVDOM(c);
@@ -184,9 +183,12 @@ const instantiateNewComponent = vnode => {
     instance = componentInstanceMap[id];
   } else if (typeof vnode.type === 'function') {
     vnode.props.children     = Is.array(vnode.children) ? vnode.children : [vnode.children];
-    instance                 = new vnode.type(vnode.props); //, vnode.children
-    id                       = instance.props.id; // id could change during construction
-    componentInstanceMap[id] = instance;
+    instance                 = new vnode.type(vnode.props);
+    if(isNoriComponent(vnode)) {
+      // Stateless functional components fail this
+      id                       = instance.props.id; // id could change during construction
+      componentInstanceMap[id] = instance;
+    }
   } else if (vnode.hasOwnProperty('_owner')) {
     instance                 = vnode._owner;
     id                       = instance.props.id; // id could change during construction
