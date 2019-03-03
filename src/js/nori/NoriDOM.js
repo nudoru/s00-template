@@ -1,8 +1,8 @@
 import decalelize from 'decamelize';
 import {enqueueDidMount, performDidMountQueue} from './LifecycleQueue';
-import {removeComponentInstance, renderVDOM} from "./Nori";
+import {removeComponentInstance, renderVDOM, renderComponentVDOM} from "./Nori";
 import {removeAllElements} from "./browser/DOMToolbox";
-
+import Is from './util/is';
 
 const ID_KEY        = 'data-nori-id';
 const isEvent       = event => /^on/.test(event);
@@ -60,7 +60,7 @@ const updateDOM = ($element, newvdom, currentvdom, index = 0, patches) => {
     if ($toRemove) {
       //console.log('Remove', currentvdom, $toRemove);
       removeComponentInstance(currentvdom);
-      if(currentvdom.hasOwnProperty('props')) {
+      if (currentvdom.hasOwnProperty('props')) {
         removeEvents(currentvdom.props.id);
       }
       $element.removeChild($toRemove);
@@ -71,14 +71,14 @@ const updateDOM = ($element, newvdom, currentvdom, index = 0, patches) => {
         vnode : currentvdom
       });
     } else {
-      console.warn(`wanted to remove`,currentvdom,`but it wasn't there`);
+      console.warn(`wanted to remove`, currentvdom, `but it wasn't there`);
     }
   } else if (changed(newvdom, currentvdom)) {
 
     // This needs to be smarter? Rearrange rather than replace and append
 
     const $newElement = createElement(newvdom);
-    if(newvdom.type) {
+    if (newvdom.type) {
       //console.log('Replace', newvdom, currentvdom, $newElement,$element.childNodes[index]);
     }
     $element.replaceChild($newElement, $element.childNodes[index]);
@@ -98,7 +98,7 @@ const updateDOM = ($element, newvdom, currentvdom, index = 0, patches) => {
     );
     const newLength = newvdom.children.length;
     const oldLength = currentvdom.children.length;
-    const len = Math.max(newLength, oldLength);
+    const len       = Math.max(newLength, oldLength);
     for (let i = 0; i < len; i++) {
       updateDOM($element.childNodes[index], newvdom.children[i], currentvdom.children[i], i, patches);
     }
@@ -111,36 +111,26 @@ const changed = (newNode, oldNode) => {
     newNode.type !== oldNode.type
 };
 
-const createElement = node => {
+const createElement = vnode => {
   let $element,
-      ownerComp = node.owner !== null && node.owner !== undefined ? node.owner : null;
+      ownerComp = vnode.owner !== null && vnode.owner !== undefined ? vnode.owner : null;
 
-  if (typeof node === 'string' || typeof node === 'number') {
+  if (typeof vnode === 'string' || typeof vnode === 'number') {
     // Plain text value
-    $element = createTextNode(node);
-  } else if (typeof node.type === 'function') {
-    // Stateless functional component
-    $element = createElement(new node.type(node.props, node.children));
-  } else if (typeof node === 'object' && typeof node.type === 'string') {
-
-    //if(domElMap.hasOwnProperty(node.props.id)){
-      //$element = domElMap[node.props.id];
-      //console.log('recycling',$element);
-    //} else {
-      $element = document.createElement(node.type);
-      if (node.hasOwnProperty('children')) {
-        node.children
-          .map(createElement)
-          .forEach(child => $element.appendChild(child));
-      }
-      //domElMap[node.props.id] = $element;
-    //}
-
-
-  } else if (typeof node === 'function') {
-    return createTextNode('createElement : expected vdom, node is a function', node);
+    $element = createTextNode(vnode);
+  } else if (typeof vnode.type === 'function') {
+    $element             = createElement(renderComponentVDOM(vnode));
+  } else if (typeof vnode === 'object' && typeof vnode.type === 'string') {
+    $element = document.createElement(vnode.type);
+    if (vnode.hasOwnProperty('children')) {
+      vnode.children
+        .map(createElement)
+        .forEach(child => $element.appendChild(child));
+    }
+  } else if (typeof vnode === 'function') {
+    return createTextNode('createElement : expected vdom, vnode is a function', vnode);
   } else {
-    return createTextNode(`createElement: Unknown node type ${typeof node} : ${node.type}`);
+    return createTextNode(`createElement: Unknown node type ${typeof vnode} : ${vnode.type}`);
   }
 
   if (ownerComp) {
@@ -150,8 +140,8 @@ const createElement = node => {
     }
   }
 
-  setProps($element, node.props || {});
-  setEvents(node, $element);
+  setProps($element, vnode.props || {});
+  setEvents(vnode, $element);
 
   return $element;
 };
@@ -236,7 +226,7 @@ const setProps = ($element, props) => Object.keys(props).forEach(key => {
 
 const setProp = ($element, key, value) => {
   if (!isSpecialProp(key) && !isEvent(key)) {
-    if(key === 'style') {
+    if (key === 'style') {
       value = convertStylePropObjToHTML(value);
     } else if (key === 'className') {
       key = 'class';
@@ -252,9 +242,9 @@ const setProp = ($element, key, value) => {
 };
 
 const convertStylePropObjToHTML = obj => Object.keys(obj).reduce((acc, k) => {
-  acc.push(`${decalelize(k,'-')}: ${obj[k]}`);
+  acc.push(`${decalelize(k, '-')}: ${obj[k]}`);
   return acc;
-},[]).join('; ');
+}, []).join('; ');
 
 const setBooleanProp = ($element, key, value) => {
   if (value) {

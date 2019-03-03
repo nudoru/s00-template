@@ -15,8 +15,8 @@ export default class Lorem extends NoriComponent {
   // Default state
   internalState = {lorem: 'Lorem ipsum dolor sit amet ...'};
 
-  constructor(props, children = []) {
-    const baseElement = props.element || 'span';
+  constructor(props) {
+    super(props);
 
     const min = props.min || 3;
     const max = props.max || 5;
@@ -42,7 +42,6 @@ export default class Lorem extends NoriComponent {
         break;
     }
 
-    super(baseElement, props, []);
 
     // have to call super first
     this.internalState = {lorem};

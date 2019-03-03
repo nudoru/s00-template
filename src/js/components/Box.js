@@ -9,8 +9,8 @@ import NoriComponent from '../nori/NoriComponent';
 
 export default class Box extends NoriComponent {
 
-  constructor(props, children) {
-    super('div', props, children);
+  constructor(props) {
+    super(props);
   }
 
   render() {

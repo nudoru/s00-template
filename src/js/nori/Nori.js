@@ -14,6 +14,7 @@ TODO
   - Memoize? https://blog.javascripting.com/2016/10/05/building-your-own-react-clone-in-five-easy-steps/
  */
 
+import Is from './util/is';
 import {flatten} from "./util/ArrayUtils";
 import {getNextId} from "./util/ElementIDCreator";
 import {cloneDeep} from 'lodash';
@@ -119,7 +120,7 @@ const performUpdates = () => {
 //------------------------------------------------------------------------------
 
 // Renders out components to get a vdom tree for the first render of a component or tree
-const renderComponentVDOM = vnode => {
+export const renderComponentVDOM = vnode => {
   vnode = cloneNode(vnode);
   if (typeof vnode === 'object' && typeof vnode.type === 'function') {
     vnode          = compose(renderComponentNode, instantiateNewComponent)(vnode);
@@ -186,12 +187,13 @@ const instantiateNewComponent = vnode => {
   if (componentInstanceMap.hasOwnProperty(id)) {
     instance = componentInstanceMap[id];
   } else if (typeof vnode.type === 'function') {
-    instance                 = new vnode.type(vnode.props, vnode.children);
-    id                       = instance.props.id;
+    vnode.props.children  = Is.array(vnode.children) ? vnode.children : [vnode.children];
+    instance                 = new vnode.type(vnode.props); //, vnode.children
+    id                       = instance.props.id; // id could change during construction
     componentInstanceMap[id] = instance;
   } else if (vnode.hasOwnProperty('owner')) {
     instance                 = vnode.owner;
-    id                       = instance.props.id;
+    id                       = instance.props.id; // id could change during construction
     componentInstanceMap[id] = instance;
   } else {
     console.warn(`instantiateNewComponent : vnode is not component type`, typeof vnode.type, vnode);

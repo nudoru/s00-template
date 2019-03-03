@@ -21,10 +21,10 @@ export default class Clicker extends Component {
   internalState = {count: 0};
 
   // Subclasses should only take passed props and children
-  constructor(props, children) {
+  constructor(props) {
     // call super and pass what's needed
     //let [greeting, setGreet] = useState('Hello, <em>{{name}}!</em>');
-    super('p', props, [greeting]);
+    super(props);
   }
 
   $onClick = evt => {

@@ -5,11 +5,11 @@ import {enqueueUpdate} from "./Nori";
 
 export default class NoriComponent {
 
-  constructor(type, props, children) {
-    this.type            = type;
+  constructor(props) {
+    //this.type            = type;
     this.props           = props || {};
     this.props.id        = props.key ? props.key : (props.id ? props.id : getNextId());
-    this.props.children  = Is.array(children) ? children : [children];
+    // this.props.children  = Is.array(children) ? children : [children];
     //this.tweens          = props.hasOwnProperty('tweens') ? props.tweens : {};
     this.internalState   = props.hasOwnProperty('state') ? props.state : {};
     this.isDirty         = true;

@@ -10,8 +10,8 @@ import {h} from "../nori/Nori";
 export default class ColorSwatch extends NoriComponent {
 
   // Subclasses should only take passed props and children
-  constructor(props, children) {
-    super('h1', props, []);
+  constructor(props) {
+    super(props);
     this.intervalId = null;
     this.state      = {counter: 1};
   }

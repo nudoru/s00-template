@@ -1596,7 +1596,63 @@ function _taggedTemplateLiteral(strings, raw) { if (!raw) { raw = strings.slice(
 // normalize.css v8.0.0 | MIT License | github.com/necolas/normalize.css
 // + Customs
 (0, _emotion.injectGlobal)(_templateObject(), _Theme.modularScale.ms2, _Theme.theme.fontSizes[2]);
-},{"emotion":"../node_modules/emotion/dist/index.esm.js","./Theme":"js/theme/Theme.js"}],"js/nori/util/NumberUtils.js":[function(require,module,exports) {
+},{"emotion":"../node_modules/emotion/dist/index.esm.js","./Theme":"js/theme/Theme.js"}],"js/nori/util/is.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = void 0;
+
+function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
+
+var _default = {
+  existy: function existy(x) {
+    return x !== null;
+  },
+  truthy: function truthy(x) {
+    return x !== false && this.existy(x);
+  },
+  falsey: function falsey(x) {
+    return !this.truthy(x);
+  },
+  func: function func(object) {
+    return typeof object === "function";
+  },
+  object: function object(_object) {
+    return Object.prototype.toString.call(_object) === "[object Object]";
+  },
+  objectEmpty: function objectEmpty(object) {
+    for (var key in object) {
+      if (object.hasOwnProperty(key)) {
+        return false;
+      }
+    }
+
+    return true;
+  },
+  string: function string(object) {
+    return Object.prototype.toString.call(object) === "[object String]";
+  },
+  array: function array(object) {
+    return Array.isArray(object); //return Object.prototype.toString.call(object) === '[object Array]';
+  },
+  promise: function promise(_promise) {
+    return _promise && typeof _promise.then === 'function';
+  },
+  observable: function observable(_observable) {
+    return _observable && typeof _observable.subscribe === 'function';
+  },
+  element: function element(obj) {
+    return (typeof HTMLElement === "undefined" ? "undefined" : _typeof(HTMLElement)) === 'object' ? obj instanceof HTMLElement || obj instanceof DocumentFragment : //DOM2
+    obj && _typeof(obj) === 'object' && obj !== null && (obj.nodeType === 1 || obj.nodeType === 11) && typeof obj.nodeName === 'string';
+  },
+  integer: function integer(str) {
+    return /^-?\d+$/.test(str);
+  }
+};
+exports.default = _default;
+},{}],"js/nori/util/NumberUtils.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -42395,6 +42451,8 @@ var _Nori = require("./Nori");
 
 var _DOMToolbox = require("./browser/DOMToolbox");
 
+var _is = _interopRequireDefault(require("./util/is"));
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
@@ -42522,34 +42580,27 @@ var changed = function changed(newNode, oldNode) {
   return _typeof(newNode) !== _typeof(oldNode) || (typeof newNode === 'string' || typeof newNode === 'number' || typeof newNode === 'boolean') && newNode !== oldNode || newNode.type !== oldNode.type;
 };
 
-var createElement = function createElement(node) {
+var createElement = function createElement(vnode) {
   var $element,
-      ownerComp = node.owner !== null && node.owner !== undefined ? node.owner : null;
+      ownerComp = vnode.owner !== null && vnode.owner !== undefined ? vnode.owner : null;
 
-  if (typeof node === 'string' || typeof node === 'number') {
+  if (typeof vnode === 'string' || typeof vnode === 'number') {
     // Plain text value
-    $element = createTextNode(node);
-  } else if (typeof node.type === 'function') {
-    // Stateless functional component
-    $element = createElement(new node.type(node.props, node.children));
-  } else if (_typeof(node) === 'object' && typeof node.type === 'string') {
-    //if(domElMap.hasOwnProperty(node.props.id)){
-    //$element = domElMap[node.props.id];
-    //console.log('recycling',$element);
-    //} else {
-    $element = document.createElement(node.type);
+    $element = createTextNode(vnode);
+  } else if (typeof vnode.type === 'function') {
+    $element = createElement((0, _Nori.renderComponentVDOM)(vnode));
+  } else if (_typeof(vnode) === 'object' && typeof vnode.type === 'string') {
+    $element = document.createElement(vnode.type);
 
-    if (node.hasOwnProperty('children')) {
-      node.children.map(createElement).forEach(function (child) {
+    if (vnode.hasOwnProperty('children')) {
+      vnode.children.map(createElement).forEach(function (child) {
         return $element.appendChild(child);
       });
-    } //domElMap[node.props.id] = $element;
-    //}
-
-  } else if (typeof node === 'function') {
-    return createTextNode('createElement : expected vdom, node is a function', node);
+    }
+  } else if (typeof vnode === 'function') {
+    return createTextNode('createElement : expected vdom, vnode is a function', vnode);
   } else {
-    return createTextNode("createElement: Unknown node type ".concat(_typeof(node), " : ").concat(node.type));
+    return createTextNode("createElement: Unknown node type ".concat(_typeof(vnode), " : ").concat(vnode.type));
   }
 
   if (ownerComp) {
@@ -42560,8 +42611,8 @@ var createElement = function createElement(node) {
     }
   }
 
-  setProps($element, node.props || {});
-  setEvents(node, $element);
+  setProps($element, vnode.props || {});
+  setEvents(vnode, $element);
   return $element;
 };
 
@@ -42715,13 +42766,15 @@ var removeBooleanProp = function removeBooleanProp($element, key) {
   $element.removeAttribute(key);
   $element[key] = false;
 };
-},{"decamelize":"../node_modules/decamelize/index.js","./LifecycleQueue":"js/nori/LifecycleQueue.js","./Nori":"js/nori/Nori.js","./browser/DOMToolbox":"js/nori/browser/DOMToolbox.js"}],"js/nori/Nori.js":[function(require,module,exports) {
+},{"decamelize":"../node_modules/decamelize/index.js","./LifecycleQueue":"js/nori/LifecycleQueue.js","./Nori":"js/nori/Nori.js","./browser/DOMToolbox":"js/nori/browser/DOMToolbox.js","./util/is":"js/nori/util/is.js"}],"js/nori/Nori.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.removeComponentInstance = exports.enqueueUpdate = exports.renderVDOM = exports.h = exports.isSteady = exports.isUpdating = exports.isRendering = exports.isInitialized = exports.getCurrentHostTree = exports.setCurrentHostTree = exports.isNoriComponent = void 0;
+exports.removeComponentInstance = exports.renderComponentVDOM = exports.enqueueUpdate = exports.renderVDOM = exports.h = exports.isSteady = exports.isUpdating = exports.isRendering = exports.isInitialized = exports.getCurrentHostTree = exports.setCurrentHostTree = exports.isNoriComponent = void 0;
+
+var _is = _interopRequireDefault(require("./util/is"));
 
 var _ArrayUtils = require("./util/ArrayUtils");
 
@@ -42734,6 +42787,8 @@ var _LifecycleQueue = require("./LifecycleQueue");
 var _NoriDOM = require("./NoriDOM");
 
 var _ramda = require("ramda");
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 function _toConsumableArray(arr) { return _arrayWithoutHoles(arr) || _iterableToArray(arr) || _nonIterableSpread(); }
 
@@ -42899,6 +42954,8 @@ var renderComponentVDOM = function renderComponentVDOM(vnode) {
 }; // Updates the vdom rerendering only the nodes that match an id
 
 
+exports.renderComponentVDOM = renderComponentVDOM;
+
 var updateComponentVDOM = function updateComponentVDOM(id) {
   return function (vnode) {
     vnode = cloneNode(vnode);
@@ -42966,12 +43023,16 @@ var instantiateNewComponent = function instantiateNewComponent(vnode) {
   if (componentInstanceMap.hasOwnProperty(id)) {
     instance = componentInstanceMap[id];
   } else if (typeof vnode.type === 'function') {
-    instance = new vnode.type(vnode.props, vnode.children);
-    id = instance.props.id;
+    vnode.props.children = _is.default.array(vnode.children) ? vnode.children : [vnode.children];
+    instance = new vnode.type(vnode.props); //, vnode.children
+
+    id = instance.props.id; // id could change during construction
+
     componentInstanceMap[id] = instance;
   } else if (vnode.hasOwnProperty('owner')) {
     instance = vnode.owner;
-    id = instance.props.id;
+    id = instance.props.id; // id could change during construction
+
     componentInstanceMap[id] = instance;
   } else {
     console.warn("instantiateNewComponent : vnode is not component type", _typeof(vnode.type), vnode);
@@ -43008,63 +43069,7 @@ var removeComponentInstance = function removeComponentInstance(vnode) {
 };
 
 exports.removeComponentInstance = removeComponentInstance;
-},{"./util/ArrayUtils":"js/nori/util/ArrayUtils.js","./util/ElementIDCreator":"js/nori/util/ElementIDCreator.js","lodash":"../node_modules/lodash/lodash.js","./LifecycleQueue":"js/nori/LifecycleQueue.js","./NoriDOM":"js/nori/NoriDOM.js","ramda":"../node_modules/ramda/es/index.js"}],"js/nori/util/is.js":[function(require,module,exports) {
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.default = void 0;
-
-function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
-
-var _default = {
-  existy: function existy(x) {
-    return x !== null;
-  },
-  truthy: function truthy(x) {
-    return x !== false && this.existy(x);
-  },
-  falsey: function falsey(x) {
-    return !this.truthy(x);
-  },
-  func: function func(object) {
-    return typeof object === "function";
-  },
-  object: function object(_object) {
-    return Object.prototype.toString.call(_object) === "[object Object]";
-  },
-  objectEmpty: function objectEmpty(object) {
-    for (var key in object) {
-      if (object.hasOwnProperty(key)) {
-        return false;
-      }
-    }
-
-    return true;
-  },
-  string: function string(object) {
-    return Object.prototype.toString.call(object) === "[object String]";
-  },
-  array: function array(object) {
-    return Array.isArray(object); //return Object.prototype.toString.call(object) === '[object Array]';
-  },
-  promise: function promise(_promise) {
-    return _promise && typeof _promise.then === 'function';
-  },
-  observable: function observable(_observable) {
-    return _observable && typeof _observable.subscribe === 'function';
-  },
-  element: function element(obj) {
-    return (typeof HTMLElement === "undefined" ? "undefined" : _typeof(HTMLElement)) === 'object' ? obj instanceof HTMLElement || obj instanceof DocumentFragment : //DOM2
-    obj && _typeof(obj) === 'object' && obj !== null && (obj.nodeType === 1 || obj.nodeType === 11) && typeof obj.nodeName === 'string';
-  },
-  integer: function integer(str) {
-    return /^-?\d+$/.test(str);
-  }
-};
-exports.default = _default;
-},{}],"js/nori/NoriComponent.js":[function(require,module,exports) {
+},{"./util/is":"js/nori/util/is.js","./util/ArrayUtils":"js/nori/util/ArrayUtils.js","./util/ElementIDCreator":"js/nori/util/ElementIDCreator.js","lodash":"../node_modules/lodash/lodash.js","./LifecycleQueue":"js/nori/LifecycleQueue.js","./NoriDOM":"js/nori/NoriDOM.js","ramda":"../node_modules/ramda/es/index.js"}],"js/nori/NoriComponent.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -43093,13 +43098,13 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
 var NoriComponent =
 /*#__PURE__*/
 function () {
-  function NoriComponent(type, props, children) {
+  function NoriComponent(props) {
     _classCallCheck(this, NoriComponent);
 
-    this.type = type;
+    //this.type            = type;
     this.props = props || {};
-    this.props.id = props.key ? props.key : props.id ? props.id : (0, _ElementIDCreator.getNextId)();
-    this.props.children = _is.default.array(children) ? children : [children]; //this.tweens          = props.hasOwnProperty('tweens') ? props.tweens : {};
+    this.props.id = props.key ? props.key : props.id ? props.id : (0, _ElementIDCreator.getNextId)(); // this.props.children  = Is.array(children) ? children : [children];
+    //this.tweens          = props.hasOwnProperty('tweens') ? props.tweens : {};
 
     this.internalState = props.hasOwnProperty('state') ? props.state : {};
     this.isDirty = true;
@@ -43240,10 +43245,10 @@ var Box =
 function (_NoriComponent) {
   _inherits(Box, _NoriComponent);
 
-  function Box(props, children) {
+  function Box(props) {
     _classCallCheck(this, Box);
 
-    return _possibleConstructorReturn(this, _getPrototypeOf(Box).call(this, 'div', props, children));
+    return _possibleConstructorReturn(this, _getPrototypeOf(Box).call(this, props));
   }
 
   _createClass(Box, [{
@@ -43558,11 +43563,13 @@ function (_NoriComponent) {
   function Lorem(props) {
     var _this;
 
-    var children = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : [];
-
     _classCallCheck(this, Lorem);
 
-    var baseElement = props.element || 'span';
+    _this = _possibleConstructorReturn(this, _getPrototypeOf(Lorem).call(this, props));
+    _this.TEXT = 'text';
+    _this.internalState = {
+      lorem: 'Lorem ipsum dolor sit amet ...'
+    };
     var min = props.min || 3;
     var max = props.max || 5;
     var mode = props.mode || 'text';
@@ -43588,14 +43595,9 @@ function (_NoriComponent) {
       case 'fullNameFL':
         lorem = L.firstLastName();
         break;
-    }
+    } // have to call super first
 
-    _this = _possibleConstructorReturn(this, _getPrototypeOf(Lorem).call(this, baseElement, props, [])); // have to call super first
 
-    _this.TEXT = 'text';
-    _this.internalState = {
-      lorem: 'Lorem ipsum dolor sit amet ...'
-    };
     _this.internalState = {
       lorem: lorem
     };
@@ -43699,12 +43701,12 @@ function (_NoriComponent) {
   _inherits(Ticker, _NoriComponent);
 
   // Subclasses should only take passed props and children
-  function Ticker(props, children) {
+  function Ticker(props) {
     var _this;
 
     _classCallCheck(this, Ticker);
 
-    _this = _possibleConstructorReturn(this, _getPrototypeOf(Ticker).call(this, 'h1', props, []));
+    _this = _possibleConstructorReturn(this, _getPrototypeOf(Ticker).call(this, props));
 
     _this.componentDidMount = function () {
       _this.intervalID = setInterval(_this.$updateTicker, 1000);
@@ -43803,12 +43805,12 @@ function (_NoriComponent) {
   _inherits(Greeter, _NoriComponent);
 
   // Subclasses should only take passed props and children
-  function Greeter(props, children) {
+  function Greeter(props) {
     var _this;
 
     _classCallCheck(this, Greeter);
 
-    _this = _possibleConstructorReturn(this, _getPrototypeOf(Greeter).call(this, 'h1', props, []));
+    _this = _possibleConstructorReturn(this, _getPrototypeOf(Greeter).call(this, props));
 
     _this.$onClick = function (evt) {
       // console.log(`  - ${this.props.id} GREETER : click ${this.state.name}`);
@@ -43923,12 +43925,12 @@ function (_NoriComponent) {
   _inherits(Lister, _NoriComponent);
 
   // Subclasses should only take passed props and children
-  function Lister(props, children) {
+  function Lister(props) {
     var _this;
 
     _classCallCheck(this, Lister);
 
-    _this = _possibleConstructorReturn(this, _getPrototypeOf(Lister).call(this, 'h1', props, []));
+    _this = _possibleConstructorReturn(this, _getPrototypeOf(Lister).call(this, props));
 
     _this.componentDidMount = function () {//console.log('Ticker did mount');
     };
@@ -44046,12 +44048,12 @@ function (_NoriComponent) {
   _inherits(ColorSwatch, _NoriComponent);
 
   // Subclasses should only take passed props and children
-  function ColorSwatch(props, children) {
+  function ColorSwatch(props) {
     var _this;
 
     _classCallCheck(this, ColorSwatch);
 
-    _this = _possibleConstructorReturn(this, _getPrototypeOf(ColorSwatch).call(this, 'h1', props, []));
+    _this = _possibleConstructorReturn(this, _getPrototypeOf(ColorSwatch).call(this, props));
 
     _this.componentDidMount = function () {
       _this.intervalId = setInterval(_this.$updateTicker, 100);

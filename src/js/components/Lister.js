@@ -20,8 +20,8 @@ padding: ${modularScale.ms0}
 export default class Lister extends NoriComponent {
 
   // Subclasses should only take passed props and children
-  constructor(props, children) {
-    super('h1', props, []);
+  constructor(props) {
+    super(props);
     this.state = {counter: 1};
   }
 
