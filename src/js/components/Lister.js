@@ -9,7 +9,6 @@ import {h} from "../nori/Nori";
 import {css} from 'emotion';
 import {modularScale} from "../theme/Theme";
 import {range} from "../nori/util/ArrayUtils";
-import Ticker from './Ticker';
 import Greeter from './Greeter';
 
 const bordered = css`
@@ -44,12 +43,11 @@ export default class Lister extends NoriComponent {
 
   $onRemoveClick = e => {
     let current = this.state.counter;
-    if(current < 2) {
+    if (current < 2) {
       return;
     }
     this.state = {counter: --current}
   };
-
 
 
 // <ul>
@@ -70,15 +68,20 @@ export default class Lister extends NoriComponent {
   render() {
     //console.log('render lister');
     return <div className={bordered} key={this.props.id}>
-      <button onClick={this.$onAddClick}>Add</button><button onClick={this.$onRemoveClick}>Remove</button>
+      <button onClick={this.$onAddClick}>Add</button>
+      <button onClick={this.$onRemoveClick}>Remove</button>
       <hr/>
+      <span>
       {range(this.state.counter).map(i => {
-        return <Greeter key={'listitem-'+i}/>;
+        return <Greeter key={'listitem-' + i}/>;
       })}
+      </span>
       <hr/>
+      <span>
       {() => (range(this.state.counter).map(i => {
-        return <Greeter key={'listitem-2'+i}/>;
+        return <Greeter key={'listitem-2' + i}/>;
       }))}
+      </span>
     </div>;
   }
 }

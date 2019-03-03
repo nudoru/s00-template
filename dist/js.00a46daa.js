@@ -39541,8 +39541,8 @@ function (_NoriComponent) {
     _this.tickerID = null;
     _this.state = {
       counter: 1
-    };
-    console.log("".concat(_this.props, " TICKER : constructor"));
+    }; // console.log(`${this.props.id} TICKER : constructor`);
+
     return _this;
   }
 
@@ -39695,8 +39695,6 @@ var _Theme = require("../theme/Theme");
 
 var _ArrayUtils = require("../nori/util/ArrayUtils");
 
-var _Ticker = _interopRequireDefault(require("./Ticker"));
-
 var _Greeter = _interopRequireDefault(require("./Greeter"));
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
@@ -39806,17 +39804,17 @@ function (_NoriComponent) {
         onClick: this.$onAddClick
       }, "Add"), (0, _Nori.h)("button", {
         onClick: this.$onRemoveClick
-      }, "Remove"), (0, _Nori.h)("hr", null), (0, _ArrayUtils.range)(this.state.counter).map(function (i) {
+      }, "Remove"), (0, _Nori.h)("hr", null), (0, _Nori.h)("span", null, (0, _ArrayUtils.range)(this.state.counter).map(function (i) {
         return (0, _Nori.h)(_Greeter.default, {
           key: 'listitem-' + i
         });
-      }), (0, _Nori.h)("hr", null), function () {
+      })), (0, _Nori.h)("hr", null), (0, _Nori.h)("span", null, function () {
         return (0, _ArrayUtils.range)(_this2.state.counter).map(function (i) {
           return (0, _Nori.h)(_Greeter.default, {
             key: 'listitem-2' + i
           });
         });
-      });
+      }));
     }
   }]);
 
@@ -39824,7 +39822,7 @@ function (_NoriComponent) {
 }(_NoriComponent2.default);
 
 exports.default = Lister;
-},{"../nori/NoriComponent":"js/nori/NoriComponent.js","../nori/Nori":"js/nori/Nori.js","emotion":"../node_modules/emotion/dist/index.esm.js","../theme/Theme":"js/theme/Theme.js","../nori/util/ArrayUtils":"js/nori/util/ArrayUtils.js","./Ticker":"js/components/Ticker.js","./Greeter":"js/components/Greeter.js"}],"img/pattern/shattered.png":[function(require,module,exports) {
+},{"../nori/NoriComponent":"js/nori/NoriComponent.js","../nori/Nori":"js/nori/Nori.js","emotion":"../node_modules/emotion/dist/index.esm.js","../theme/Theme":"js/theme/Theme.js","../nori/util/ArrayUtils":"js/nori/util/ArrayUtils.js","./Greeter":"js/components/Greeter.js"}],"img/pattern/shattered.png":[function(require,module,exports) {
 module.exports = "/shattered.a446e091.png";
 },{}],"js/index.js":[function(require,module,exports) {
 "use strict";
@@ -39903,8 +39901,8 @@ var testBox = (0, _Nori.h)(_Box.default, {
   mode: _Lorem.default.TITLE
 }), (0, _Nori.h)(_Box.default, {
   className: whiteBox
-}, (0, _Nori.h)(Sfc, null), (0, _Nori.h)(_Greeter.default, null), (0, _Nori.h)(_Lister.default, null))));
-(0, _NoriDOM.render)((0, _Nori.h)(_Lister.default, null), document.querySelector('#js-application'));
+}, (0, _Nori.h)(Sfc, null), (0, _Nori.h)(_Ticker.default, null), (0, _Nori.h)(_Greeter.default, null), (0, _Nori.h)(_Lister.default, null))));
+(0, _NoriDOM.render)(testBox, document.querySelector('#js-application'));
 },{"./theme/Global":"js/theme/Global.js","./theme/Theme":"js/theme/Theme.js","emotion":"../node_modules/emotion/dist/index.esm.js","./nori/Nori":"js/nori/Nori.js","./nori/NoriDOM":"js/nori/NoriDOM.js","./components/Box":"js/components/Box.js","./components/Lorem":"js/components/Lorem.js","./components/Ticker":"js/components/Ticker.js","./components/Greeter":"js/components/Greeter.js","./components/Lister":"js/components/Lister.js","../img/pattern/shattered.png":"img/pattern/shattered.png"}],"../node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
 var global = arguments[3];
 var OVERLAY_ID = '__parcel__error__overlay__';

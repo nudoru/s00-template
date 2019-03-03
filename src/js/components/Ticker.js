@@ -17,7 +17,7 @@ export default class Ticker extends NoriComponent {
     super('h1', props, []);
     this.tickerID = null;
     this.state = {counter: 1};
-    console.log(`${this.props} TICKER : constructor`);
+    // console.log(`${this.props.id} TICKER : constructor`);
   }
 
   componentDidMount = () => {
