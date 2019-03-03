@@ -11,7 +11,7 @@ const getEventName  = event => event.slice(2).toLowerCase();
 const specialProps  = ['tweens', 'state', 'actions', 'children', 'element', 'min', 'max', 'mode'];
 const isSpecialProp = test => specialProps.includes(test);
 
-let eventMap = {},
+let eventMap            = {},
     renderedElementsMap = {},
     $documentHostNode;
 
@@ -26,20 +26,8 @@ export const render = (component, hostNode) => {
   console.timeEnd('render');
 };
 
-const correlateVDOMNode = (vnode, $domRoot) => {
-  if (!vnode) {
-    return $domRoot;
-  } else {
-    // const $element = document.querySelector(`[${ID_KEY}="${vnode.props.id}"]`);
-    const $element = vnode.hasOwnProperty('props') ? renderedElementsMap[vnode.props.id] : null;
-    if (!$element) {
-      // console.warn(`correlateVDOMNode : Couldn't get [${ID_KEY}="${vnode.props.id}"]`);
-      console.warn(`correlateVDOMNode : Couldn't get rendered element ${vnode.props.id}`);
-    }
-    return $element;
-  }
-};
-
+// This approach is bassackward since getting the patches and then applying them are
+// done in separate steps
 export const patch = (newvdom, currentvdom) => {
   let patches = [];
   updateDOM($documentHostNode, newvdom, currentvdom, 0, patches);
@@ -58,7 +46,7 @@ const updateDOM = ($element, newvdom, currentvdom, index = 0, patches) => {
       vnode : newvdom
     });
   } else if (!newvdom) {
-    const $toRemove = correlateVDOMNode(currentvdom, $element);
+    const $toRemove = getELForVNode(currentvdom, $element);
     if ($toRemove) {
       //console.log('Remove', currentvdom, $toRemove);
       removeComponentInstance(currentvdom);
@@ -66,7 +54,7 @@ const updateDOM = ($element, newvdom, currentvdom, index = 0, patches) => {
         removeEvents(currentvdom.props.id);
       }
       $element.removeChild($toRemove);
-      if(currentvdom.hasOwnProperty('props')) {
+      if (currentvdom.hasOwnProperty('props')) {
         delete renderedElementsMap[currentvdom.props.id];
       }
       patches.push({
@@ -79,9 +67,10 @@ const updateDOM = ($element, newvdom, currentvdom, index = 0, patches) => {
       console.warn(`wanted to remove`, currentvdom, `but it wasn't there`);
     }
   } else if (changed(newvdom, currentvdom)) {
-
-    // This needs to be smarter? Rearrange rather than replace and append
-
+    // This needs to be smarter - Rearrange rather than replace and append
+    // There is problem when mulitple new nodes are inserted at separate indices in that
+    // existing nodes are mutated to a new node type and the reference to that origional
+    // element is lost.
     const $newElement = createElement(newvdom);
     if (newvdom.type) {
       //console.log('Replace', newvdom, currentvdom, $newElement,$element.childNodes[index]);
@@ -114,6 +103,20 @@ const changed = (newNode, oldNode) => {
   return typeof newNode !== typeof oldNode ||
     (typeof newNode === 'string' || typeof newNode === 'number' || typeof newNode === 'boolean') && newNode !== oldNode ||
     newNode.type !== oldNode.type
+};
+
+const getELForVNode = (vnode, $domRoot) => {
+  if (!vnode) {
+    return $domRoot;
+  } else {
+    // const $element = document.querySelector(`[${ID_KEY}="${vnode.props.id}"]`);
+    const $element = vnode.hasOwnProperty('props') ? renderedElementsMap[vnode.props.id] : null;
+    if (!$element) {
+      // console.warn(`getELForVNode : Couldn't get [${ID_KEY}="${vnode.props.id}"]`);
+      console.warn(`correlateVDOMNode : Couldn't get rendered element ${vnode.props.id}`);
+    }
+    return $element;
+  }
 };
 
 const createElement = vnode => {
@@ -150,7 +153,7 @@ const createElement = vnode => {
   setProps($element, vnode.props || {});
   setEvents(vnode, $element);
 
-  if(vnode.hasOwnProperty('props')) {
+  if (vnode.hasOwnProperty('props')) {
     renderedElementsMap[vnode.props.id] = $element;
   }
   return $element;
@@ -162,38 +165,41 @@ const createTextNode = string => document.createTextNode(string);
 //EVENTSEVENTSEVENTSEVENTSEVENTSEVENTSEVENTSEVENTSEVENTSEVENTSEVENTSEVENTSEVENTS
 //------------------------------------------------------------------------------
 
-const setEvents = (node, $element) => {
-  const props = node.props || {};
-  mapActions(props).forEach(evt => {
-    if (evt.type === 'event') {
-      const nodeId        = node.props.id;
-      evt.internalHandler = handleEventTrigger(evt, $element);
-      $element.addEventListener(evt.event, evt.internalHandler);
-      if (!eventMap.hasOwnProperty(nodeId)) {
-        eventMap[nodeId] = [];
-      }
-      eventMap[nodeId].push(() => $element.removeEventListener(evt.event, evt.internalHandler));
+const setEvents = (vnode, $element) => {
+  const props = vnode.props || {};
+  marshalEventProps(props).forEach(evt => {
+    const nodeId        = vnode.props.id;
+    evt.internalHandler = internalEventHandler(evt, vnode, $element);
+    $element.addEventListener(evt.event, evt.internalHandler);
+    if (!eventMap.hasOwnProperty(nodeId)) {
+      eventMap[nodeId] = [];
     }
+    // Push an event remover fn to a queue
+    eventMap[nodeId].push(() => $element.removeEventListener(evt.event, evt.internalHandler));
   });
 };
 
-const mapActions = props => Object.keys(props).reduce((acc, key) => {
+const marshalEventProps = props => Object.keys(props).reduce((acc, key) => {
   let value = props[key],
       evt   = isEvent(key) ? getEventName(key) : null;
   if (evt !== null) {
     acc.push({
-      type           : 'event',
-      event          : evt,
-      externalHandler: value,
-      internalHandler: null
+      event                : evt,
+      componentEventHandler: value,
+      internalHandler      : null
     });
   }
   return acc;
 }, []);
 
-const handleEventTrigger = (evt, $element) => e => evt.externalHandler(createEventObject(e, $element));
+const internalEventHandler = (evt, vnode, $element) => e => evt.componentEventHandler(createProxyEventObject(e, vnode, $element));
 
-// Nori calls this
+const createProxyEventObject = (event, vnode, $element = null) => ({
+  event,
+  vnode,
+  target: $element
+});
+
 const removeEvents = id => {
   if (eventMap.hasOwnProperty(id)) {
     eventMap[id].map(fn => {
@@ -204,17 +210,12 @@ const removeEvents = id => {
   }
 };
 
-const createEventObject = (e, $element = null) => ({
-  event : e,
-  target: $element
-});
-
 //------------------------------------------------------------------------------
 //PROPSPROPSPROPSPROPSPROPSPROPSPROPSPROPSPROPSPROPSPROPSPROPSPROPSPROPSPROPSPRO
 //------------------------------------------------------------------------------
 
 const updateProps = ($element, newProps, oldProps = {}) => {
-  let props = Object.assign({}, newProps, oldProps);
+  const props = Object.assign({}, newProps, oldProps);
   Object.keys(props).forEach(key => {
     updateProp($element, key, newProps[key], oldProps[key]);
   });
@@ -229,7 +230,7 @@ const updateProp = ($element, key, newValue, oldValue) => {
 };
 
 const setProps = ($element, props) => Object.keys(props).forEach(key => {
-  let value = props[key];
+  const value = props[key];
   setProp($element, key, value);
   return $element;
 });
@@ -259,6 +260,7 @@ const setProp = ($element, key, value) => {
   }
 };
 
+// convert "object" style css prop names back to hyphenated html/css styles
 const convertStylePropObjToHTML = obj => Object.keys(obj).reduce((acc, k) => {
   acc.push(`${decalelize(k, '-')}: ${obj[k]}`);
   return acc;

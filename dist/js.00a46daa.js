@@ -42486,25 +42486,11 @@ var render = function render(component, hostNode) {
 
   (0, _LifecycleQueue.performDidMountQueue)();
   console.timeEnd('render');
-};
+}; // This approach is bassackward since getting the patches and then applying them are
+// done in separate steps
+
 
 exports.render = render;
-
-var correlateVDOMNode = function correlateVDOMNode(vnode, $domRoot) {
-  if (!vnode) {
-    return $domRoot;
-  } else {
-    // const $element = document.querySelector(`[${ID_KEY}="${vnode.props.id}"]`);
-    var $element = vnode.hasOwnProperty('props') ? renderedElementsMap[vnode.props.id] : null;
-
-    if (!$element) {
-      // console.warn(`correlateVDOMNode : Couldn't get [${ID_KEY}="${vnode.props.id}"]`);
-      console.warn("correlateVDOMNode : Couldn't get rendered element ".concat(vnode.props.id));
-    }
-
-    return $element;
-  }
-};
 
 var patch = function patch(newvdom, currentvdom) {
   var patches = [];
@@ -42529,7 +42515,7 @@ var updateDOM = function updateDOM($element, newvdom, currentvdom) {
       vnode: newvdom
     });
   } else if (!newvdom) {
-    var $toRemove = correlateVDOMNode(currentvdom, $element);
+    var $toRemove = getELForVNode(currentvdom, $element);
 
     if ($toRemove) {
       //console.log('Remove', currentvdom, $toRemove);
@@ -42555,7 +42541,10 @@ var updateDOM = function updateDOM($element, newvdom, currentvdom) {
       console.warn("wanted to remove", currentvdom, "but it wasn't there");
     }
   } else if (changed(newvdom, currentvdom)) {
-    // This needs to be smarter? Rearrange rather than replace and append
+    // This needs to be smarter - Rearrange rather than replace and append
+    // There is problem when mulitple new nodes are inserted at separate indices in that
+    // existing nodes are mutated to a new node type and the reference to that origional
+    // element is lost.
     var _$newElement = createElement(newvdom);
 
     if (newvdom.type) {//console.log('Replace', newvdom, currentvdom, $newElement,$element.childNodes[index]);
@@ -42584,6 +42573,22 @@ var updateDOM = function updateDOM($element, newvdom, currentvdom) {
 
 var changed = function changed(newNode, oldNode) {
   return _typeof(newNode) !== _typeof(oldNode) || (typeof newNode === 'string' || typeof newNode === 'number' || typeof newNode === 'boolean') && newNode !== oldNode || newNode.type !== oldNode.type;
+};
+
+var getELForVNode = function getELForVNode(vnode, $domRoot) {
+  if (!vnode) {
+    return $domRoot;
+  } else {
+    // const $element = document.querySelector(`[${ID_KEY}="${vnode.props.id}"]`);
+    var $element = vnode.hasOwnProperty('props') ? renderedElementsMap[vnode.props.id] : null;
+
+    if (!$element) {
+      // console.warn(`getELForVNode : Couldn't get [${ID_KEY}="${vnode.props.id}"]`);
+      console.warn("correlateVDOMNode : Couldn't get rendered element ".concat(vnode.props.id));
+    }
+
+    return $element;
+  }
 };
 
 var createElement = function createElement(vnode) {
@@ -42636,35 +42641,33 @@ var createTextNode = function createTextNode(string) {
 //------------------------------------------------------------------------------
 
 
-var setEvents = function setEvents(node, $element) {
-  var props = node.props || {};
-  mapActions(props).forEach(function (evt) {
-    if (evt.type === 'event') {
-      var nodeId = node.props.id;
-      evt.internalHandler = handleEventTrigger(evt, $element);
-      $element.addEventListener(evt.event, evt.internalHandler);
+var setEvents = function setEvents(vnode, $element) {
+  var props = vnode.props || {};
+  marshalEventProps(props).forEach(function (evt) {
+    var nodeId = vnode.props.id;
+    evt.internalHandler = internalEventHandler(evt, vnode, $element);
+    $element.addEventListener(evt.event, evt.internalHandler);
 
-      if (!eventMap.hasOwnProperty(nodeId)) {
-        eventMap[nodeId] = [];
-      }
+    if (!eventMap.hasOwnProperty(nodeId)) {
+      eventMap[nodeId] = [];
+    } // Push an event remover fn to a queue
 
-      eventMap[nodeId].push(function () {
-        return $element.removeEventListener(evt.event, evt.internalHandler);
-      });
-    }
+
+    eventMap[nodeId].push(function () {
+      return $element.removeEventListener(evt.event, evt.internalHandler);
+    });
   });
 };
 
-var mapActions = function mapActions(props) {
+var marshalEventProps = function marshalEventProps(props) {
   return Object.keys(props).reduce(function (acc, key) {
     var value = props[key],
         evt = isEvent(key) ? getEventName(key) : null;
 
     if (evt !== null) {
       acc.push({
-        type: 'event',
         event: evt,
-        externalHandler: value,
+        componentEventHandler: value,
         internalHandler: null
       });
     }
@@ -42673,12 +42676,20 @@ var mapActions = function mapActions(props) {
   }, []);
 };
 
-var handleEventTrigger = function handleEventTrigger(evt, $element) {
+var internalEventHandler = function internalEventHandler(evt, vnode, $element) {
   return function (e) {
-    return evt.externalHandler(createEventObject(e, $element));
+    return evt.componentEventHandler(createProxyEventObject(e, vnode, $element));
   };
-}; // Nori calls this
+};
 
+var createProxyEventObject = function createProxyEventObject(event, vnode) {
+  var $element = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : null;
+  return {
+    event: event,
+    vnode: vnode,
+    target: $element
+  };
+};
 
 var removeEvents = function removeEvents(id) {
   if (eventMap.hasOwnProperty(id)) {
@@ -42688,14 +42699,6 @@ var removeEvents = function removeEvents(id) {
     });
     delete eventMap[id];
   }
-};
-
-var createEventObject = function createEventObject(e) {
-  var $element = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : null;
-  return {
-    event: e,
-    target: $element
-  };
 }; //------------------------------------------------------------------------------
 //PROPSPROPSPROPSPROPSPROPSPROPSPROPSPROPSPROPSPROPSPROPSPROPSPROPSPROPSPROPSPRO
 //------------------------------------------------------------------------------
@@ -42751,7 +42754,8 @@ var setProp = function setProp($element, key, value) {
       $element.setAttribute(key, value);
     }
   }
-};
+}; // convert "object" style css prop names back to hyphenated html/css styles
+
 
 var convertStylePropObjToHTML = function convertStylePropObjToHTML(obj) {
   return Object.keys(obj).reduce(function (acc, k) {
@@ -43755,13 +43759,13 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
 
 function _possibleConstructorReturn(self, call) { if (call && (_typeof(call) === "object" || typeof call === "function")) { return call; } return _assertThisInitialized(self); }
 
-function _assertThisInitialized(self) { if (self === void 0) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return self; }
-
 function _getPrototypeOf(o) { _getPrototypeOf = Object.setPrototypeOf ? Object.getPrototypeOf : function _getPrototypeOf(o) { return o.__proto__ || Object.getPrototypeOf(o); }; return _getPrototypeOf(o); }
 
 function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function"); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, writable: true, configurable: true } }); if (superClass) _setPrototypeOf(subClass, superClass); }
 
 function _setPrototypeOf(o, p) { _setPrototypeOf = Object.setPrototypeOf || function _setPrototypeOf(o, p) { o.__proto__ = p; return o; }; return _setPrototypeOf(o, p); }
+
+function _assertThisInitialized(self) { if (self === void 0) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return self; }
 
 function _templateObject() {
   var data = _taggedTemplateLiteral(["color: blue;"]);
@@ -43812,7 +43816,8 @@ function (_NoriComponent) {
     _this.componentDidUpdate = function () {// console.log('Greet did update');
     };
 
-    _this.onOver = function (e) {//console.log('Greeter over', e, this);
+    _this.onOver = function (e) {
+      console.log('Greeter over', e, _assertThisInitialized(_assertThisInitialized(_this)));
     };
 
     _this.onOut = function () {//console.log('Greeter out');

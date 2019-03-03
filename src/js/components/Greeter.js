@@ -46,7 +46,7 @@ export default class Greeter extends NoriComponent {
   };
 
   onOver = (e) => {
-    //console.log('Greeter over', e, this);
+    console.log('Greeter over', e, this);
   };
 
   onOut = () => {
