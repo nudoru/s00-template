@@ -115,8 +115,8 @@ const createElement = vnode => {
   let $element,
       ownerComp = vnode.owner !== null && vnode.owner !== undefined ? vnode.owner : null;
 
+  // TODO am I missing any types here?
   if (typeof vnode === 'string' || typeof vnode === 'number') {
-    // Plain text value
     $element = createTextNode(vnode);
   } else if (typeof vnode.type === 'function') {
     $element             = createElement(renderComponentVDOM(vnode));
@@ -128,8 +128,11 @@ const createElement = vnode => {
         .forEach(child => $element.appendChild(child));
     }
   } else if (typeof vnode === 'function') {
+    // TODO shouldn't this be fixed in the vdom stage before it gets here?
+    // console.warn('createElement : expected vdom, vnode is a function', vnode);
     return createTextNode('createElement : expected vdom, vnode is a function', vnode);
   } else {
+    console.warn(`createElement: Unknown node type ${typeof vnode} : ${vnode.type}`, vnode);
     return createTextNode(`createElement: Unknown node type ${typeof vnode} : ${vnode.type}`);
   }
 

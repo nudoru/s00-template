@@ -42582,10 +42582,9 @@ var changed = function changed(newNode, oldNode) {
 
 var createElement = function createElement(vnode) {
   var $element,
-      ownerComp = vnode.owner !== null && vnode.owner !== undefined ? vnode.owner : null;
+      ownerComp = vnode.owner !== null && vnode.owner !== undefined ? vnode.owner : null; // TODO am I missing any types here?
 
   if (typeof vnode === 'string' || typeof vnode === 'number') {
-    // Plain text value
     $element = createTextNode(vnode);
   } else if (typeof vnode.type === 'function') {
     $element = createElement((0, _Nori.renderComponentVDOM)(vnode));
@@ -42598,8 +42597,11 @@ var createElement = function createElement(vnode) {
       });
     }
   } else if (typeof vnode === 'function') {
+    // TODO shouldn't this be fixed in the vdom stage before it gets here?
+    // console.warn('createElement : expected vdom, vnode is a function', vnode);
     return createTextNode('createElement : expected vdom, vnode is a function', vnode);
   } else {
+    console.warn("createElement: Unknown node type ".concat(_typeof(vnode), " : ").concat(vnode.type), vnode);
     return createTextNode("createElement: Unknown node type ".concat(_typeof(vnode), " : ").concat(vnode.type));
   }
 
