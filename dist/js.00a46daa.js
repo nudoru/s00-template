@@ -42795,7 +42795,7 @@ var removeBooleanProp = function removeBooleanProp($element, key) {
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.removeComponentInstance = exports.renderComponentVDOM = exports.enqueueUpdate = exports.renderVDOM = exports.h = exports.isSteady = exports.isUpdating = exports.isRendering = exports.isInitialized = exports.getCurrentHostTree = exports.setCurrentHostTree = exports.isNoriComponent = void 0;
+exports.removeComponentInstance = exports.renderComponentVDOM = exports.enqueueUpdate = exports.renderVDOM = exports.h = exports.isSteady = exports.isUpdating = exports.isRendering = exports.isInitialized = exports.getCurrentVDOM = exports.setCurrentVDOM = exports.isNoriComponent = void 0;
 
 var _is = _interopRequireDefault(require("./util/is"));
 
@@ -42827,8 +42827,9 @@ var STAGE_UNITIALIZED = 'uninitialized';
 var STAGE_RENDERING = 'rendering';
 var STAGE_UPDATING = 'updating';
 var STAGE_STEADY = 'steady';
-var UPDATE_TIMEOUT = 10;
-var currentHostTree,
+var UPDATE_TIMEOUT = 10; // how ofter the update queue runs
+
+var currentVDOM,
     componentInstanceMap = {},
     updateTimeOut,
     currentStage = STAGE_UNITIALIZED;
@@ -42856,17 +42857,17 @@ var isNoriComponent = function isNoriComponent(test) {
 
 exports.isNoriComponent = isNoriComponent;
 
-var setCurrentHostTree = function setCurrentHostTree(tree) {
-  return currentHostTree = tree;
+var setCurrentVDOM = function setCurrentVDOM(tree) {
+  return currentVDOM = tree;
 };
 
-exports.setCurrentHostTree = setCurrentHostTree;
+exports.setCurrentVDOM = setCurrentVDOM;
 
-var getCurrentHostTree = function getCurrentHostTree(_) {
-  return cloneNode(currentHostTree);
+var getCurrentVDOM = function getCurrentVDOM(_) {
+  return cloneNode(currentVDOM);
 };
 
-exports.getCurrentHostTree = getCurrentHostTree;
+exports.getCurrentVDOM = getCurrentVDOM;
 
 var isInitialized = function isInitialized(_) {
   return currentStage !== STAGE_UNITIALIZED;
@@ -42905,7 +42906,8 @@ var h = function h(type, props) {
     type: type,
     props: props || {},
     children: args.length ? (0, _ArrayUtils.flatten)(args) : [],
-    _owner: null
+    _owner: null // will be the NoriComponent instance that generated the node
+
   };
 }; // Called from NoriDOM to render the first vdom
 
@@ -42915,7 +42917,7 @@ exports.h = h;
 var renderVDOM = function renderVDOM(node) {
   currentStage = STAGE_RENDERING;
   var vdom = renderComponentVDOM(node);
-  setCurrentHostTree(vdom);
+  setCurrentVDOM(vdom);
   currentStage = STAGE_STEADY;
   return vdom;
 }; //------------------------------------------------------------------------------
@@ -42942,23 +42944,23 @@ var performUpdates = function performUpdates() {
   if (isRendering()) {
     console.log(">>> Update called while rendering");
     return;
-  } //console.time('update');
+  } // console.time('update');
 
 
   clearTimeout(updateTimeOut);
   updateTimeOut = null;
   currentStage = STAGE_RENDERING;
-  var updatedVDOMTree = getCurrentHostTree(); //TODO FOPT
+  var updatedVDOMTree = (0, _LifecycleQueue.getDidUpdateQueue)().reduce(function (acc, id) {
+    acc = updateComponentVDOM(id)(acc);
+    return acc;
+  }, getCurrentVDOM()); // TODO FOPT => get updatedVDOM tree to flow into patch and setCurrentVDOM
 
-  (0, _LifecycleQueue.getDidUpdateQueue)().forEach(function (id) {
-    updatedVDOMTree = updateComponentVDOM(id)(updatedVDOMTree);
-  });
-  (0, _NoriDOM.patch)(updatedVDOMTree, getCurrentHostTree());
-  setCurrentHostTree(updatedVDOMTree);
+  (0, _NoriDOM.patch)(updatedVDOMTree, getCurrentVDOM());
+  setCurrentVDOM(updatedVDOMTree);
   (0, _LifecycleQueue.performDidMountQueue)();
   currentStage = STAGE_UPDATING;
   (0, _LifecycleQueue.performDidUpdateQueue)(componentInstanceMap);
-  currentStage = STAGE_STEADY; //console.timeEnd('update');
+  currentStage = STAGE_STEADY; // console.timeEnd('update');
 }; //------------------------------------------------------------------------------
 //CREATIONCREATIONCREATIONCREATIONCREATIONCREATIONCREATIONCREATIONCREATIONCREATI
 //------------------------------------------------------------------------------
@@ -43007,9 +43009,7 @@ var renderChildFunctions = function renderChildFunctions(vnode) {
   var children = vnode.children,
       result = [],
       resultIndex = [],
-      index = 0; //TODO FOPT
-  // can use reduce and acc for result index?
-
+      index = 0;
   children = children.map(function (child, i) {
     if (typeof child === 'function') {
       var childResult = child();

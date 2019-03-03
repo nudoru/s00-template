@@ -1,5 +1,7 @@
 /*
 TODO
+  - create a fn that will determine if the vnode has been rendered and call render or update as appropriate
+  - test form input
   - test props on SFC
   - test component children on SFC
   - Element or wrapper for text nodes
@@ -28,9 +30,9 @@ const STAGE_RENDERING   = 'rendering';
 const STAGE_UPDATING    = 'updating';
 const STAGE_STEADY      = 'steady';
 
-const UPDATE_TIMEOUT = 10;
+const UPDATE_TIMEOUT = 10;  // how ofter the update queue runs
 
-let currentHostTree,
+let currentVDOM,
     componentInstanceMap = {},
     updateTimeOut,
     currentStage         = STAGE_UNITIALIZED;
@@ -40,13 +42,13 @@ const cloneNode         = vnode => cloneDeep(vnode); // Warning: Potentially exp
 const hasOwnerComponent = vnode => vnode.hasOwnProperty('_owner') && vnode._owner !== null;
 const getKeyOrId        = vnode => vnode.props.key ? vnode.props.key : vnode.props.id;
 
-export const isNoriComponent    = test => test.$$typeof && Symbol.keyFor(test.$$typeof) === 'nori.component';
-export const setCurrentHostTree = tree => currentHostTree = tree;
-export const getCurrentHostTree = _ => cloneNode(currentHostTree);
-export const isInitialized      = _ => currentStage !== STAGE_UNITIALIZED;
-export const isRendering        = _ => currentStage === STAGE_RENDERING;
-export const isUpdating         = _ => currentStage === STAGE_UPDATING;
-export const isSteady           = _ => currentStage === STAGE_STEADY;
+export const isNoriComponent = test => test.$$typeof && Symbol.keyFor(test.$$typeof) === 'nori.component';
+export const setCurrentVDOM  = tree => currentVDOM = tree;
+export const getCurrentVDOM  = _ => cloneNode(currentVDOM);
+export const isInitialized   = _ => currentStage !== STAGE_UNITIALIZED;
+export const isRendering     = _ => currentStage === STAGE_RENDERING;
+export const isUpdating      = _ => currentStage === STAGE_UPDATING;
+export const isSteady        = _ => currentStage === STAGE_STEADY;
 
 //------------------------------------------------------------------------------
 //PUBLICPUBLICPUBLICPUBLICPUBLICPUBLICPUBLICPUBLICPUBLICPUBLICPUBLICPUBLICPUBLIC
@@ -57,14 +59,14 @@ export const h = (type, props, ...args) => ({
   type,
   props   : props || {},
   children: args.length ? flatten(args) : [],
-  _owner   : null
+  _owner  : null // will be the NoriComponent instance that generated the node
 });
 
 // Called from NoriDOM to render the first vdom
 export const renderVDOM = node => {
   currentStage = STAGE_RENDERING;
   const vdom   = renderComponentVDOM(node);
-  setCurrentHostTree(vdom);
+  setCurrentVDOM(vdom);
   currentStage = STAGE_STEADY;
   return vdom;
 };
@@ -89,26 +91,26 @@ const performUpdates = () => {
     return;
   }
 
-  //console.time('update');
+  // console.time('update');
   clearTimeout(updateTimeOut);
   updateTimeOut = null;
 
-  currentStage        = STAGE_RENDERING;
-  let updatedVDOMTree = getCurrentHostTree();
+  currentStage = STAGE_RENDERING;
 
-  //TODO FOPT
-  getDidUpdateQueue().forEach(id => {
-    updatedVDOMTree = updateComponentVDOM(id)(updatedVDOMTree);
-  });
-  patch(updatedVDOMTree, getCurrentHostTree());
-  setCurrentHostTree(updatedVDOMTree);
+  const updatedVDOMTree = getDidUpdateQueue().reduce((acc, id) => {
+    acc = updateComponentVDOM(id)(acc);
+    return acc;
+  }, getCurrentVDOM());
+  // TODO FOPT => get updatedVDOM tree to flow into patch and setCurrentVDOM
+  patch(updatedVDOMTree, getCurrentVDOM());
+  setCurrentVDOM(updatedVDOMTree);
 
   performDidMountQueue();
 
   currentStage = STAGE_UPDATING;
   performDidUpdateQueue(componentInstanceMap);
   currentStage = STAGE_STEADY;
-  //console.timeEnd('update');
+  // console.timeEnd('update');
 };
 
 //------------------------------------------------------------------------------
@@ -150,8 +152,6 @@ const renderChildFunctions = vnode => {
       resultIndex = [],
       index       = 0;
 
-  //TODO FOPT
-  // can use reduce and acc for result index?
   children = children.map((child, i) => {
     if (typeof child === 'function') {
       let childResult = child();
@@ -183,7 +183,7 @@ const instantiateNewComponent = vnode => {
   if (componentInstanceMap.hasOwnProperty(id)) {
     instance = componentInstanceMap[id];
   } else if (typeof vnode.type === 'function') {
-    vnode.props.children  = Is.array(vnode.children) ? vnode.children : [vnode.children];
+    vnode.props.children     = Is.array(vnode.children) ? vnode.children : [vnode.children];
     instance                 = new vnode.type(vnode.props); //, vnode.children
     id                       = instance.props.id; // id could change during construction
     componentInstanceMap[id] = instance;
@@ -199,7 +199,7 @@ const instantiateNewComponent = vnode => {
 
 const renderComponentNode = instance => {
   if (typeof instance.internalRender === 'function') {
-    let vnode   = instance.internalRender();
+    let vnode    = instance.internalRender();
     vnode._owner = instance;
     return vnode;
   } else if (isVDOMNode(instance)) {
