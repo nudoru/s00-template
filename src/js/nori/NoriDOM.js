@@ -1,8 +1,7 @@
 import decalelize from 'decamelize';
 import {enqueueDidMount, performDidMountQueue} from './LifecycleQueue';
-import {removeComponentInstance, renderVDOM, renderComponentVDOM} from "./Nori";
+import {removeComponentInstance, renderComponentVDOM, renderVDOM} from "./Nori";
 import {removeAllElements} from "./browser/DOMToolbox";
-import Is from './util/is';
 
 const ID_KEY        = 'data-nori-id';
 const isEvent       = event => /^on/.test(event);
@@ -12,7 +11,6 @@ const specialProps  = ['tweens', 'state', 'actions', 'children', 'element', 'min
 const isSpecialProp = test => specialProps.includes(test);
 
 let eventMap = {},
-    domElMap = {},
     $documentHostNode;
 
 export const render = (component, hostNode) => {
@@ -113,13 +111,12 @@ const changed = (newNode, oldNode) => {
 
 const createElement = vnode => {
   let $element,
-      ownerComp = vnode.owner !== null && vnode.owner !== undefined ? vnode.owner : null;
+      ownerComp = vnode._owner !== null && vnode._owner !== undefined ? vnode._owner : null;
 
-  // TODO am I missing any types here?
-  if (typeof vnode === 'string' || typeof vnode === 'number') {
+  if (typeof vnode === 'string' || typeof vnode === 'number' || typeof vnode === 'boolean') {
     $element = createTextNode(vnode);
   } else if (typeof vnode.type === 'function') {
-    $element             = createElement(renderComponentVDOM(vnode));
+    $element = createElement(renderComponentVDOM(vnode));
   } else if (typeof vnode === 'object' && typeof vnode.type === 'string') {
     $element = document.createElement(vnode.type);
     if (vnode.hasOwnProperty('children')) {
@@ -137,9 +134,8 @@ const createElement = vnode => {
   }
 
   if (ownerComp) {
-    ownerComp.current = $element;
     if (typeof ownerComp.componentDidMount === 'function') {
-      enqueueDidMount(ownerComp.componentDidMount); //.bind(ownerComp)
+      enqueueDidMount(ownerComp.componentDidMount);
     }
   }
 

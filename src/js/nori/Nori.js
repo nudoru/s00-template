@@ -1,9 +1,5 @@
 /*
 TODO
-  - create a blinker, props update tester w/ css
-  - simplify NoriComponent constructor - just take props
-    - but children on props
-    - "regular HTML" is an new element class
   - test props on SFC
   - test component children on SFC
   - Element or wrapper for text nodes
@@ -41,7 +37,7 @@ let currentHostTree,
 
 const isVDOMNode        = vnode => typeof vnode === 'object' && vnode.hasOwnProperty('type') && vnode.hasOwnProperty('props') && vnode.hasOwnProperty('children');
 const cloneNode         = vnode => cloneDeep(vnode); // Warning: Potentially expensive
-const hasOwnerComponent = vnode => vnode.hasOwnProperty('owner') && vnode.owner !== null;
+const hasOwnerComponent = vnode => vnode.hasOwnProperty('_owner') && vnode._owner !== null;
 const getKeyOrId        = vnode => vnode.props.key ? vnode.props.key : vnode.props.id;
 
 export const isNoriComponent    = test => test.$$typeof && Symbol.keyFor(test.$$typeof) === 'nori.component';
@@ -61,7 +57,7 @@ export const h = (type, props, ...args) => ({
   type,
   props   : props || {},
   children: args.length ? flatten(args) : [],
-  owner   : null
+  _owner   : null
 });
 
 // Called from NoriDOM to render the first vdom
@@ -191,8 +187,8 @@ const instantiateNewComponent = vnode => {
     instance                 = new vnode.type(vnode.props); //, vnode.children
     id                       = instance.props.id; // id could change during construction
     componentInstanceMap[id] = instance;
-  } else if (vnode.hasOwnProperty('owner')) {
-    instance                 = vnode.owner;
+  } else if (vnode.hasOwnProperty('_owner')) {
+    instance                 = vnode._owner;
     id                       = instance.props.id; // id could change during construction
     componentInstanceMap[id] = instance;
   } else {
@@ -204,7 +200,7 @@ const instantiateNewComponent = vnode => {
 const renderComponentNode = instance => {
   if (typeof instance.internalRender === 'function') {
     let vnode   = instance.internalRender();
-    vnode.owner = instance;
+    vnode._owner = instance;
     return vnode;
   } else if (isVDOMNode(instance)) {
     if (!instance.props.id) {
@@ -218,9 +214,10 @@ const renderComponentNode = instance => {
 
 export const removeComponentInstance = vnode => {
   if (hasOwnerComponent(vnode)) {
-    if (typeof vnode.owner.componentWillUnmount === 'function') {
-      vnode.owner.componentWillUnmount();
+    if (typeof vnode._owner.componentWillUnmount === 'function') {
+      vnode._owner.componentWillUnmount();
+      vnode._owner.remove();
     }
-    delete componentInstanceMap[vnode.owner.props.id];
+    delete componentInstanceMap[vnode._owner.props.id];
   }
 };

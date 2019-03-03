@@ -42451,8 +42451,6 @@ var _Nori = require("./Nori");
 
 var _DOMToolbox = require("./browser/DOMToolbox");
 
-var _is = _interopRequireDefault(require("./util/is"));
-
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
@@ -42475,7 +42473,6 @@ var isSpecialProp = function isSpecialProp(test) {
 };
 
 var eventMap = {},
-    domElMap = {},
     $documentHostNode;
 
 var render = function render(component, hostNode) {
@@ -42582,9 +42579,9 @@ var changed = function changed(newNode, oldNode) {
 
 var createElement = function createElement(vnode) {
   var $element,
-      ownerComp = vnode.owner !== null && vnode.owner !== undefined ? vnode.owner : null; // TODO am I missing any types here?
+      ownerComp = vnode._owner !== null && vnode._owner !== undefined ? vnode._owner : null;
 
-  if (typeof vnode === 'string' || typeof vnode === 'number') {
+  if (typeof vnode === 'string' || typeof vnode === 'number' || typeof vnode === 'boolean') {
     $element = createTextNode(vnode);
   } else if (typeof vnode.type === 'function') {
     $element = createElement((0, _Nori.renderComponentVDOM)(vnode));
@@ -42606,10 +42603,8 @@ var createElement = function createElement(vnode) {
   }
 
   if (ownerComp) {
-    ownerComp.current = $element;
-
     if (typeof ownerComp.componentDidMount === 'function') {
-      (0, _LifecycleQueue.enqueueDidMount)(ownerComp.componentDidMount); //.bind(ownerComp)
+      (0, _LifecycleQueue.enqueueDidMount)(ownerComp.componentDidMount);
     }
   }
 
@@ -42768,7 +42763,7 @@ var removeBooleanProp = function removeBooleanProp($element, key) {
   $element.removeAttribute(key);
   $element[key] = false;
 };
-},{"decamelize":"../node_modules/decamelize/index.js","./LifecycleQueue":"js/nori/LifecycleQueue.js","./Nori":"js/nori/Nori.js","./browser/DOMToolbox":"js/nori/browser/DOMToolbox.js","./util/is":"js/nori/util/is.js"}],"js/nori/Nori.js":[function(require,module,exports) {
+},{"decamelize":"../node_modules/decamelize/index.js","./LifecycleQueue":"js/nori/LifecycleQueue.js","./Nori":"js/nori/Nori.js","./browser/DOMToolbox":"js/nori/browser/DOMToolbox.js"}],"js/nori/Nori.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -42822,7 +42817,7 @@ var cloneNode = function cloneNode(vnode) {
 
 
 var hasOwnerComponent = function hasOwnerComponent(vnode) {
-  return vnode.hasOwnProperty('owner') && vnode.owner !== null;
+  return vnode.hasOwnProperty('_owner') && vnode._owner !== null;
 };
 
 var getKeyOrId = function getKeyOrId(vnode) {
@@ -42884,7 +42879,7 @@ var h = function h(type, props) {
     type: type,
     props: props || {},
     children: args.length ? (0, _ArrayUtils.flatten)(args) : [],
-    owner: null
+    _owner: null
   };
 }; // Called from NoriDOM to render the first vdom
 
@@ -43031,8 +43026,8 @@ var instantiateNewComponent = function instantiateNewComponent(vnode) {
     id = instance.props.id; // id could change during construction
 
     componentInstanceMap[id] = instance;
-  } else if (vnode.hasOwnProperty('owner')) {
-    instance = vnode.owner;
+  } else if (vnode.hasOwnProperty('_owner')) {
+    instance = vnode._owner;
     id = instance.props.id; // id could change during construction
 
     componentInstanceMap[id] = instance;
@@ -43046,7 +43041,7 @@ var instantiateNewComponent = function instantiateNewComponent(vnode) {
 var renderComponentNode = function renderComponentNode(instance) {
   if (typeof instance.internalRender === 'function') {
     var vnode = instance.internalRender();
-    vnode.owner = instance;
+    vnode._owner = instance;
     return vnode;
   } else if (isVDOMNode(instance)) {
     if (!instance.props.id) {
@@ -43062,11 +43057,13 @@ var renderComponentNode = function renderComponentNode(instance) {
 
 var removeComponentInstance = function removeComponentInstance(vnode) {
   if (hasOwnerComponent(vnode)) {
-    if (typeof vnode.owner.componentWillUnmount === 'function') {
-      vnode.owner.componentWillUnmount();
+    if (typeof vnode._owner.componentWillUnmount === 'function') {
+      vnode._owner.componentWillUnmount();
+
+      vnode._owner.remove();
     }
 
-    delete componentInstanceMap[vnode.owner.props.id];
+    delete componentInstanceMap[vnode._owner.props.id];
   }
 };
 
@@ -43080,8 +43077,6 @@ Object.defineProperty(exports, "__esModule", {
 exports.default = void 0;
 
 var _is = _interopRequireDefault(require("./util/is"));
-
-var _ramda = require("ramda");
 
 var _ElementIDCreator = require("./util/ElementIDCreator");
 
@@ -43103,17 +43098,16 @@ function () {
   function NoriComponent(props) {
     _classCallCheck(this, NoriComponent);
 
-    //this.type            = type;
     this.props = props || {};
-    this.props.id = props.key ? props.key : props.id ? props.id : (0, _ElementIDCreator.getNextId)(); // this.props.children  = Is.array(children) ? children : [children];
-    //this.tweens          = props.hasOwnProperty('tweens') ? props.tweens : {};
-
-    this.internalState = props.hasOwnProperty('state') ? props.state : {};
-    this.isDirty = true;
-    this.internalCurrent = null;
-    this.internalVDOM = null;
-    this.memoRenderResult = null;
+    this.props.id = props.key ? props.key : props.id ? props.id : (0, _ElementIDCreator.getNextId)();
+    this._internalState = props.hasOwnProperty('state') ? props.state : {};
+    this._isDirty = true;
+    this._memoRenderResult = null;
     this.$$typeof = Symbol.for('nori.component');
+
+    if (typeof this.render !== 'function') {
+      console.error("Component ".concat(this.props.id, " doesn't have a render() method!"));
+    }
   }
 
   _createClass(NoriComponent, [{
@@ -43121,48 +43115,41 @@ function () {
     //https://reactjs.org/docs/shallow-compare.html
     value: function shouldComponentUpdate(nextProps, nextState) {
       // Deep compare
-      // return !equals(nextState, this.internalState); //equals is from Ramda
+      // return !equals(nextState, this._internalState); //equals is from Ramda
       // Shallow compare
-      return !(nextState === this.internalState) || !(nextProps === this.props);
+      return !(nextState === this._internalState) || !(nextProps === this.props);
     }
   }, {
     key: "forceUpdate",
     value: function forceUpdate() {
       (0, _Nori.enqueueUpdate)(this.props.id);
-    } // Memoize last render result and return if not dirty?
-
+    }
   }, {
     key: "internalRender",
     value: function internalRender() {
       var _this = this;
 
-      if (typeof this.render === 'function') {
-        if (this.isDirty || !this.memoRenderResult) {
-          var result = this.render();
+      if (this._isDirty || !this._memoRenderResult) {
+        var result = this.render();
 
-          if (!result.props.id) {
-            result.props.id = this.props.id;
-          }
-
-          result.children.forEach(function (child, i) {
-            if (_typeof(child) === 'object' && !child.props.id) {
-              child.props.id = _this.props.id + ".".concat(i);
-            }
-          });
-          this.isDirty = false;
-          this.memoRenderResult = result;
+        if (!result.props.id) {
+          result.props.id = this.props.id;
         }
 
-        return this.memoRenderResult;
-      } else {
-        console.error("Component ".concat(this.props.id, " has no render()!"));
+        result.children.forEach(function (child, i) {
+          if (_typeof(child) === 'object' && !child.props.id) {
+            child.props.id = _this.props.id + ".".concat(i);
+          }
+        });
+        this._isDirty = false;
+        this._memoRenderResult = result;
       }
+
+      return this._memoRenderResult;
     }
   }, {
     key: "remove",
-    value: function remove() {
-      this.internalCurrent = null;
-      this.internalVDOM = null;
+    value: function remove() {// Nothing here
     }
   }, {
     key: "state",
@@ -43173,34 +43160,18 @@ function () {
       }
 
       if (this.shouldComponentUpdate({}, nextState)) {
-        this.internalState = Object.assign({}, this.internalState, nextState);
+        this._internalState = Object.assign({}, this._internalState, nextState);
 
         if (typeof this.componentWillUpdate === 'function') {
           this.componentWillUpdate();
         }
 
-        this.isDirty = true;
+        this._isDirty = true;
         (0, _Nori.enqueueUpdate)(this.props.id);
       }
     },
     get: function get() {
-      return Object.assign({}, this.internalState);
-    }
-  }, {
-    key: "current",
-    set: function set(el) {
-      this.internalCurrent = el;
-    },
-    get: function get() {
-      return this.internalCurrent;
-    }
-  }, {
-    key: "vdom",
-    set: function set(v) {
-      this.internalVDOM = v;
-    },
-    get: function get() {
-      return this.internalVDOM;
+      return Object.assign({}, this._internalState);
     }
   }]);
 
@@ -43208,7 +43179,7 @@ function () {
 }();
 
 exports.default = NoriComponent;
-},{"./util/is":"js/nori/util/is.js","ramda":"../node_modules/ramda/es/index.js","./util/ElementIDCreator":"js/nori/util/ElementIDCreator.js","./Nori":"js/nori/Nori.js"}],"js/components/Box.js":[function(require,module,exports) {
+},{"./util/is":"js/nori/util/is.js","./util/ElementIDCreator":"js/nori/util/ElementIDCreator.js","./Nori":"js/nori/Nori.js"}],"js/components/Box.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -43568,10 +43539,6 @@ function (_NoriComponent) {
     _classCallCheck(this, Lorem);
 
     _this = _possibleConstructorReturn(this, _getPrototypeOf(Lorem).call(this, props));
-    _this.TEXT = 'text';
-    _this.internalState = {
-      lorem: 'Lorem ipsum dolor sit amet ...'
-    };
     var min = props.min || 3;
     var max = props.max || 5;
     var mode = props.mode || 'text';
@@ -43597,44 +43564,17 @@ function (_NoriComponent) {
       case 'fullNameFL':
         lorem = L.firstLastName();
         break;
-    } // have to call super first
+    }
 
-
-    _this.internalState = {
+    _this.state = {
       lorem: lorem
     };
     return _this;
-  } // Default state
-
+  }
 
   _createClass(Lorem, [{
     key: "render",
     value: function render() {
-      // const min = this.props.min || 3;
-      // const max = this.props.max || 5;
-      // const mode = this.props.mode || 'text';
-      //
-      // let lorem = L.text(min, max);
-      //
-      // switch (mode) {
-      //   case 'paragraph':
-      //     lorem = L.paragraph(min, max);
-      //     break;
-      //   case 'title':
-      //     lorem = L.title(min, max);
-      //     break;
-      //   case 'sentence':
-      //     lorem = L.sentence(min, max);
-      //     break;
-      //   case 'date':
-      //     lorem = L.date().string;
-      //     break;
-      //   case 'fullNameFL':
-      //     lorem = L.firstLastName();
-      //     break;
-      // }
-      // Return an array or each letter will be created as an individual element
-      // The base element in the constructor determines what dom element it gets wrapped in
       return (0, _Nori.h)("span", null, this.state.lorem);
     }
   }]);
@@ -43741,7 +43681,7 @@ function (_NoriComponent) {
     value: function render() {
       return (0, _Nori.h)("h3", null, "The count is ", (0, _Nori.h)("strong", {
         className: red
-      }, this.internalState.counter), " ticks.");
+      }, this.state.counter), " ticks.");
     }
   }]);
 

@@ -1,22 +1,20 @@
 import Is from './util/is';
-import {equals} from "ramda";
 import {getNextId} from './util/ElementIDCreator';
 import {enqueueUpdate} from "./Nori";
 
 export default class NoriComponent {
 
   constructor(props) {
-    //this.type            = type;
-    this.props           = props || {};
-    this.props.id        = props.key ? props.key : (props.id ? props.id : getNextId());
-    // this.props.children  = Is.array(children) ? children : [children];
-    //this.tweens          = props.hasOwnProperty('tweens') ? props.tweens : {};
-    this.internalState   = props.hasOwnProperty('state') ? props.state : {};
-    this.isDirty         = true;
-    this.internalCurrent = null;
-    this.internalVDOM    = null;
-    this.memoRenderResult = null;
-    this.$$typeof        = Symbol.for('nori.component');
+    this.props             = props || {};
+    this.props.id          = props.key ? props.key : (props.id ? props.id : getNextId());
+    this._internalState    = props.hasOwnProperty('state') ? props.state : {};
+    this._isDirty          = true;
+    this._memoRenderResult = null;
+    this.$$typeof          = Symbol.for('nori.component');
+
+    if (typeof this.render !== 'function') {
+      console.error(`Component ${this.props.id} doesn't have a render() method!`);
+    }
   }
 
   set state(nextState) {
@@ -26,74 +24,52 @@ export default class NoriComponent {
     }
 
     if (this.shouldComponentUpdate({}, nextState)) {
-      this.internalState = Object.assign({}, this.internalState, nextState);
+      this._internalState = Object.assign({}, this._internalState, nextState);
       if (typeof this.componentWillUpdate === 'function') {
         this.componentWillUpdate();
       }
-      this.isDirty = true;
+      this._isDirty = true;
       enqueueUpdate(this.props.id);
     }
   }
 
   get state() {
-    return Object.assign({}, this.internalState);
-  }
-
-  set current(el) {
-    this.internalCurrent = el;
-  }
-
-  get current() {
-    return this.internalCurrent;
-  }
-
-  set vdom(v) {
-    this.internalVDOM = v;
-  }
-
-  get vdom() {
-    return this.internalVDOM;
+    return Object.assign({}, this._internalState);
   }
 
   //https://reactjs.org/docs/shallow-compare.html
   shouldComponentUpdate(nextProps, nextState) {
     // Deep compare
-    // return !equals(nextState, this.internalState); //equals is from Ramda
+    // return !equals(nextState, this._internalState); //equals is from Ramda
     // Shallow compare
-    return !(nextState === this.internalState) || !(nextProps === this.props);
+    return !(nextState === this._internalState) || !(nextProps === this.props);
   }
 
   forceUpdate() {
     enqueueUpdate(this.props.id);
   }
 
-  // Memoize last render result and return if not dirty?
   internalRender() {
-    if (typeof this.render === 'function') {
-      if(this.isDirty || !this.memoRenderResult) {
-        let result =  this.render();
-        if(!result.props.id) {
-          result.props.id = this.props.id;
-        }
-
-        result.children.forEach((child, i) => {
-          if (typeof child === 'object' && !child.props.id) {
-            child.props.id = this.props.id + `.${i}`;
-          }
-        });
-
-        this.isDirty = false;
-        this.memoRenderResult = result;
+    if (this._isDirty || !this._memoRenderResult) {
+      const result = this.render();
+      if (!result.props.id) {
+        result.props.id = this.props.id;
       }
-      return this.memoRenderResult;
-    } else {
-      console.error(`Component ${this.props.id} has no render()!`)
+
+      result.children.forEach((child, i) => {
+        if (typeof child === 'object' && !child.props.id) {
+          child.props.id = this.props.id + `.${i}`;
+        }
+      });
+
+      this._isDirty          = false;
+      this._memoRenderResult = result;
     }
+    return this._memoRenderResult;
   }
 
   remove() {
-    this.internalCurrent = null;
-    this.internalVDOM    = null;
+    // Nothing here
   }
 
 }
