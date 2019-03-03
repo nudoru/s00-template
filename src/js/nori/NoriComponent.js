@@ -1,3 +1,4 @@
+import {cloneDeep} from 'lodash';
 import Is from './util/is';
 import {getNextId} from './util/ElementIDCreator';
 import {enqueueUpdate} from "./Nori";
@@ -7,9 +8,11 @@ export default class NoriComponent {
   constructor(props) {
     this.props             = props || {};
     this.props.id          = props.key ? props.key : (props.id ? props.id : getNextId());
+    this.props.key         = props.key || null;
     this._internalState    = props.hasOwnProperty('state') ? props.state : {};
     this._isDirty          = true;
     this._memoRenderResult = null;
+    this._lastRenderedDOMEl = null;
     this.$$typeof          = Symbol.for('nori.component');
 
     if (typeof this.render !== 'function') {
@@ -34,15 +37,21 @@ export default class NoriComponent {
   }
 
   get state() {
-    return Object.assign({}, this._internalState);
+    // return Object.assign({}, this._internalState);
+    return cloneDeep(this._internalState);
   }
 
-  //https://reactjs.org/docs/shallow-compare.html
   shouldComponentUpdate(nextProps, nextState) {
-    // Deep compare
-    // return !equals(nextState, this._internalState); //equals is from Ramda
-    // Shallow compare
+    // Deep compare using Ramda !equals(nextState, this._internalState);
     return !(nextState === this._internalState) || !(nextProps === this.props);
+  }
+
+  set $current($el) {
+    this._lastRenderedDOMEl = $el;
+  }
+
+  get $current() {
+    return this._lastRenderedDOMEl;
   }
 
   forceUpdate() {

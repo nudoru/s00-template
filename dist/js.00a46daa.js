@@ -42456,6 +42456,7 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
 
 var ID_KEY = 'data-nori-id';
+var SHOW_ID_KEYS = false;
 
 var isEvent = function isEvent(event) {
   return /^on/.test(event);
@@ -42466,13 +42467,14 @@ var getEventName = function getEventName(event) {
 }; // "Special props should be updated as new props are added to components.
 
 
-var specialProps = ['tweens', 'state', 'actions', 'children', 'element', 'min', 'max', 'mode', 'key'];
+var specialProps = ['tweens', 'state', 'actions', 'children', 'element', 'min', 'max', 'mode'];
 
 var isSpecialProp = function isSpecialProp(test) {
   return specialProps.includes(test);
 };
 
 var eventMap = {},
+    renderedElementsMap = {},
     $documentHostNode;
 
 var render = function render(component, hostNode) {
@@ -42492,10 +42494,12 @@ var correlateVDOMNode = function correlateVDOMNode(vnode, $domRoot) {
   if (!vnode) {
     return $domRoot;
   } else {
-    var $element = document.querySelector("[".concat(ID_KEY, "=\"").concat(vnode.props.id, "\"]"));
+    // const $element = document.querySelector(`[${ID_KEY}="${vnode.props.id}"]`);
+    var $element = vnode.hasOwnProperty('props') ? renderedElementsMap[vnode.props.id] : null;
 
     if (!$element) {
-      console.warn("correlateVDOMNode : Couldn't get [".concat(ID_KEY, "=\"").concat(vnode.props.id, "\"]"));
+      // console.warn(`correlateVDOMNode : Couldn't get [${ID_KEY}="${vnode.props.id}"]`);
+      console.warn("correlateVDOMNode : Couldn't get rendered element ".concat(vnode.props.id));
     }
 
     return $element;
@@ -42536,6 +42540,11 @@ var updateDOM = function updateDOM($element, newvdom, currentvdom) {
       }
 
       $element.removeChild($toRemove);
+
+      if (currentvdom.hasOwnProperty('props')) {
+        delete renderedElementsMap[currentvdom.props.id];
+      }
+
       patches.push({
         type: 'REMOVE',
         node: $toRemove,
@@ -42578,8 +42587,8 @@ var changed = function changed(newNode, oldNode) {
 };
 
 var createElement = function createElement(vnode) {
-  var $element,
-      ownerComp = vnode._owner !== null && vnode._owner !== undefined ? vnode._owner : null;
+  var $element;
+  var ownerComp = vnode._owner !== null && vnode._owner !== undefined ? vnode._owner : null;
 
   if (typeof vnode === 'string' || typeof vnode === 'number' || typeof vnode === 'boolean') {
     $element = createTextNode(vnode);
@@ -42603,6 +42612,8 @@ var createElement = function createElement(vnode) {
   }
 
   if (ownerComp) {
+    ownerComp.$current = $element;
+
     if (typeof ownerComp.componentDidMount === 'function') {
       (0, _LifecycleQueue.enqueueDidMount)(ownerComp.componentDidMount);
     }
@@ -42610,6 +42621,11 @@ var createElement = function createElement(vnode) {
 
   setProps($element, vnode.props || {});
   setEvents(vnode, $element);
+
+  if (vnode.hasOwnProperty('props')) {
+    renderedElementsMap[vnode.props.id] = $element;
+  }
+
   return $element;
 };
 
@@ -42716,7 +42732,17 @@ var setProp = function setProp($element, key, value) {
     } else if (key === 'className') {
       key = 'class';
     } else if (key === 'id') {
+      if (!SHOW_ID_KEYS) {
+        return;
+      }
+
       key = ID_KEY;
+    } else if (key === 'key') {
+      if (!value) {
+        return;
+      }
+
+      key = 'id';
     }
 
     if (typeof value === 'boolean') {
@@ -43076,6 +43102,8 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.default = void 0;
 
+var _lodash = require("lodash");
+
 var _is = _interopRequireDefault(require("./util/is"));
 
 var _ElementIDCreator = require("./util/ElementIDCreator");
@@ -43100,9 +43128,11 @@ function () {
 
     this.props = props || {};
     this.props.id = props.key ? props.key : props.id ? props.id : (0, _ElementIDCreator.getNextId)();
+    this.props.key = props.key || null;
     this._internalState = props.hasOwnProperty('state') ? props.state : {};
     this._isDirty = true;
     this._memoRenderResult = null;
+    this._lastRenderedDOMEl = null;
     this.$$typeof = Symbol.for('nori.component');
 
     if (typeof this.render !== 'function') {
@@ -43112,11 +43142,8 @@ function () {
 
   _createClass(NoriComponent, [{
     key: "shouldComponentUpdate",
-    //https://reactjs.org/docs/shallow-compare.html
     value: function shouldComponentUpdate(nextProps, nextState) {
-      // Deep compare
-      // return !equals(nextState, this._internalState); //equals is from Ramda
-      // Shallow compare
+      // Deep compare using Ramda !equals(nextState, this._internalState);
       return !(nextState === this._internalState) || !(nextProps === this.props);
     }
   }, {
@@ -43171,7 +43198,16 @@ function () {
       }
     },
     get: function get() {
-      return Object.assign({}, this._internalState);
+      // return Object.assign({}, this._internalState);
+      return (0, _lodash.cloneDeep)(this._internalState);
+    }
+  }, {
+    key: "$current",
+    set: function set($el) {
+      this._lastRenderedDOMEl = $el;
+    },
+    get: function get() {
+      return this._lastRenderedDOMEl;
     }
   }]);
 
@@ -43179,7 +43215,7 @@ function () {
 }();
 
 exports.default = NoriComponent;
-},{"./util/is":"js/nori/util/is.js","./util/ElementIDCreator":"js/nori/util/ElementIDCreator.js","./Nori":"js/nori/Nori.js"}],"js/components/Box.js":[function(require,module,exports) {
+},{"lodash":"../node_modules/lodash/lodash.js","./util/is":"js/nori/util/is.js","./util/ElementIDCreator":"js/nori/util/ElementIDCreator.js","./Nori":"js/nori/Nori.js"}],"js/components/Box.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {

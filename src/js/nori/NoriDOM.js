@@ -4,13 +4,15 @@ import {removeComponentInstance, renderComponentVDOM, renderVDOM} from "./Nori";
 import {removeAllElements} from "./browser/DOMToolbox";
 
 const ID_KEY        = 'data-nori-id';
+const SHOW_ID_KEYS  = false;
 const isEvent       = event => /^on/.test(event);
 const getEventName  = event => event.slice(2).toLowerCase();
 // "Special props should be updated as new props are added to components.
-const specialProps  = ['tweens', 'state', 'actions', 'children', 'element', 'min', 'max', 'mode', 'key'];
+const specialProps  = ['tweens', 'state', 'actions', 'children', 'element', 'min', 'max', 'mode'];
 const isSpecialProp = test => specialProps.includes(test);
 
 let eventMap = {},
+    renderedElementsMap = {},
     $documentHostNode;
 
 export const render = (component, hostNode) => {
@@ -28,9 +30,11 @@ const correlateVDOMNode = (vnode, $domRoot) => {
   if (!vnode) {
     return $domRoot;
   } else {
-    const $element = document.querySelector(`[${ID_KEY}="${vnode.props.id}"]`);
+    // const $element = document.querySelector(`[${ID_KEY}="${vnode.props.id}"]`);
+    const $element = vnode.hasOwnProperty('props') ? renderedElementsMap[vnode.props.id] : null;
     if (!$element) {
-      console.warn(`correlateVDOMNode : Couldn't get [${ID_KEY}="${vnode.props.id}"]`);
+      // console.warn(`correlateVDOMNode : Couldn't get [${ID_KEY}="${vnode.props.id}"]`);
+      console.warn(`correlateVDOMNode : Couldn't get rendered element ${vnode.props.id}`);
     }
     return $element;
   }
@@ -62,6 +66,9 @@ const updateDOM = ($element, newvdom, currentvdom, index = 0, patches) => {
         removeEvents(currentvdom.props.id);
       }
       $element.removeChild($toRemove);
+      if(currentvdom.hasOwnProperty('props')) {
+        delete renderedElementsMap[currentvdom.props.id];
+      }
       patches.push({
         type  : 'REMOVE',
         node  : $toRemove,
@@ -110,8 +117,8 @@ const changed = (newNode, oldNode) => {
 };
 
 const createElement = vnode => {
-  let $element,
-      ownerComp = vnode._owner !== null && vnode._owner !== undefined ? vnode._owner : null;
+  let $element;
+  const ownerComp = vnode._owner !== null && vnode._owner !== undefined ? vnode._owner : null;
 
   if (typeof vnode === 'string' || typeof vnode === 'number' || typeof vnode === 'boolean') {
     $element = createTextNode(vnode);
@@ -134,6 +141,7 @@ const createElement = vnode => {
   }
 
   if (ownerComp) {
+    ownerComp.$current = $element;
     if (typeof ownerComp.componentDidMount === 'function') {
       enqueueDidMount(ownerComp.componentDidMount);
     }
@@ -142,6 +150,9 @@ const createElement = vnode => {
   setProps($element, vnode.props || {});
   setEvents(vnode, $element);
 
+  if(vnode.hasOwnProperty('props')) {
+    renderedElementsMap[vnode.props.id] = $element;
+  }
   return $element;
 };
 
@@ -230,7 +241,15 @@ const setProp = ($element, key, value) => {
     } else if (key === 'className') {
       key = 'class';
     } else if (key === 'id') {
+      if (!SHOW_ID_KEYS) {
+        return;
+      }
       key = ID_KEY;
+    } else if (key === 'key') {
+      if (!value) {
+        return;
+      }
+      key = 'id';
     }
     if (typeof value === 'boolean') {
       setBooleanProp($element, key, value);
