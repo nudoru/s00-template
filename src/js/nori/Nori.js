@@ -1,5 +1,11 @@
 /*
 TODO
+  - create a blinker, props update tester w/ css
+  - simplify NoriComponent constructor - just take props
+    - but children on props
+    - "regular HTML" is an new element class
+  - test props on SFC
+  - test component children on SFC
   - Element or wrapper for text nodes
   - use ImmutableJS data structures
   - test fn as prop value
@@ -7,7 +13,6 @@ TODO
   - in component constructor, call super w/ only props
   - Memoize? https://blog.javascripting.com/2016/10/05/building-your-own-react-clone-in-five-easy-steps/
  */
-
 
 import {flatten} from "./util/ArrayUtils";
 import {getNextId} from "./util/ElementIDCreator";
@@ -18,7 +23,8 @@ import {
   performDidMountQueue,
   performDidUpdateQueue
 } from './LifecycleQueue';
-import {patch, removeEvents} from './NoriDOM';
+import {patch} from './NoriDOM';
+import {compose} from 'ramda';
 
 const STAGE_UNITIALIZED = 'uninitialized';
 const STAGE_RENDERING   = 'rendering';
@@ -32,9 +38,10 @@ let currentHostTree,
     updateTimeOut,
     currentStage         = STAGE_UNITIALIZED;
 
-const isVDOMNode        = node => typeof node === 'object' && node.hasOwnProperty('type') && node.hasOwnProperty('props') && node.hasOwnProperty('children');
-const cloneNode         = node => cloneDeep(node); // Warning: Potentially expensive
-const hasOwnerComponent = node => node.hasOwnProperty('owner') && node.owner !== null;
+const isVDOMNode        = vnode => typeof vnode === 'object' && vnode.hasOwnProperty('type') && vnode.hasOwnProperty('props') && vnode.hasOwnProperty('children');
+const cloneNode         = vnode => cloneDeep(vnode); // Warning: Potentially expensive
+const hasOwnerComponent = vnode => vnode.hasOwnProperty('owner') && vnode.owner !== null;
+const getKeyOrId        = vnode => vnode.props.key ? vnode.props.key : vnode.props.id;
 
 export const isNoriComponent    = test => test.$$typeof && Symbol.keyFor(test.$$typeof) === 'nori.component';
 export const setCurrentHostTree = tree => currentHostTree = tree;
@@ -49,12 +56,12 @@ export const isSteady           = _ => currentStage === STAGE_STEADY;
 //------------------------------------------------------------------------------
 
 // Create VDOM from JSX. Used by the Babel/JSX transpiler
-export const h = (type, props, ...args) => {
-  props = props || {};
-  return {
-    type, props, children: args.length ? flatten(args) : [], owner: null
-  };
-};
+export const h = (type, props, ...args) => ({
+  type,
+  props   : props || {},
+  children: args.length ? flatten(args) : [],
+  owner   : null
+});
 
 // Called from NoriDOM to render the first vdom
 export const renderVDOM = node => {
@@ -93,11 +100,11 @@ const performUpdates = () => {
 
   //TODO FOPT
   getDidUpdateQueue().forEach(id => {
-    updatedVDOMTree = updateComponentVDOM(updatedVDOMTree, id);
+    updatedVDOMTree = updateComponentVDOM(id)(updatedVDOMTree);
   });
   patch(updatedVDOMTree, getCurrentHostTree());
-
   setCurrentHostTree(updatedVDOMTree);
+
   performDidMountQueue();
 
   currentStage = STAGE_UPDATING;
@@ -111,52 +118,60 @@ const performUpdates = () => {
 //------------------------------------------------------------------------------
 
 // Renders out components to get a vdom tree for the first render of a component or tree
-const renderComponentVDOM = node => {
-  node = cloneNode(node);
-  if (typeof node === 'object' && typeof node.type === 'function') {
-    node          = renderComponentNode(instantiateNewComponent(node));
-    node.children = renderChildFunctions(node).map(child => renderComponentVDOM(child));
+const renderComponentVDOM = vnode => {
+  vnode = cloneNode(vnode);
+  if (typeof vnode === 'object' && typeof vnode.type === 'function') {
+    vnode          = compose(renderComponentNode, instantiateNewComponent)(vnode);
+    vnode.children = renderChildFunctions(vnode).map(renderComponentVDOM);
   }
-  return node;
+  return vnode;
 };
 
 // Updates the vdom rerendering only the nodes that match an id
-const updateComponentVDOM = (node, id) => {
-  node = cloneNode(node);
-  if (typeof node === 'object') {
-    if (hasOwnerComponent(node) && node.owner.props.id === id) { //
-      node = renderComponentNode(instantiateNewComponent(node)); // node
-    } else if (typeof node.type === 'function') {
-      node = renderComponentVDOM(node); // new component added
+const updateComponentVDOM = id => vnode => {
+  vnode = cloneNode(vnode);
+  if (typeof vnode === 'object') {
+    if (hasOwnerComponent(vnode) && vnode.props.id === id) { //
+      vnode = renderComponentNode(instantiateNewComponent(vnode));
+    } else if (typeof vnode.type === 'function') {
+      vnode = renderComponentVDOM(vnode); // new component added
     }
-    if (node.hasOwnProperty('children')) {
-      node.children = renderChildFunctions(node).map(child => updateComponentVDOM(child, id));
+    if (vnode.hasOwnProperty('children')) {
+      vnode.children = renderChildFunctions(vnode).map(updateComponentVDOM(id));
     }
   }
-  return node;
+  return vnode;
 };
 
 // If children are an inline fn, render and insert the resulting children in to the
 // child array at the location of the fn
 // works backwards so the insertion indices are correct
-const renderChildFunctions = node => {
-  let children    = node.children,
+const renderChildFunctions = vnode => {
+  let children    = vnode.children,
       result      = [],
       resultIndex = [],
       index       = 0;
 
   //TODO FOPT
-  children.forEach((child, i) => {
+  // can use reduce and acc for result index?
+  children = children.map((child, i) => {
     if (typeof child === 'function') {
-      let childResult = child(node);
-      childResult.forEach((c, i) => {
-        if (typeof c === 'object' && !c.props.id) {
-          c.props.id = c.props.id ? c.props.id : node.props.id + `.${i}.${index++}`;
+      let childResult = child();
+
+      childResult = childResult.map((c, i) => {
+        if (typeof c.type === 'function') {
+          c = renderComponentVDOM(c);
+        } else if (typeof c === 'object' && !getKeyOrId(c)) { //c.props.id
+          c.props.id = c.props.id ? c.props.id : vnode.props.id + `.${i}.${index++}`;
         }
+        return c;
       });
       result.unshift(childResult);
       resultIndex.unshift(i);
+    } else {
+      child = renderComponentVDOM(child);
     }
+    return child;
   });
   resultIndex.forEach((idx, i) => {
     children.splice(idx, 1, ...result[i]);
@@ -164,23 +179,31 @@ const renderChildFunctions = node => {
   return children;
 };
 
-const instantiateNewComponent = node => {
-  if (componentInstanceMap.hasOwnProperty(node.props.id)) {
-    return componentInstanceMap[node.props.id];
+const instantiateNewComponent = vnode => {
+  let instance = vnode,
+      id       = getKeyOrId(vnode);
+  if (componentInstanceMap.hasOwnProperty(id)) {
+    instance = componentInstanceMap[id];
+  } else if (typeof vnode.type === 'function') {
+    instance                 = new vnode.type(vnode.props, vnode.children);
+    id                       = instance.props.id;
+    componentInstanceMap[id] = instance;
+  } else if (vnode.hasOwnProperty('owner')) {
+    instance                 = vnode.owner;
+    id                       = instance.props.id;
+    componentInstanceMap[id] = instance;
+  } else {
+    console.warn(`instantiateNewComponent : vnode is not component type`, typeof vnode.type, vnode);
   }
-  const instance                      = new node.type(node.props, node.children);
-  componentInstanceMap[node.props.id] = instance;
   return instance;
 };
 
 const renderComponentNode = instance => {
   if (typeof instance.internalRender === 'function') {
-    let vnode     = instance.internalRender();
-    instance.vdom = vnode;
-    vnode.owner   = instance;
+    let vnode   = instance.internalRender();
+    vnode.owner = instance;
     return vnode;
   } else if (isVDOMNode(instance)) {
-    // SFC
     if (!instance.props.id) {
       instance.props.id = instance.props.key ? '' + instance.props.key : getNextId();
     }

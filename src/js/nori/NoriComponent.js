@@ -8,9 +8,10 @@ export default class NoriComponent {
   constructor(type, props, children) {
     this.type            = type;
     this.props           = props || {};
-    this.props.id        = props.key ? props.key : getNextId();
+    // this.props.id        = props.id || (props.key ? props.key : getNextId());
+    this.props.id        = props.key ? props.key : (props.id ? props.id : getNextId());
     this.props.children  = Is.array(children) ? children : [children];
-    this.tweens          = props.hasOwnProperty('tweens') ? props.tweens : {};
+    //this.tweens          = props.hasOwnProperty('tweens') ? props.tweens : {};
     this.internalState   = props.hasOwnProperty('state') ? props.state : {};
     this.isDirty         = true;
     this.internalCurrent = null;

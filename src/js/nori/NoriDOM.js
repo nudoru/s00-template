@@ -47,7 +47,7 @@ const updateDOM = ($element, newvdom, currentvdom, index = 0, patches) => {
   if (currentvdom !== 0 && !currentvdom) {
     const $newElement = createElement(newvdom);
     $element.appendChild($newElement);
-    console.log('Append', newvdom, $newElement);
+    //console.log('Append', newvdom, $newElement);
     patches.push({
       type  : 'APPEND',
       node  : $newElement,
@@ -57,8 +57,8 @@ const updateDOM = ($element, newvdom, currentvdom, index = 0, patches) => {
   } else if (!newvdom) {
     const $toRemove = correlateVDOMNode(currentvdom, $element);
     if ($toRemove) {
-      console.log('Remove', currentvdom, $toRemove);
-      // removeComponentInstance(currentvdom);
+      //console.log('Remove', currentvdom, $toRemove);
+      removeComponentInstance(currentvdom);
       if(currentvdom.hasOwnProperty('props')) {
         removeEvents(currentvdom.props.id);
       }
@@ -73,9 +73,12 @@ const updateDOM = ($element, newvdom, currentvdom, index = 0, patches) => {
       console.warn(`wanted to remove`,currentvdom,`but it wasn't there`);
     }
   } else if (changed(newvdom, currentvdom)) {
+
+    // This needs to be smarter? Rearrange rather than replace and append
+
     const $newElement = createElement(newvdom);
     if(newvdom.type) {
-      console.log('Replace', newvdom, currentvdom, $newElement);
+      //console.log('Replace', newvdom, currentvdom, $newElement,$element.childNodes[index]);
     }
     $element.replaceChild($newElement, $element.childNodes[index]);
     patches.push({
@@ -86,6 +89,7 @@ const updateDOM = ($element, newvdom, currentvdom, index = 0, patches) => {
       vnode  : newvdom
     });
   } else if (newvdom.type) {
+    // If it's a component, iterate over children
     updateProps(
       $element.childNodes[index],
       newvdom.props,

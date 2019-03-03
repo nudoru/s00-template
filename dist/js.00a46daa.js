@@ -38283,8 +38283,8 @@ var updateDOM = function updateDOM($element, newvdom, currentvdom) {
 
   if (currentvdom !== 0 && !currentvdom) {
     var $newElement = createElement(newvdom);
-    $element.appendChild($newElement);
-    console.log('Append', newvdom, $newElement);
+    $element.appendChild($newElement); //console.log('Append', newvdom, $newElement);
+
     patches.push({
       type: 'APPEND',
       node: $newElement,
@@ -38295,7 +38295,8 @@ var updateDOM = function updateDOM($element, newvdom, currentvdom) {
     var $toRemove = correlateVDOMNode(currentvdom, $element);
 
     if ($toRemove) {
-      console.log('Remove', currentvdom, $toRemove); // removeComponentInstance(currentvdom);
+      //console.log('Remove', currentvdom, $toRemove);
+      (0, _Nori.removeComponentInstance)(currentvdom);
 
       if (currentvdom.hasOwnProperty('props')) {
         removeEvents(currentvdom.props.id);
@@ -38312,10 +38313,10 @@ var updateDOM = function updateDOM($element, newvdom, currentvdom) {
       console.warn("wanted to remove", currentvdom, "but it wasn't there");
     }
   } else if (changed(newvdom, currentvdom)) {
+    // This needs to be smarter? Rearrange rather than replace and append
     var _$newElement = createElement(newvdom);
 
-    if (newvdom.type) {
-      console.log('Replace', newvdom, currentvdom, _$newElement);
+    if (newvdom.type) {//console.log('Replace', newvdom, currentvdom, $newElement,$element.childNodes[index]);
     }
 
     $element.replaceChild(_$newElement, $element.childNodes[index]);
@@ -38327,6 +38328,7 @@ var updateDOM = function updateDOM($element, newvdom, currentvdom) {
       vnode: newvdom
     });
   } else if (newvdom.type) {
+    // If it's a component, iterate over children
     updateProps($element.childNodes[index], newvdom.props, currentvdom.props);
     var newLength = newvdom.children.length;
     var oldLength = currentvdom.children.length;
@@ -38544,6 +38546,8 @@ var _LifecycleQueue = require("./LifecycleQueue");
 
 var _NoriDOM = require("./NoriDOM");
 
+var _ramda = require("ramda");
+
 function _toConsumableArray(arr) { return _arrayWithoutHoles(arr) || _iterableToArray(arr) || _nonIterableSpread(); }
 
 function _nonIterableSpread() { throw new TypeError("Invalid attempt to spread non-iterable instance"); }
@@ -38564,17 +38568,21 @@ var currentHostTree,
     updateTimeOut,
     currentStage = STAGE_UNITIALIZED;
 
-var isVDOMNode = function isVDOMNode(node) {
-  return _typeof(node) === 'object' && node.hasOwnProperty('type') && node.hasOwnProperty('props') && node.hasOwnProperty('children');
+var isVDOMNode = function isVDOMNode(vnode) {
+  return _typeof(vnode) === 'object' && vnode.hasOwnProperty('type') && vnode.hasOwnProperty('props') && vnode.hasOwnProperty('children');
 };
 
-var cloneNode = function cloneNode(node) {
-  return (0, _lodash.cloneDeep)(node);
+var cloneNode = function cloneNode(vnode) {
+  return (0, _lodash.cloneDeep)(vnode);
 }; // Warning: Potentially expensive
 
 
-var hasOwnerComponent = function hasOwnerComponent(node) {
-  return node.hasOwnProperty('owner') && node.owner !== null;
+var hasOwnerComponent = function hasOwnerComponent(vnode) {
+  return vnode.hasOwnProperty('owner') && vnode.owner !== null;
+};
+
+var getKeyOrId = function getKeyOrId(vnode) {
+  return vnode.props.key ? vnode.props.key : vnode.props.id;
 };
 
 var isNoriComponent = function isNoriComponent(test) {
@@ -38624,15 +38632,13 @@ var isSteady = function isSteady(_) {
 exports.isSteady = isSteady;
 
 var h = function h(type, props) {
-  props = props || {};
-
   for (var _len = arguments.length, args = new Array(_len > 2 ? _len - 2 : 0), _key = 2; _key < _len; _key++) {
     args[_key - 2] = arguments[_key];
   }
 
   return {
     type: type,
-    props: props,
+    props: props || {},
     children: args.length ? (0, _ArrayUtils.flatten)(args) : [],
     owner: null
   };
@@ -38679,7 +38685,7 @@ var performUpdates = function performUpdates() {
   var updatedVDOMTree = getCurrentHostTree(); //TODO FOPT
 
   (0, _LifecycleQueue.getDidUpdateQueue)().forEach(function (id) {
-    updatedVDOMTree = updateComponentVDOM(updatedVDOMTree, id);
+    updatedVDOMTree = updateComponentVDOM(id)(updatedVDOMTree);
   });
   (0, _NoriDOM.patch)(updatedVDOMTree, getCurrentHostTree());
   setCurrentHostTree(updatedVDOMTree);
@@ -38694,86 +38700,105 @@ var performUpdates = function performUpdates() {
 // Renders out components to get a vdom tree for the first render of a component or tree
 
 
-var renderComponentVDOM = function renderComponentVDOM(node) {
-  node = cloneNode(node);
+var renderComponentVDOM = function renderComponentVDOM(vnode) {
+  vnode = cloneNode(vnode);
 
-  if (_typeof(node) === 'object' && typeof node.type === 'function') {
-    node = renderComponentNode(instantiateNewComponent(node));
-    node.children = renderChildFunctions(node).map(function (child) {
-      return renderComponentVDOM(child);
-    });
+  if (_typeof(vnode) === 'object' && typeof vnode.type === 'function') {
+    vnode = (0, _ramda.compose)(renderComponentNode, instantiateNewComponent)(vnode);
+    vnode.children = renderChildFunctions(vnode).map(renderComponentVDOM);
   }
 
-  return node;
+  return vnode;
 }; // Updates the vdom rerendering only the nodes that match an id
 
 
-var updateComponentVDOM = function updateComponentVDOM(node, id) {
-  node = cloneNode(node);
+var updateComponentVDOM = function updateComponentVDOM(id) {
+  return function (vnode) {
+    vnode = cloneNode(vnode);
 
-  if (_typeof(node) === 'object') {
-    if (hasOwnerComponent(node) && node.owner.props.id === id) {
-      //
-      node = renderComponentNode(instantiateNewComponent(node)); // node
-    } else if (typeof node.type === 'function') {
-      node = renderComponentVDOM(node); // new component added
+    if (_typeof(vnode) === 'object') {
+      if (hasOwnerComponent(vnode) && vnode.props.id === id) {
+        //
+        vnode = renderComponentNode(instantiateNewComponent(vnode));
+      } else if (typeof vnode.type === 'function') {
+        vnode = renderComponentVDOM(vnode); // new component added
+      }
+
+      if (vnode.hasOwnProperty('children')) {
+        vnode.children = renderChildFunctions(vnode).map(updateComponentVDOM(id));
+      }
     }
 
-    if (node.hasOwnProperty('children')) {
-      node.children = renderChildFunctions(node).map(function (child) {
-        return updateComponentVDOM(child, id);
-      });
-    }
-  }
-
-  return node;
+    return vnode;
+  };
 }; // If children are an inline fn, render and insert the resulting children in to the
 // child array at the location of the fn
 // works backwards so the insertion indices are correct
 
 
-var renderChildFunctions = function renderChildFunctions(node) {
-  var children = node.children,
+var renderChildFunctions = function renderChildFunctions(vnode) {
+  var children = vnode.children,
       result = [],
       resultIndex = [],
       index = 0; //TODO FOPT
+  // can use reduce and acc for result index?
 
-  children.forEach(function (child, i) {
+  children = children.map(function (child, i) {
     if (typeof child === 'function') {
-      var childResult = child(node);
-      childResult.forEach(function (c, i) {
-        if (_typeof(c) === 'object' && !c.props.id) {
-          c.props.id = c.props.id ? c.props.id : node.props.id + ".".concat(i, ".").concat(index++);
+      var childResult = child();
+      childResult = childResult.map(function (c, i) {
+        if (typeof c.type === 'function') {
+          c = renderComponentVDOM(c);
+        } else if (_typeof(c) === 'object' && !getKeyOrId(c)) {
+          //c.props.id
+          c.props.id = c.props.id ? c.props.id : vnode.props.id + ".".concat(i, ".").concat(index++);
         }
+
+        return c;
       });
       result.unshift(childResult);
       resultIndex.unshift(i);
+    } else {
+      child = renderComponentVDOM(child);
     }
+
+    return child;
   });
   resultIndex.forEach(function (idx, i) {
-    children.splice.apply(children, [idx, 1].concat(_toConsumableArray(result[i])));
+    var _children;
+
+    (_children = children).splice.apply(_children, [idx, 1].concat(_toConsumableArray(result[i])));
   });
   return children;
 };
 
-var instantiateNewComponent = function instantiateNewComponent(node) {
-  if (componentInstanceMap.hasOwnProperty(node.props.id)) {
-    return componentInstanceMap[node.props.id];
+var instantiateNewComponent = function instantiateNewComponent(vnode) {
+  var instance = vnode,
+      id = getKeyOrId(vnode);
+
+  if (componentInstanceMap.hasOwnProperty(id)) {
+    instance = componentInstanceMap[id];
+  } else if (typeof vnode.type === 'function') {
+    instance = new vnode.type(vnode.props, vnode.children);
+    id = instance.props.id;
+    componentInstanceMap[id] = instance;
+  } else if (vnode.hasOwnProperty('owner')) {
+    instance = vnode.owner;
+    id = instance.props.id;
+    componentInstanceMap[id] = instance;
+  } else {
+    console.warn("instantiateNewComponent : vnode is not component type", _typeof(vnode.type), vnode);
   }
 
-  var instance = new node.type(node.props, node.children);
-  componentInstanceMap[node.props.id] = instance;
   return instance;
 };
 
 var renderComponentNode = function renderComponentNode(instance) {
   if (typeof instance.internalRender === 'function') {
     var vnode = instance.internalRender();
-    instance.vdom = vnode;
     vnode.owner = instance;
     return vnode;
   } else if (isVDOMNode(instance)) {
-    // SFC
     if (!instance.props.id) {
       instance.props.id = instance.props.key ? '' + instance.props.key : (0, _ElementIDCreator.getNextId)();
     }
@@ -38796,7 +38821,7 @@ var removeComponentInstance = function removeComponentInstance(vnode) {
 };
 
 exports.removeComponentInstance = removeComponentInstance;
-},{"./util/ArrayUtils":"js/nori/util/ArrayUtils.js","./util/ElementIDCreator":"js/nori/util/ElementIDCreator.js","lodash":"../node_modules/lodash/lodash.js","./LifecycleQueue":"js/nori/LifecycleQueue.js","./NoriDOM":"js/nori/NoriDOM.js"}],"js/nori/util/is.js":[function(require,module,exports) {
+},{"./util/ArrayUtils":"js/nori/util/ArrayUtils.js","./util/ElementIDCreator":"js/nori/util/ElementIDCreator.js","lodash":"../node_modules/lodash/lodash.js","./LifecycleQueue":"js/nori/LifecycleQueue.js","./NoriDOM":"js/nori/NoriDOM.js","ramda":"../node_modules/ramda/es/index.js"}],"js/nori/util/is.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -38885,10 +38910,11 @@ function () {
     _classCallCheck(this, NoriComponent);
 
     this.type = type;
-    this.props = props || {};
-    this.props.id = props.key ? props.key : (0, _ElementIDCreator.getNextId)();
-    this.props.children = _is.default.array(children) ? children : [children];
-    this.tweens = props.hasOwnProperty('tweens') ? props.tweens : {};
+    this.props = props || {}; // this.props.id        = props.id || (props.key ? props.key : getNextId());
+
+    this.props.id = props.key ? props.key : props.id ? props.id : (0, _ElementIDCreator.getNextId)();
+    this.props.children = _is.default.array(children) ? children : [children]; //this.tweens          = props.hasOwnProperty('tweens') ? props.tweens : {};
+
     this.internalState = props.hasOwnProperty('state') ? props.state : {};
     this.isDirty = true;
     this.internalCurrent = null;
@@ -39516,6 +39542,7 @@ function (_NoriComponent) {
     _this.state = {
       counter: 1
     };
+    console.log("".concat(_this.props, " TICKER : constructor"));
     return _this;
   }
 
@@ -39598,6 +39625,7 @@ function (_NoriComponent) {
     _this = _possibleConstructorReturn(this, _getPrototypeOf(Greeter).call(this, 'h1', props, []));
 
     _this.$onClick = function (evt) {
+      // console.log(`  - ${this.props.id} GREETER : click ${this.state.name}`);
       _this.state = {
         name: L.firstLastName()
       };
@@ -39626,14 +39654,15 @@ function (_NoriComponent) {
 
     _this.state = {
       name: L.firstLastName()
-    };
+    }; // console.log(`${this.props.id} GREETER : constructor`);
+
     return _this;
   }
 
   _createClass(Greeter, [{
     key: "render",
     value: function render() {
-      //console.log(`Greeter ${this.props.id} render with ${this.state.name}`);
+      // console.log(`  - ${this.props.id} GREETER : render ${this.state.name}`);
       return (0, _Nori.h)("h1", {
         onClick: this.$onClick,
         onMouseOver: this.onOver,
@@ -39874,8 +39903,8 @@ var testBox = (0, _Nori.h)(_Box.default, {
   mode: _Lorem.default.TITLE
 }), (0, _Nori.h)(_Box.default, {
   className: whiteBox
-}, (0, _Nori.h)(Sfc, null), (0, _Nori.h)(_Ticker.default, null), (0, _Nori.h)(_Greeter.default, null), (0, _Nori.h)(_Lister.default, null))));
-(0, _NoriDOM.render)(testBox, document.querySelector('#js-application'));
+}, (0, _Nori.h)(Sfc, null), (0, _Nori.h)(_Greeter.default, null), (0, _Nori.h)(_Lister.default, null))));
+(0, _NoriDOM.render)((0, _Nori.h)(_Lister.default, null), document.querySelector('#js-application'));
 },{"./theme/Global":"js/theme/Global.js","./theme/Theme":"js/theme/Theme.js","emotion":"../node_modules/emotion/dist/index.esm.js","./nori/Nori":"js/nori/Nori.js","./nori/NoriDOM":"js/nori/NoriDOM.js","./components/Box":"js/components/Box.js","./components/Lorem":"js/components/Lorem.js","./components/Ticker":"js/components/Ticker.js","./components/Greeter":"js/components/Greeter.js","./components/Lister":"js/components/Lister.js","../img/pattern/shattered.png":"img/pattern/shattered.png"}],"../node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
 var global = arguments[3];
 var OVERLAY_ID = '__parcel__error__overlay__';

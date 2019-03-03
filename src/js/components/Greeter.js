@@ -17,9 +17,11 @@ export default class Greeter extends NoriComponent {
   constructor(props, children) {
     super('h1', props, []);
     this.state = {name: L.firstLastName()};
+    // console.log(`${this.props.id} GREETER : constructor`);
   }
 
   $onClick = evt => {
+    // console.log(`  - ${this.props.id} GREETER : click ${this.state.name}`);
     this.state = {name:L.firstLastName()};
   };
 
@@ -52,7 +54,7 @@ export default class Greeter extends NoriComponent {
   };
 
   render() {
-    //console.log(`Greeter ${this.props.id} render with ${this.state.name}`);
+    // console.log(`  - ${this.props.id} GREETER : render ${this.state.name}`);
     return <h1 onClick={this.$onClick} onMouseOver={this.onOver} onMouseOut={this.onOut}>Hello, <em className={blue}>{this.state.name}</em></h1>;
   }
 }

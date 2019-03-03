@@ -55,11 +55,10 @@ let testBox = <Box key='main' className={appContainer}>
     <Lorem mode={Lorem.TITLE}/>
     <Box className={whiteBox}>
       <Sfc/>
-      <Ticker/>
       <Greeter/>
       <Lister/>
     </Box>
   </Box>
 </Box>;
 
-render(testBox, document.querySelector('#js-application'));
+render(<Lister/>, document.querySelector('#js-application'));
