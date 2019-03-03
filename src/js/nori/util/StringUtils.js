@@ -58,5 +58,4 @@ export const removeWhiteSpace = (str) => {
 
 
 export const slugify = str => str.split(' ').map(s => s.toLowerCase()).join('_');
-
 export const unslugify = str => str.split('_').map(s => s.charAt(0).toUpperCase() + s.substring(1)).join(' ');

@@ -1,3 +1,4 @@
+import decalelize from 'decamelize';
 import {enqueueDidMount, performDidMountQueue} from './LifecycleQueue';
 import {removeComponentInstance, renderVDOM} from "./Nori";
 import {removeAllElements} from "./browser/DOMToolbox";
@@ -235,7 +236,9 @@ const setProps = ($element, props) => Object.keys(props).forEach(key => {
 
 const setProp = ($element, key, value) => {
   if (!isSpecialProp(key) && !isEvent(key)) {
-    if (key === 'className') {
+    if(key === 'style') {
+      value = convertStylePropObjToHTML(value);
+    } else if (key === 'className') {
       key = 'class';
     } else if (key === 'id') {
       key = ID_KEY;
@@ -247,6 +250,11 @@ const setProp = ($element, key, value) => {
     }
   }
 };
+
+const convertStylePropObjToHTML = obj => Object.keys(obj).reduce((acc, k) => {
+  acc.push(`${decalelize(k,'-')}: ${obj[k]}`);
+  return acc;
+},[]).join('; ');
 
 const setBooleanProp = ($element, key, value) => {
   if (value) {

@@ -31,7 +31,7 @@ const STAGE_RENDERING   = 'rendering';
 const STAGE_UPDATING    = 'updating';
 const STAGE_STEADY      = 'steady';
 
-const UPDATE_TIMEOUT = 1;
+const UPDATE_TIMEOUT = 10;
 
 let currentHostTree,
     componentInstanceMap = {},
@@ -78,6 +78,7 @@ export const renderVDOM = node => {
 
 // Queue updates from components and batch update every so often
 // Called from NoriComponent set state
+// TODO What about requestIdleCallback https://github.com/aFarkas/requestIdleCallback
 export const enqueueUpdate = id => {
   enqueueDidUpdate(id);
   if (!updateTimeOut) {
@@ -91,7 +92,7 @@ const performUpdates = () => {
     return;
   }
 
-  // console.time('update');
+  //console.time('update');
   clearTimeout(updateTimeOut);
   updateTimeOut = null;
 
@@ -109,8 +110,8 @@ const performUpdates = () => {
 
   currentStage = STAGE_UPDATING;
   performDidUpdateQueue(componentInstanceMap);
-  // console.timeEnd('update');
   currentStage = STAGE_STEADY;
+  //console.timeEnd('update');
 };
 
 //------------------------------------------------------------------------------

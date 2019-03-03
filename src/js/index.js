@@ -10,6 +10,7 @@ import Lorem from './components/Lorem';
 import Ticker from './components/Ticker';
 import Greeter from './components/Greeter';
 import Lister from './components/Lister';
+import ColorSwatch from './components/ColorSwatch';
 
 // ${tme.gradients['premium-white']};
 const appContainerBG = require('../img/pattern/shattered.png');
@@ -56,6 +57,7 @@ let testBox = <Box key='main' className={appContainer}>
     <Box className={whiteBox}>
       <Sfc/>
       <Ticker/>
+      <ColorSwatch/>
       <Greeter/>
       <Lister/>
     </Box>

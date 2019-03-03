@@ -15,13 +15,13 @@ export default class Ticker extends NoriComponent {
   // Subclasses should only take passed props and children
   constructor(props, children) {
     super('h1', props, []);
-    this.tickerID = null;
-    this.state = {counter: 1};
+    this.intervalID = null;
+    this.state      = {counter: 1};
     // console.log(`${this.props.id} TICKER : constructor`);
   }
 
   componentDidMount = () => {
-    this.tickerID = setInterval(this.$updateTicker, 1000)
+    this.intervalID = setInterval(this.$updateTicker, 1000)
   };
 
   $updateTicker = _ => {
@@ -34,7 +34,7 @@ export default class Ticker extends NoriComponent {
   };
 
   componentWillUnmount = () => {
-    clearInterval(this.tickerID);
+    clearInterval(this.intervalID);
   };
 
   render() {
