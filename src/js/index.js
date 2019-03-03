@@ -47,12 +47,28 @@ const blackBox = css`
 `;
 
 const Sfc = props => <span><h1>{props.message}</h1><Greeter/></span>;
-  
+
+//https://overreacted.io/how-are-function-components-different-from-classes/
+const SFCWithJuice = (props) => {
+  const showMessage = () => {
+    alert('Followed ' + props.user);
+  };
+
+  const handleClick = () => {
+    setTimeout(showMessage, 1000);
+  };
+
+  return (
+    <button onClick={handleClick}>SFC With Juice</button>
+  );
+};
+
 let testBox = <Box key='main' className={appContainer}>
   <Box className={blackBox}>
     <Lorem mode={Lorem.TITLE}/>
     <Box className={whiteBox}>
       <Sfc message='IMA sfc'/>
+      <SFCWithJuice user='Dan'/>
       <Ticker/>
       <span><ColorSwatch/></span>
       <Greeter/>

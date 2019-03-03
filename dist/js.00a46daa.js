@@ -44162,6 +44162,21 @@ var blackBox = (0, _emotion.css)(_templateObject3(), _Theme.theme.gradients['pre
 
 var Sfc = function Sfc(props) {
   return (0, _Nori.h)("span", null, (0, _Nori.h)("h1", null, props.message), (0, _Nori.h)(_Greeter.default, null));
+}; //https://overreacted.io/how-are-function-components-different-from-classes/
+
+
+var SFCWithJuice = function SFCWithJuice(props) {
+  var showMessage = function showMessage() {
+    alert('Followed ' + props.user);
+  };
+
+  var handleClick = function handleClick() {
+    setTimeout(showMessage, 1000);
+  };
+
+  return (0, _Nori.h)("button", {
+    onClick: handleClick
+  }, "SFC With Juice");
 };
 
 var testBox = (0, _Nori.h)(_Box.default, {
@@ -44175,6 +44190,8 @@ var testBox = (0, _Nori.h)(_Box.default, {
   className: whiteBox
 }, (0, _Nori.h)(Sfc, {
   message: "IMA sfc"
+}), (0, _Nori.h)(SFCWithJuice, {
+  user: "Dan"
 }), (0, _Nori.h)(_Ticker.default, null), (0, _Nori.h)("span", null, (0, _Nori.h)(_ColorSwatch.default, null)), (0, _Nori.h)(_Greeter.default, null), (0, _Nori.h)(_Lister.default, null))));
 (0, _NoriDOM.render)(testBox, document.querySelector('#js-application'));
 },{"./theme/Global":"js/theme/Global.js","./theme/Theme":"js/theme/Theme.js","emotion":"../node_modules/emotion/dist/index.esm.js","./nori/Nori":"js/nori/Nori.js","./nori/NoriDOM":"js/nori/NoriDOM.js","./components/Box":"js/components/Box.js","./components/Lorem":"js/components/Lorem.js","./components/Ticker":"js/components/Ticker.js","./components/Greeter":"js/components/Greeter.js","./components/Lister":"js/components/Lister.js","./components/ColorSwatch":"js/components/ColorSwatch.js","../img/pattern/shattered.png":"img/pattern/shattered.png"}],"../node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
