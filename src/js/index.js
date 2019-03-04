@@ -68,7 +68,6 @@ let testBox = <Box key='main' className={appContainer}>
     <Lorem mode={Lorem.TITLE}/>
     <Box className={whiteBox}>
       <Sfc message='IMA sfc'/>
-      <SFCWithJuice user='Dan'/>
       <Ticker/>
       <span><ColorSwatch/></span>
       <Greeter/>

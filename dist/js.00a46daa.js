@@ -42542,8 +42542,8 @@ var updateDOM = function updateDOM($element, newvdom, currentvdom) {
     }
   } else if (changed(newvdom, currentvdom)) {
     // This needs to be smarter - Rearrange rather than replace and append
-    // There is problem when mulitple new nodes are inserted at separate indices in that
-    // existing nodes are mutated to a new node type and the reference to that origional
+    // There is problem when multiple new nodes are inserted at separate indices in that
+    // existing nodes are mutated to a new node type and the reference to that original
     // element is lost.
     var _$newElement = createElement(newvdom);
 
@@ -42595,7 +42595,7 @@ var createElement = function createElement(vnode) {
   var $element;
   var ownerComp = vnode._owner !== null && vnode._owner !== undefined ? vnode._owner : null;
 
-  if (typeof vnode === 'string' || typeof vnode === 'number' || typeof vnode === 'boolean') {
+  if (typeof vnode === 'string' || typeof vnode === 'number') {
     $element = createTextNode(vnode);
   } else if (typeof vnode.type === 'function') {
     $element = createElement((0, _Nori.renderComponentVDOM)(vnode));
@@ -42622,7 +42622,8 @@ var createElement = function createElement(vnode) {
     if (typeof ownerComp.componentDidMount === 'function') {
       (0, _LifecycleQueue.enqueueDidMount)(ownerComp.componentDidMount);
     }
-  }
+  } // Is there any benefit to moving this work to after all of the DOM work is done?
+
 
   setProps($element, vnode.props || {});
   setEvents(vnode, $element);
@@ -43183,15 +43184,14 @@ var instantiateNewComponent = function instantiateNewComponent(vnode) {
     instance = new vnode.type(vnode.props);
 
     if (isNoriComponent(vnode)) {
-      // Stateless functional components fail this
+      // Only cache NoriComps, not SFCs
       id = instance.props.id; // id could change during construction
 
       componentInstanceMap[id] = instance;
     }
   } else if (vnode.hasOwnProperty('_owner')) {
     instance = vnode._owner;
-    id = instance.props.id; // id could change during construction
-
+    id = instance.props.id;
     componentInstanceMap[id] = instance;
   } else {
     console.warn("instantiateNewComponent : vnode is not component type", _typeof(vnode.type), vnode);
@@ -43213,7 +43213,6 @@ var renderComponentNode = function renderComponentNode(instance) {
     return instance;
   }
 
-  console.warn("renderComponentNode : No render() on instance");
   return null;
 };
 
@@ -43961,20 +43960,6 @@ function (_NoriComponent) {
 
   _createClass(Lister, [{
     key: "render",
-    // <ul>
-    // {range(this.state.counter).map(i => <li>Item {i+1}</li>)}
-    // </ul>
-    //return <Greeter key={'listitem-'+i}/>;
-
-    /*
-    {() => (range(this.state.counter).map(i => {
-          return <Greeter key={'listitem-'+i}/>;
-        }))}
-        <hr/>
-        {() => (range(this.state.counter).map(i => {
-          return <Greeter key={'listitem-2'+i}/>;
-        }))}
-    */
     value: function render() {
       var _this2 = this;
 
@@ -44190,8 +44175,6 @@ var testBox = (0, _Nori.h)(_Box.default, {
   className: whiteBox
 }, (0, _Nori.h)(Sfc, {
   message: "IMA sfc"
-}), (0, _Nori.h)(SFCWithJuice, {
-  user: "Dan"
 }), (0, _Nori.h)(_Ticker.default, null), (0, _Nori.h)("span", null, (0, _Nori.h)(_ColorSwatch.default, null)), (0, _Nori.h)(_Greeter.default, null), (0, _Nori.h)(_Lister.default, null))));
 (0, _NoriDOM.render)(testBox, document.querySelector('#js-application'));
 },{"./theme/Global":"js/theme/Global.js","./theme/Theme":"js/theme/Theme.js","emotion":"../node_modules/emotion/dist/index.esm.js","./nori/Nori":"js/nori/Nori.js","./nori/NoriDOM":"js/nori/NoriDOM.js","./components/Box":"js/components/Box.js","./components/Lorem":"js/components/Lorem.js","./components/Ticker":"js/components/Ticker.js","./components/Greeter":"js/components/Greeter.js","./components/Lister":"js/components/Lister.js","./components/ColorSwatch":"js/components/ColorSwatch.js","../img/pattern/shattered.png":"img/pattern/shattered.png"}],"../node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {

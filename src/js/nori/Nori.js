@@ -1,5 +1,9 @@
 /*
 TODO
+  - context?
+  - refs?
+  - hooks?
+  - spinner https://github.com/davidhu2000/react-spinners/blob/master/src/BarLoader.jsx
   - create a fn that will determine if the vnode has been rendered and call render or update as appropriate
   - test form input
   - Element or wrapper for text nodes?
@@ -185,13 +189,13 @@ const instantiateNewComponent = vnode => {
     vnode.props.children     = Is.array(vnode.children) ? vnode.children : [vnode.children];
     instance                 = new vnode.type(vnode.props);
     if(isNoriComponent(vnode)) {
-      // Stateless functional components fail this
+      // Only cache NoriComps, not SFCs
       id                       = instance.props.id; // id could change during construction
       componentInstanceMap[id] = instance;
     }
   } else if (vnode.hasOwnProperty('_owner')) {
     instance                 = vnode._owner;
-    id                       = instance.props.id; // id could change during construction
+    id                       = instance.props.id;
     componentInstanceMap[id] = instance;
   } else {
     console.warn(`instantiateNewComponent : vnode is not component type`, typeof vnode.type, vnode);
@@ -210,7 +214,6 @@ const renderComponentNode = instance => {
     }
     return instance;
   }
-  console.warn(`renderComponentNode : No render() on instance`);
   return null;
 };
 

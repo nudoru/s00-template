@@ -68,8 +68,8 @@ const updateDOM = ($element, newvdom, currentvdom, index = 0, patches) => {
     }
   } else if (changed(newvdom, currentvdom)) {
     // This needs to be smarter - Rearrange rather than replace and append
-    // There is problem when mulitple new nodes are inserted at separate indices in that
-    // existing nodes are mutated to a new node type and the reference to that origional
+    // There is problem when multiple new nodes are inserted at separate indices in that
+    // existing nodes are mutated to a new node type and the reference to that original
     // element is lost.
     const $newElement = createElement(newvdom);
     if (newvdom.type) {
@@ -123,7 +123,7 @@ const createElement = vnode => {
   let $element;
   const ownerComp = vnode._owner !== null && vnode._owner !== undefined ? vnode._owner : null;
 
-  if (typeof vnode === 'string' || typeof vnode === 'number' || typeof vnode === 'boolean') {
+  if (typeof vnode === 'string' || typeof vnode === 'number') {
     $element = createTextNode(vnode);
   } else if (typeof vnode.type === 'function') {
     $element = createElement(renderComponentVDOM(vnode));
@@ -150,6 +150,7 @@ const createElement = vnode => {
     }
   }
 
+  // Is there any benefit to moving this work to after all of the DOM work is done?
   setProps($element, vnode.props || {});
   setEvents(vnode, $element);
 
