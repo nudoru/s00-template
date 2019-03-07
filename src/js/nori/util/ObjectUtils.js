@@ -24,6 +24,8 @@ export const isNull = (obj) => {
   return isnull;
 };
 
+export const keysOf = obj => obj instanceof Object && Object.keys(obj) || [];
+
 export const dynamicSort = (property) => {
   return function (a, b) {
     return a[property] < b[property] ? -1 : a[property] > b[property] ? 1 : 0;

@@ -42921,7 +42921,7 @@ exports.default = NoriComponent;
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.removeComponentInstance = exports.renderComponentVDOM = exports.enqueueUpdate = exports.renderVDOM = exports.h = exports.isSteady = exports.isUpdating = exports.isRendering = exports.isInitialized = exports.getCurrentVDOM = exports.setCurrentVDOM = exports.isNoriComponentInstance = exports.isNoriComponent = void 0;
+exports.useEffect = exports.useState = exports.removeComponentInstance = exports.renderComponentVDOM = exports.enqueueUpdate = exports.renderVDOM = exports.h = exports.isSteady = exports.isUpdating = exports.isRendering = exports.isInitialized = exports.getCurrentVDOM = exports.setCurrentVDOM = exports.isNoriComponentInstance = exports.isNoriComponent = void 0;
 
 var _is = _interopRequireDefault(require("./util/is"));
 
@@ -42958,8 +42958,11 @@ var STAGE_STEADY = 'steady';
 var UPDATE_TIMEOUT = 10; // how ofter the update queue runs
 
 var currentVDOM,
+    hooksMap = {},
+    currentlyRendering,
+    currentlyRenderingCounter,
     componentInstanceMap = {},
-    updateTimeOut,
+    updateTimeOutID,
     currentStage = STAGE_UNITIALIZED;
 
 var isVDOMNode = function isVDOMNode(vnode) {
@@ -43067,8 +43070,8 @@ exports.renderVDOM = renderVDOM;
 var enqueueUpdate = function enqueueUpdate(id) {
   (0, _LifecycleQueue.enqueueDidUpdate)(id);
 
-  if (!updateTimeOut) {
-    updateTimeOut = setTimeout(performUpdates, UPDATE_TIMEOUT);
+  if (!updateTimeOutID) {
+    updateTimeOutID = setTimeout(performUpdates, UPDATE_TIMEOUT);
   }
 };
 
@@ -43081,8 +43084,8 @@ var performUpdates = function performUpdates() {
   } // console.time('update');
 
 
-  clearTimeout(updateTimeOut);
-  updateTimeOut = null;
+  clearTimeout(updateTimeOutID);
+  updateTimeOutID = null;
   currentStage = STAGE_RENDERING;
   var updatedVDOMTree = (0, _LifecycleQueue.getDidUpdateQueue)().reduce(function (acc, id) {
     acc = updateComponentVDOM(id)(acc);
@@ -43202,8 +43205,12 @@ var instantiateNewComponent = function instantiateNewComponent(vnode) {
 
 var renderComponentNode = function renderComponentNode(instance) {
   if (typeof instance.internalRender === 'function') {
+    // Set currently rendering for hook
+    currentlyRendering = instance;
+    currentlyRenderingCounter = 0;
     var vnode = instance.internalRender();
     vnode._owner = instance;
+    currentlyRendering = null;
     return vnode;
   } else if (isVDOMNode(instance)) {
     if (!instance.props.id) {
@@ -43227,8 +43234,79 @@ var removeComponentInstance = function removeComponentInstance(vnode) {
     delete componentInstanceMap[vnode._owner.props.id];
   }
 };
+/* Let's play with hooksMap!
+https://reactjs.org/docs/hooksMap-reference.html
+React's Rules:
+  1. must be called at the top level (not in a loop)
+  2. called in the same order - not in a conditional
+*/
+
 
 exports.removeComponentInstance = removeComponentInstance;
+
+var registerHook = function registerHook(type) {
+  for (var _len2 = arguments.length, args = new Array(_len2 > 1 ? _len2 - 1 : 0), _key2 = 1; _key2 < _len2; _key2++) {
+    args[_key2 - 1] = arguments[_key2];
+  }
+
+  if (!currentlyRendering) {
+    console.warn("registerHook : Can't register hook, no current vnode!");
+    return;
+  }
+
+  var id = currentlyRendering.props.id; // currentlyRendering should be the vnode
+  // is this is the first pass?
+
+  if (!hooksMap.hasOwnProperty(id)) {
+    hooksMap[id] = [];
+  }
+
+  if (!hooksMap[id][currentlyRenderingCounter]) {
+    hooksMap[id].push({
+      type: type,
+      vnode: currentlyRendering,
+      data: args
+    }); //console.log(`NEW hook ${type} for ${id} at ${currentlyRenderingCounter}`, args);
+  } else {
+    var runHook = hooksMap[id][currentlyRenderingCounter];
+    console.log("RUN hook ".concat(type, " for ").concat(id), runHook);
+
+    switch (runHook.type) {
+      case 'useState':
+        console.log("useState: ", runHook.data);
+        break;
+
+      case 'useEffect':
+        console.log("useEffect: ", runHook.data);
+        break;
+
+      default:
+        console.warn("unknown hook type: ".concat(runHook.type));
+    }
+  }
+
+  currentlyRenderingCounter++;
+};
+
+var unregisterHook = function unregisterHook(vnode, type) {
+  console.log("unregisterHook for ", vnode, type);
+};
+
+var performHook = function performHook(vnode) {
+  console.log("performHook for ", vnode);
+};
+
+var useState = function useState(initialState) {
+  registerHook('useState', initialState);
+};
+
+exports.useState = useState;
+
+var useEffect = function useEffect(didUpdateFn) {
+  registerHook('useEffect', didUpdateFn);
+};
+
+exports.useEffect = useEffect;
 },{"./util/is":"js/nori/util/is.js","./util/ArrayUtils":"js/nori/util/ArrayUtils.js","./util/ElementIDCreator":"js/nori/util/ElementIDCreator.js","lodash":"../node_modules/lodash/lodash.js","./LifecycleQueue":"js/nori/LifecycleQueue.js","./NoriDOM":"js/nori/NoriDOM.js","ramda":"../node_modules/ramda/es/index.js","./NoriComponent":"js/nori/NoriComponent.js"}],"js/components/Box.js":[function(require,module,exports) {
 "use strict";
 
@@ -43769,13 +43847,13 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
 
 function _possibleConstructorReturn(self, call) { if (call && (_typeof(call) === "object" || typeof call === "function")) { return call; } return _assertThisInitialized(self); }
 
+function _assertThisInitialized(self) { if (self === void 0) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return self; }
+
 function _getPrototypeOf(o) { _getPrototypeOf = Object.setPrototypeOf ? Object.getPrototypeOf : function _getPrototypeOf(o) { return o.__proto__ || Object.getPrototypeOf(o); }; return _getPrototypeOf(o); }
 
 function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function"); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, writable: true, configurable: true } }); if (superClass) _setPrototypeOf(subClass, superClass); }
 
 function _setPrototypeOf(o, p) { _setPrototypeOf = Object.setPrototypeOf || function _setPrototypeOf(o, p) { o.__proto__ = p; return o; }; return _setPrototypeOf(o, p); }
-
-function _assertThisInitialized(self) { if (self === void 0) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return self; }
 
 function _templateObject() {
   var data = _taggedTemplateLiteral(["color: blue;"]);
@@ -43826,8 +43904,7 @@ function (_NoriComponent) {
     _this.componentDidUpdate = function () {// console.log('Greet did update');
     };
 
-    _this.onOver = function (e) {
-      console.log('Greeter over', e, _assertThisInitialized(_assertThisInitialized(_this)));
+    _this.onOver = function (e) {//console.log('Greeter over', e, this);
     };
 
     _this.onOut = function () {//console.log('Greeter out');
@@ -43843,7 +43920,19 @@ function (_NoriComponent) {
   _createClass(Greeter, [{
     key: "render",
     value: function render() {
-      // console.log(`  - ${this.props.id} GREETER : render ${this.state.name}`);
+      var us1 = (0, _Nori.useState)({
+        foo: 'greet 1!'
+      });
+      var us2 = (0, _Nori.useState)({
+        foo: 'greet 2!'
+      });
+      (0, _Nori.useEffect)(function () {
+        console.log('greeter effect 1!!!');
+      });
+      var us3 = (0, _Nori.useState)({
+        foo: 'greet 3!'
+      }); // console.log(`  - ${this.props.id} GREETER : render ${this.state.name}`);
+
       return (0, _Nori.h)("h1", {
         onClick: this.$onClick,
         onMouseOver: this.onOver,
@@ -43964,6 +44053,12 @@ function (_NoriComponent) {
       var _this2 = this;
 
       //console.log('render lister');
+      var us = (0, _Nori.useState)({
+        foo: 'lister'
+      });
+      (0, _Nori.useEffect)(function () {
+        console.log('lister effect!!!');
+      });
       return (0, _Nori.h)("div", {
         className: bordered,
         key: this.props.id

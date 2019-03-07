@@ -1,8 +1,18 @@
 /*
 TODO
+  - update lister with my usestate as a test
+  - test render props pattern https://www.robinwieruch.de/react-render-props-pattern/
+  - use this list to preinit common tags? https://www.npmjs.com/package/html-tags
+    - ex: https://github.com/alex-milanov/vdom-prototype/blob/master/src/js/util/vdom.js#L190
+    - // Super slick ES6 one liner factory function!
+      const greetingFactory = (name) => Reflect.construct(Greeting, [name]);
+  - throw errors and error boundaries
+  - update props
+  - memo components
+  - pure components - no update if state didn't change
   - context?
   - refs?
-  - hooks?
+  - hooksMap?
   - spinner https://github.com/davidhu2000/react-spinners/blob/master/src/BarLoader.jsx
   - create a fn that will determine if the vnode has been rendered and call render or update as appropriate
   - test form input
@@ -36,8 +46,11 @@ const STAGE_STEADY      = 'steady';
 const UPDATE_TIMEOUT = 10;  // how ofter the update queue runs
 
 let currentVDOM,
+    hooksMap             = {},
+    currentlyRendering,
+    currentlyRenderingCounter,
     componentInstanceMap = {},
-    updateTimeOut,
+    updateTimeOutID,
     currentStage         = STAGE_UNITIALIZED;
 
 const isVDOMNode        = vnode => typeof vnode === 'object' && vnode.hasOwnProperty('type') && vnode.hasOwnProperty('props') && vnode.hasOwnProperty('children');
@@ -84,8 +97,8 @@ export const renderVDOM = node => {
 // TODO What about requestIdleCallback https://github.com/aFarkas/requestIdleCallback
 export const enqueueUpdate = id => {
   enqueueDidUpdate(id);
-  if (!updateTimeOut) {
-    updateTimeOut = setTimeout(performUpdates, UPDATE_TIMEOUT);
+  if (!updateTimeOutID) {
+    updateTimeOutID = setTimeout(performUpdates, UPDATE_TIMEOUT);
   }
 };
 
@@ -96,8 +109,8 @@ const performUpdates = () => {
   }
 
   // console.time('update');
-  clearTimeout(updateTimeOut);
-  updateTimeOut = null;
+  clearTimeout(updateTimeOutID);
+  updateTimeOutID = null;
 
   currentStage = STAGE_RENDERING;
 
@@ -159,7 +172,7 @@ const renderChildFunctions = vnode => {
   children = children.map((child, i) => {
     if (typeof child === 'function') {
       let childResult = child();
-      childResult = childResult.map((c, i) => {
+      childResult     = childResult.map((c, i) => {
         if (typeof c.type === 'function') {
           c = renderComponentVDOM(c);
         } else if (typeof c === 'object' && !getKeyOrId(c)) { //c.props.id
@@ -186,9 +199,9 @@ const instantiateNewComponent = vnode => {
   if (componentInstanceMap.hasOwnProperty(id)) {
     instance = componentInstanceMap[id];
   } else if (typeof vnode.type === 'function') {
-    vnode.props.children     = Is.array(vnode.children) ? vnode.children : [vnode.children];
-    instance                 = new vnode.type(vnode.props);
-    if(isNoriComponent(vnode)) {
+    vnode.props.children = Is.array(vnode.children) ? vnode.children : [vnode.children];
+    instance             = new vnode.type(vnode.props);
+    if (isNoriComponent(vnode)) {
       // Only cache NoriComps, not SFCs
       id                       = instance.props.id; // id could change during construction
       componentInstanceMap[id] = instance;
@@ -205,8 +218,12 @@ const instantiateNewComponent = vnode => {
 
 const renderComponentNode = instance => {
   if (typeof instance.internalRender === 'function') {
-    let vnode    = instance.internalRender();
-    vnode._owner = instance;
+    // Set currently rendering for hook
+    currentlyRendering        = instance;
+    currentlyRenderingCounter = 0;
+    let vnode                 = instance.internalRender();
+    vnode._owner              = instance;
+    currentlyRendering        = null;
     return vnode;
   } else if (isVDOMNode(instance)) {
     if (!instance.props.id) {
@@ -225,4 +242,62 @@ export const removeComponentInstance = vnode => {
     }
     delete componentInstanceMap[vnode._owner.props.id];
   }
+};
+
+
+/* Let's play with hooksMap!
+https://reactjs.org/docs/hooksMap-reference.html
+React's Rules:
+  1. must be called at the top level (not in a loop)
+  2. called in the same order - not in a conditional
+*/
+
+const registerHook = (type, ...args) => {
+  if (!currentlyRendering) {
+    console.warn(`registerHook : Can't register hook, no current vnode!`);
+    return;
+  }
+  const id = currentlyRendering.props.id;
+
+  // currentlyRendering should be the vnode
+  // is this is the first pass?
+
+  if (!hooksMap.hasOwnProperty(id)) {
+    hooksMap[id] = [];
+  }
+  if (!hooksMap[id][currentlyRenderingCounter]) {
+    hooksMap[id].push({type, vnode: currentlyRendering, data: args});
+    //console.log(`NEW hook ${type} for ${id} at ${currentlyRenderingCounter}`, args);
+  } else {
+    const runHook = hooksMap[id][currentlyRenderingCounter];
+    console.log(`RUN hook ${type} for ${id}`, runHook);
+
+    switch(runHook.type) {
+      case 'useState':
+        console.log(`useState: `, runHook.data);
+        break;
+      case 'useEffect':
+        console.log(`useEffect: `, runHook.data);
+        break;
+      default:
+        console.warn(`unknown hook type: ${runHook.type}`)
+    }
+  }
+  currentlyRenderingCounter++;
+};
+
+const unregisterHook = (vnode, type) => {
+  console.log(`unregisterHook for `, vnode, type);
+};
+
+const performHook = vnode => {
+  console.log(`performHook for `, vnode);
+};
+
+export const useState = (initialState) => {
+  registerHook('useState', initialState);
+};
+
+export const useEffect = (didUpdateFn) => {
+  registerHook('useEffect', didUpdateFn);
 };

@@ -5,7 +5,7 @@
  */
 
 import NoriComponent from '../nori/NoriComponent';
-import {h} from "../nori/Nori";
+import {h, useState, useEffect} from "../nori/Nori";
 import * as L from '../nori/util/Lorem';
 import {css} from 'emotion';
 
@@ -46,7 +46,7 @@ export default class Greeter extends NoriComponent {
   };
 
   onOver = (e) => {
-    console.log('Greeter over', e, this);
+    //console.log('Greeter over', e, this);
   };
 
   onOut = () => {
@@ -54,6 +54,13 @@ export default class Greeter extends NoriComponent {
   };
 
   render() {
+    const us1 = useState({foo:'greet 1!'});
+    const us2 = useState({foo:'greet 2!'});
+    useEffect(() => {
+      console.log('greeter effect 1!!!');
+    });
+    const us3 = useState({foo:'greet 3!'});
+
     // console.log(`  - ${this.props.id} GREETER : render ${this.state.name}`);
     return <h1 onClick={this.$onClick} onMouseOver={this.onOver} onMouseOut={this.onOut}>Hello, <em className={blue}>{this.state.name}</em></h1>;
   }
