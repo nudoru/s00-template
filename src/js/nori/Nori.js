@@ -12,7 +12,7 @@ TODO
   - pure components - no update if state didn't change
   - context?
   - refs?
-  - hooksMap?
+  - _hooksMap?
   - spinner https://github.com/davidhu2000/react-spinners/blob/master/src/BarLoader.jsx
   - create a fn that will determine if the vnode has been rendered and call render or update as appropriate
   - test form input
@@ -45,13 +45,11 @@ const STAGE_STEADY      = 'steady';
 
 const UPDATE_TIMEOUT = 10;  // how ofter the update queue runs
 
-let currentVDOM,
-    hooksMap             = {},
-    currentlyRendering,
-    currentlyRenderingCounter,
-    componentInstanceMap = {},
-    updateTimeOutID,
-    currentStage         = STAGE_UNITIALIZED;
+let _currentVDOM,
+    _currentVnode,
+    _componentInstanceMap = {},
+    _updateTimeOutID,
+    _currentStage         = STAGE_UNITIALIZED;
 
 const isVDOMNode        = vnode => typeof vnode === 'object' && vnode.hasOwnProperty('type') && vnode.hasOwnProperty('props') && vnode.hasOwnProperty('children');
 const cloneNode         = vnode => cloneDeep(vnode); // Warning: Potentially expensive
@@ -60,13 +58,17 @@ const getKeyOrId        = vnode => vnode.props.key ? vnode.props.key : vnode.pro
 
 export const isNoriComponent         = vnode => Object.getPrototypeOf(vnode.type) === NoriComponent;
 export const isNoriComponentInstance = test => test.$$typeof && Symbol.keyFor(test.$$typeof) === 'nori.component';
-export const setCurrentVDOM          = tree => currentVDOM = tree;
-export const getCurrentVDOM          = _ => cloneNode(currentVDOM);
-export const isInitialized           = _ => currentStage !== STAGE_UNITIALIZED;
-export const isRendering             = _ => currentStage === STAGE_RENDERING;
-export const isUpdating              = _ => currentStage === STAGE_UPDATING;
-export const isSteady                = _ => currentStage === STAGE_STEADY;
-
+export const setCurrentVDOM          = tree => _currentVDOM = tree;
+export const getCurrentVDOM          = _ => cloneNode(_currentVDOM);
+export const isInitialized           = _ => _currentStage !== STAGE_UNITIALIZED;
+export const isRendering             = _ => _currentStage === STAGE_RENDERING;
+export const isUpdating              = _ => _currentStage === STAGE_UPDATING;
+export const isSteady                = _ => _currentStage === STAGE_STEADY;
+export const getCurrentVnode         = _ => _currentVnode;
+export const setCurrentVnode         = vnode => {
+  _currentVnodeHookCursor = 0;
+  _currentVnode           = vnode;
+};
 //------------------------------------------------------------------------------
 //PUBLICPUBLICPUBLICPUBLICPUBLICPUBLICPUBLICPUBLICPUBLICPUBLICPUBLICPUBLICPUBLIC
 //------------------------------------------------------------------------------
@@ -81,10 +83,10 @@ export const h = (type, props, ...args) => ({
 
 // Called from NoriDOM to render the first vdom
 export const renderVDOM = node => {
-  currentStage = STAGE_RENDERING;
+  _currentStage = STAGE_RENDERING;
   const vdom   = renderComponentVDOM(node);
   setCurrentVDOM(vdom);
-  currentStage = STAGE_STEADY;
+  _currentStage = STAGE_STEADY;
   return vdom;
 };
 
@@ -97,8 +99,8 @@ export const renderVDOM = node => {
 // TODO What about requestIdleCallback https://github.com/aFarkas/requestIdleCallback
 export const enqueueUpdate = id => {
   enqueueDidUpdate(id);
-  if (!updateTimeOutID) {
-    updateTimeOutID = setTimeout(performUpdates, UPDATE_TIMEOUT);
+  if (!_updateTimeOutID) {
+    _updateTimeOutID = setTimeout(performUpdates, UPDATE_TIMEOUT);
   }
 };
 
@@ -109,10 +111,10 @@ const performUpdates = () => {
   }
 
   // console.time('update');
-  clearTimeout(updateTimeOutID);
-  updateTimeOutID = null;
+  clearTimeout(_updateTimeOutID);
+  _updateTimeOutID = null;
 
-  currentStage = STAGE_RENDERING;
+  _currentStage = STAGE_RENDERING;
 
   const updatedVDOMTree = getDidUpdateQueue().reduce((acc, id) => {
     acc = updateComponentVDOM(id)(acc);
@@ -124,9 +126,9 @@ const performUpdates = () => {
 
   performDidMountQueue();
 
-  currentStage = STAGE_UPDATING;
-  performDidUpdateQueue(componentInstanceMap);
-  currentStage = STAGE_STEADY;
+  _currentStage = STAGE_UPDATING;
+  performDidUpdateQueue(_componentInstanceMap);
+  _currentStage = STAGE_STEADY;
   // console.timeEnd('update');
 };
 
@@ -196,20 +198,20 @@ const renderChildFunctions = vnode => {
 const instantiateNewComponent = vnode => {
   let instance = vnode,
       id       = getKeyOrId(vnode);
-  if (componentInstanceMap.hasOwnProperty(id)) {
-    instance = componentInstanceMap[id];
+  if (_componentInstanceMap.hasOwnProperty(id)) {
+    instance = _componentInstanceMap[id];
   } else if (typeof vnode.type === 'function') {
     vnode.props.children = Is.array(vnode.children) ? vnode.children : [vnode.children];
     instance             = new vnode.type(vnode.props);
     if (isNoriComponent(vnode)) {
       // Only cache NoriComps, not SFCs
       id                       = instance.props.id; // id could change during construction
-      componentInstanceMap[id] = instance;
+      _componentInstanceMap[id] = instance;
     }
   } else if (vnode.hasOwnProperty('_owner')) {
     instance                 = vnode._owner;
     id                       = instance.props.id;
-    componentInstanceMap[id] = instance;
+    _componentInstanceMap[id] = instance;
   } else {
     console.warn(`instantiateNewComponent : vnode is not component type`, typeof vnode.type, vnode);
   }
@@ -219,11 +221,10 @@ const instantiateNewComponent = vnode => {
 const renderComponentNode = instance => {
   if (typeof instance.internalRender === 'function') {
     // Set currently rendering for hook
-    currentlyRendering        = instance;
-    currentlyRenderingCounter = 0;
-    let vnode                 = instance.internalRender();
-    vnode._owner              = instance;
-    currentlyRendering        = null;
+    setCurrentVnode(instance);
+    let vnode    = instance.internalRender();
+    vnode._owner = instance;
+    setCurrentVnode(null);
     return vnode;
   } else if (isVDOMNode(instance)) {
     if (!instance.props.id) {
@@ -240,39 +241,40 @@ export const removeComponentInstance = vnode => {
       vnode._owner.componentWillUnmount();
       vnode._owner.remove();
     }
-    delete componentInstanceMap[vnode._owner.props.id];
+    delete _componentInstanceMap[vnode._owner.props.id];
   }
 };
 
 
-/* Let's play with hooksMap!
-https://reactjs.org/docs/hooksMap-reference.html
+/* Let's play with _hooksMap!
+https://reactjs.org/docs/_hooksMap-reference.html
 React's Rules:
-  1. must be called at the top level (not in a loop)
+  1. must be called at in the redner fn
   2. called in the same order - not in a conditional
+  3. No loops
 */
 
+let _hooksMap             = {},
+    _currentVnodeHookCursor;
+
 const registerHook = (type, ...args) => {
-  if (!currentlyRendering) {
+  let cVnode = getCurrentVnode();
+  if (!cVnode) {
     console.warn(`registerHook : Can't register hook, no current vnode!`);
     return;
   }
-  const id = currentlyRendering.props.id;
+  const id = cVnode.props.id;
 
-  // currentlyRendering should be the vnode
-  // is this is the first pass?
-
-  if (!hooksMap.hasOwnProperty(id)) {
-    hooksMap[id] = [];
+  if (!_hooksMap.hasOwnProperty(id)) {
+    _hooksMap[id] = [];
   }
-  if (!hooksMap[id][currentlyRenderingCounter]) {
-    hooksMap[id].push({type, vnode: currentlyRendering, data: args});
-    //console.log(`NEW hook ${type} for ${id} at ${currentlyRenderingCounter}`, args);
+  if (!_hooksMap[id][_currentVnodeHookCursor]) {
+    _hooksMap[id].push({type, vnode: cVnode, data: args});
+    //console.log(`NEW hook ${type} for ${id} at ${_currentVnodeHookCursor}`, args);
   } else {
-    const runHook = hooksMap[id][currentlyRenderingCounter];
+    const runHook = _hooksMap[id][_currentVnodeHookCursor];
     console.log(`RUN hook ${type} for ${id}`, runHook);
-
-    switch(runHook.type) {
+    switch (runHook.type) {
       case 'useState':
         console.log(`useState: `, runHook.data);
         break;
@@ -283,7 +285,7 @@ const registerHook = (type, ...args) => {
         console.warn(`unknown hook type: ${runHook.type}`)
     }
   }
-  currentlyRenderingCounter++;
+  _currentVnodeHookCursor++;
 };
 
 const unregisterHook = (vnode, type) => {

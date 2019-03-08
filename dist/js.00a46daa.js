@@ -42921,7 +42921,7 @@ exports.default = NoriComponent;
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.useEffect = exports.useState = exports.removeComponentInstance = exports.renderComponentVDOM = exports.enqueueUpdate = exports.renderVDOM = exports.h = exports.isSteady = exports.isUpdating = exports.isRendering = exports.isInitialized = exports.getCurrentVDOM = exports.setCurrentVDOM = exports.isNoriComponentInstance = exports.isNoriComponent = void 0;
+exports.useEffect = exports.useState = exports.removeComponentInstance = exports.renderComponentVDOM = exports.enqueueUpdate = exports.renderVDOM = exports.h = exports.setCurrentVnode = exports.getCurrentVnode = exports.isSteady = exports.isUpdating = exports.isRendering = exports.isInitialized = exports.getCurrentVDOM = exports.setCurrentVDOM = exports.isNoriComponentInstance = exports.isNoriComponent = void 0;
 
 var _is = _interopRequireDefault(require("./util/is"));
 
@@ -42957,13 +42957,11 @@ var STAGE_UPDATING = 'updating';
 var STAGE_STEADY = 'steady';
 var UPDATE_TIMEOUT = 10; // how ofter the update queue runs
 
-var currentVDOM,
-    hooksMap = {},
-    currentlyRendering,
-    currentlyRenderingCounter,
-    componentInstanceMap = {},
-    updateTimeOutID,
-    currentStage = STAGE_UNITIALIZED;
+var _currentVDOM,
+    _currentVnode,
+    _componentInstanceMap = {},
+    _updateTimeOutID,
+    _currentStage = STAGE_UNITIALIZED;
 
 var isVDOMNode = function isVDOMNode(vnode) {
   return _typeof(vnode) === 'object' && vnode.hasOwnProperty('type') && vnode.hasOwnProperty('props') && vnode.hasOwnProperty('children');
@@ -42995,44 +42993,57 @@ var isNoriComponentInstance = function isNoriComponentInstance(test) {
 exports.isNoriComponentInstance = isNoriComponentInstance;
 
 var setCurrentVDOM = function setCurrentVDOM(tree) {
-  return currentVDOM = tree;
+  return _currentVDOM = tree;
 };
 
 exports.setCurrentVDOM = setCurrentVDOM;
 
 var getCurrentVDOM = function getCurrentVDOM(_) {
-  return cloneNode(currentVDOM);
+  return cloneNode(_currentVDOM);
 };
 
 exports.getCurrentVDOM = getCurrentVDOM;
 
 var isInitialized = function isInitialized(_) {
-  return currentStage !== STAGE_UNITIALIZED;
+  return _currentStage !== STAGE_UNITIALIZED;
 };
 
 exports.isInitialized = isInitialized;
 
 var isRendering = function isRendering(_) {
-  return currentStage === STAGE_RENDERING;
+  return _currentStage === STAGE_RENDERING;
 };
 
 exports.isRendering = isRendering;
 
 var isUpdating = function isUpdating(_) {
-  return currentStage === STAGE_UPDATING;
+  return _currentStage === STAGE_UPDATING;
 };
 
 exports.isUpdating = isUpdating;
 
 var isSteady = function isSteady(_) {
-  return currentStage === STAGE_STEADY;
+  return _currentStage === STAGE_STEADY;
+};
+
+exports.isSteady = isSteady;
+
+var getCurrentVnode = function getCurrentVnode(_) {
+  return _currentVnode;
+};
+
+exports.getCurrentVnode = getCurrentVnode;
+
+var setCurrentVnode = function setCurrentVnode(vnode) {
+  _currentVnodeHookCursor = 0;
+  _currentVnode = vnode;
 }; //------------------------------------------------------------------------------
 //PUBLICPUBLICPUBLICPUBLICPUBLICPUBLICPUBLICPUBLICPUBLICPUBLICPUBLICPUBLICPUBLIC
 //------------------------------------------------------------------------------
 // Create VDOM from JSX. Used by the Babel/JSX transpiler
 
 
-exports.isSteady = isSteady;
+exports.setCurrentVnode = setCurrentVnode;
 
 var h = function h(type, props) {
   for (var _len = arguments.length, args = new Array(_len > 2 ? _len - 2 : 0), _key = 2; _key < _len; _key++) {
@@ -43052,10 +43063,10 @@ var h = function h(type, props) {
 exports.h = h;
 
 var renderVDOM = function renderVDOM(node) {
-  currentStage = STAGE_RENDERING;
+  _currentStage = STAGE_RENDERING;
   var vdom = renderComponentVDOM(node);
   setCurrentVDOM(vdom);
-  currentStage = STAGE_STEADY;
+  _currentStage = STAGE_STEADY;
   return vdom;
 }; //------------------------------------------------------------------------------
 //STATEUPDATESTATEUPDATESTATEUPDATESTATEUPDATESTATEUPDATESTATEUPDATESTATEUPDATES
@@ -43070,8 +43081,8 @@ exports.renderVDOM = renderVDOM;
 var enqueueUpdate = function enqueueUpdate(id) {
   (0, _LifecycleQueue.enqueueDidUpdate)(id);
 
-  if (!updateTimeOutID) {
-    updateTimeOutID = setTimeout(performUpdates, UPDATE_TIMEOUT);
+  if (!_updateTimeOutID) {
+    _updateTimeOutID = setTimeout(performUpdates, UPDATE_TIMEOUT);
   }
 };
 
@@ -43084,9 +43095,9 @@ var performUpdates = function performUpdates() {
   } // console.time('update');
 
 
-  clearTimeout(updateTimeOutID);
-  updateTimeOutID = null;
-  currentStage = STAGE_RENDERING;
+  clearTimeout(_updateTimeOutID);
+  _updateTimeOutID = null;
+  _currentStage = STAGE_RENDERING;
   var updatedVDOMTree = (0, _LifecycleQueue.getDidUpdateQueue)().reduce(function (acc, id) {
     acc = updateComponentVDOM(id)(acc);
     return acc;
@@ -43095,9 +43106,9 @@ var performUpdates = function performUpdates() {
   (0, _NoriDOM.patch)(updatedVDOMTree, getCurrentVDOM());
   setCurrentVDOM(updatedVDOMTree);
   (0, _LifecycleQueue.performDidMountQueue)();
-  currentStage = STAGE_UPDATING;
-  (0, _LifecycleQueue.performDidUpdateQueue)(componentInstanceMap);
-  currentStage = STAGE_STEADY; // console.timeEnd('update');
+  _currentStage = STAGE_UPDATING;
+  (0, _LifecycleQueue.performDidUpdateQueue)(_componentInstanceMap);
+  _currentStage = STAGE_STEADY; // console.timeEnd('update');
 }; //------------------------------------------------------------------------------
 //CREATIONCREATIONCREATIONCREATIONCREATIONCREATIONCREATIONCREATIONCREATIONCREATI
 //------------------------------------------------------------------------------
@@ -43180,8 +43191,8 @@ var instantiateNewComponent = function instantiateNewComponent(vnode) {
   var instance = vnode,
       id = getKeyOrId(vnode);
 
-  if (componentInstanceMap.hasOwnProperty(id)) {
-    instance = componentInstanceMap[id];
+  if (_componentInstanceMap.hasOwnProperty(id)) {
+    instance = _componentInstanceMap[id];
   } else if (typeof vnode.type === 'function') {
     vnode.props.children = _is.default.array(vnode.children) ? vnode.children : [vnode.children];
     instance = new vnode.type(vnode.props);
@@ -43190,12 +43201,12 @@ var instantiateNewComponent = function instantiateNewComponent(vnode) {
       // Only cache NoriComps, not SFCs
       id = instance.props.id; // id could change during construction
 
-      componentInstanceMap[id] = instance;
+      _componentInstanceMap[id] = instance;
     }
   } else if (vnode.hasOwnProperty('_owner')) {
     instance = vnode._owner;
     id = instance.props.id;
-    componentInstanceMap[id] = instance;
+    _componentInstanceMap[id] = instance;
   } else {
     console.warn("instantiateNewComponent : vnode is not component type", _typeof(vnode.type), vnode);
   }
@@ -43206,11 +43217,10 @@ var instantiateNewComponent = function instantiateNewComponent(vnode) {
 var renderComponentNode = function renderComponentNode(instance) {
   if (typeof instance.internalRender === 'function') {
     // Set currently rendering for hook
-    currentlyRendering = instance;
-    currentlyRenderingCounter = 0;
+    setCurrentVnode(instance);
     var vnode = instance.internalRender();
     vnode._owner = instance;
-    currentlyRendering = null;
+    setCurrentVnode(null);
     return vnode;
   } else if (isVDOMNode(instance)) {
     if (!instance.props.id) {
@@ -43231,44 +43241,50 @@ var removeComponentInstance = function removeComponentInstance(vnode) {
       vnode._owner.remove();
     }
 
-    delete componentInstanceMap[vnode._owner.props.id];
+    delete _componentInstanceMap[vnode._owner.props.id];
   }
 };
-/* Let's play with hooksMap!
-https://reactjs.org/docs/hooksMap-reference.html
+/* Let's play with _hooksMap!
+https://reactjs.org/docs/_hooksMap-reference.html
 React's Rules:
-  1. must be called at the top level (not in a loop)
+  1. must be called at in the redner fn
   2. called in the same order - not in a conditional
+  3. No loops
 */
 
 
 exports.removeComponentInstance = removeComponentInstance;
+
+var _hooksMap = {},
+    _currentVnodeHookCursor;
 
 var registerHook = function registerHook(type) {
   for (var _len2 = arguments.length, args = new Array(_len2 > 1 ? _len2 - 1 : 0), _key2 = 1; _key2 < _len2; _key2++) {
     args[_key2 - 1] = arguments[_key2];
   }
 
-  if (!currentlyRendering) {
+  var cVnode = getCurrentVnode();
+
+  if (!cVnode) {
     console.warn("registerHook : Can't register hook, no current vnode!");
     return;
   }
 
-  var id = currentlyRendering.props.id; // currentlyRendering should be the vnode
-  // is this is the first pass?
+  var id = cVnode.props.id;
 
-  if (!hooksMap.hasOwnProperty(id)) {
-    hooksMap[id] = [];
+  if (!_hooksMap.hasOwnProperty(id)) {
+    _hooksMap[id] = [];
   }
 
-  if (!hooksMap[id][currentlyRenderingCounter]) {
-    hooksMap[id].push({
+  if (!_hooksMap[id][_currentVnodeHookCursor]) {
+    _hooksMap[id].push({
       type: type,
-      vnode: currentlyRendering,
+      vnode: cVnode,
       data: args
-    }); //console.log(`NEW hook ${type} for ${id} at ${currentlyRenderingCounter}`, args);
+    }); //console.log(`NEW hook ${type} for ${id} at ${_currentVnodeHookCursor}`, args);
+
   } else {
-    var runHook = hooksMap[id][currentlyRenderingCounter];
+    var runHook = _hooksMap[id][_currentVnodeHookCursor];
     console.log("RUN hook ".concat(type, " for ").concat(id), runHook);
 
     switch (runHook.type) {
@@ -43285,7 +43301,7 @@ var registerHook = function registerHook(type) {
     }
   }
 
-  currentlyRenderingCounter++;
+  _currentVnodeHookCursor++;
 };
 
 var unregisterHook = function unregisterHook(vnode, type) {
