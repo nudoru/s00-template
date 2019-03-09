@@ -5,7 +5,8 @@
  */
 
 import NoriComponent from '../nori/NoriComponent';
-import {h, useState, useEffect} from "../nori/Nori";
+import {h} from "../nori/Nori";
+import {useState, useEffect} from "../nori/Hooks";
 import * as L from '../nori/util/Lorem';
 import {css} from 'emotion';
 

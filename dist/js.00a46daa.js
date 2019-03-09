@@ -42144,7 +42144,7 @@ exports.getNextId = getNextId;
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.removeComponentInstance = exports.reconcileOnly = exports.reconcile = exports.getComponentInstances = exports.cloneNode = void 0;
+exports.removeComponentInstance = exports.reconcileOnly = exports.reconcile = exports.getHookCursor = exports.setCurrentVnode = exports.getCurrentVnode = exports.getComponentInstances = exports.cloneNode = void 0;
 
 var _ramda = require("ramda");
 
@@ -42168,7 +42168,9 @@ function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
 
 function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
 
-var _componentInstanceMap = {};
+var _componentInstanceMap = {},
+    _currentVnode,
+    _currentVnodeHookCursor = 0;
 
 var getKeyOrId = function getKeyOrId(vnode) {
   return vnode.props.key ? vnode.props.key : vnode.props.id;
@@ -42199,6 +42201,25 @@ var getComponentInstances = function getComponentInstances(_) {
 
 exports.getComponentInstances = getComponentInstances;
 
+var getCurrentVnode = function getCurrentVnode(_) {
+  return _currentVnode;
+};
+
+exports.getCurrentVnode = getCurrentVnode;
+
+var setCurrentVnode = function setCurrentVnode(vnode) {
+  _currentVnodeHookCursor = 0;
+  _currentVnode = vnode;
+};
+
+exports.setCurrentVnode = setCurrentVnode;
+
+var getHookCursor = function getHookCursor(_) {
+  return _currentVnodeHookCursor++;
+};
+
+exports.getHookCursor = getHookCursor;
+
 var reconcileChildren = function reconcileChildren(vnode, mapper) {
   if (vnode.hasOwnProperty('children')) {
     vnode.children = reconcileComponent(vnode).map(mapper);
@@ -42209,6 +42230,7 @@ var reconcileChildren = function reconcileChildren(vnode, mapper) {
 
 var reconcile = function reconcile(vnode) {
   vnode = cloneNode(vnode);
+  setCurrentVnode(vnode);
 
   if ((0, _Nori.isComponentElement)(vnode)) {
     vnode = reconcileComponentInstance(vnode);
@@ -42222,6 +42244,7 @@ exports.reconcile = reconcile;
 var reconcileOnly = function reconcileOnly(id) {
   return function (vnode) {
     vnode = cloneNode(vnode);
+    setCurrentVnode(vnode);
 
     if (hasOwnerComponent(vnode) && vnode.props.id === id) {
       vnode = reconcileComponentInstance(vnode);
@@ -43118,7 +43141,7 @@ exports.default = NoriComponent;
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.useEffect = exports.useState = exports.enqueueUpdate = exports.renderVDOM = exports.h = exports.setCurrentVnode = exports.getCurrentVnode = exports.isSteady = exports.isUpdating = exports.isRendering = exports.isInitialized = exports.getCurrentVDOM = exports.setCurrentVDOM = exports.isComponentElement = exports.isNoriComponent = exports.isNoriElement = void 0;
+exports.enqueueUpdate = exports.renderVDOM = exports.h = exports.isSteady = exports.isUpdating = exports.isRendering = exports.isInitialized = exports.getCurrentVDOM = exports.setCurrentVDOM = exports.isComponentElement = exports.isNoriComponent = exports.isNoriElement = void 0;
 
 var _ArrayUtils = require("./util/ArrayUtils");
 
@@ -43141,7 +43164,6 @@ var STAGE_STEADY = 'steady';
 var UPDATE_TIMEOUT = 10; // how ofter the update queue runs
 
 var _currentVDOM,
-    _currentVnode,
     _updateTimeOutID,
     _currentStage = STAGE_UNITIALIZED;
 
@@ -43195,26 +43217,13 @@ exports.isUpdating = isUpdating;
 
 var isSteady = function isSteady(_) {
   return _currentStage === STAGE_STEADY;
-};
-
-exports.isSteady = isSteady;
-
-var getCurrentVnode = function getCurrentVnode(_) {
-  return _currentVnode;
-};
-
-exports.getCurrentVnode = getCurrentVnode;
-
-var setCurrentVnode = function setCurrentVnode(vnode) {
-  _currentVnodeHookCursor = 0;
-  _currentVnode = vnode;
 }; //------------------------------------------------------------------------------
 //PUBLICPUBLICPUBLICPUBLICPUBLICPUBLICPUBLICPUBLICPUBLICPUBLICPUBLICPUBLICPUBLIC
 //------------------------------------------------------------------------------
 // Create VDOM from JSX. Used by the Babel/JSX transpiler
 
 
-exports.setCurrentVnode = setCurrentVnode;
+exports.isSteady = isSteady;
 
 var h = function h(type, props) {
   for (var _len = arguments.length, args = new Array(_len > 2 ? _len - 2 : 0), _key = 2; _key < _len; _key++) {
@@ -43281,81 +43290,6 @@ var performUpdates = function performUpdates() {
   (0, _LifecycleQueue.performDidUpdateQueue)((0, _Reconciler.getComponentInstances)());
   _currentStage = STAGE_STEADY; // console.timeEnd('update');
 };
-/* Let's play with _hooksMap!
-https://reactjs.org/docs/_hooksMap-reference.html
-React's Rules:
-  1. must be called at in the redner fn
-  2. called in the same order - not in a conditional
-  3. No loops
-*/
-
-
-var _hooksMap = {},
-    _currentVnodeHookCursor;
-
-var registerHook = function registerHook(type) {
-  for (var _len2 = arguments.length, args = new Array(_len2 > 1 ? _len2 - 1 : 0), _key2 = 1; _key2 < _len2; _key2++) {
-    args[_key2 - 1] = arguments[_key2];
-  }
-
-  var cVnode = getCurrentVnode();
-
-  if (!cVnode) {
-    console.warn("registerHook : Can't register hook, no current vnode!");
-    return;
-  }
-
-  var id = cVnode.props.id;
-
-  if (!_hooksMap.hasOwnProperty(id)) {
-    _hooksMap[id] = [];
-  }
-
-  if (!_hooksMap[id][_currentVnodeHookCursor]) {
-    _hooksMap[id].push({
-      type: type,
-      vnode: cVnode,
-      data: args
-    }); //console.log(`NEW hook ${type} for ${id} at ${_currentVnodeHookCursor}`, args);
-
-  } else {
-    var runHook = _hooksMap[id][_currentVnodeHookCursor];
-    console.log("RUN hook ".concat(type, " for ").concat(id), runHook);
-
-    switch (runHook.type) {
-      case 'useState':
-        console.log("useState: ", runHook.data);
-        break;
-
-      case 'useEffect':
-        console.log("useEffect: ", runHook.data);
-        break;
-
-      default:
-        console.warn("unknown hook type: ".concat(runHook.type));
-    }
-  }
-
-  _currentVnodeHookCursor++;
-};
-
-var unregisterHook = function unregisterHook(vnode, type) {
-  console.log("unregisterHook for ", vnode, type);
-};
-
-var performHook = function performHook(vnode) {
-  console.log("performHook for ", vnode);
-};
-
-var useState = function useState(initialState) {//registerHook('useState', initialState);
-};
-
-exports.useState = useState;
-
-var useEffect = function useEffect(didUpdateFn) {//registerHook('useEffect', didUpdateFn);
-};
-
-exports.useEffect = useEffect;
 },{"./util/ArrayUtils":"js/nori/util/ArrayUtils.js","./LifecycleQueue":"js/nori/LifecycleQueue.js","./NoriDOM":"js/nori/NoriDOM.js","./NoriComponent":"js/nori/NoriComponent.js","./Reconciler":"js/nori/Reconciler.js"}],"js/components/Box.js":[function(require,module,exports) {
 "use strict";
 
@@ -43866,7 +43800,93 @@ function (_NoriComponent) {
 }(_NoriComponent2.default);
 
 exports.default = Ticker;
-},{"../nori/NoriComponent":"js/nori/NoriComponent.js","../nori/Nori":"js/nori/Nori.js","emotion":"../node_modules/emotion/dist/index.esm.js"}],"js/components/Greeter.js":[function(require,module,exports) {
+},{"../nori/NoriComponent":"js/nori/NoriComponent.js","../nori/Nori":"js/nori/Nori.js","emotion":"../node_modules/emotion/dist/index.esm.js"}],"js/nori/Hooks.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.useEffect = exports.useState = void 0;
+
+var _Reconciler = require("./Reconciler");
+
+/* Let's play with _hooksMap!
+https://reactjs.org/docs/_hooksMap-reference.html
+React's Rules:
+  1. must be called at in the redner fn
+  2. called in the same order - not in a conditional
+  3. No loops
+*/
+var _hooksMap = {};
+
+var registerHook = function registerHook(type) {
+  for (var _len = arguments.length, args = new Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
+    args[_key - 1] = arguments[_key];
+  }
+
+  var cVnode = (0, _Reconciler.getCurrentVnode)(),
+      cursor = (0, _Reconciler.getHookCursor)();
+
+  if (!cVnode) {
+    console.warn("registerHook : Can't register hook, no current vnode!");
+    return;
+  }
+
+  var id = cVnode.props.id;
+
+  if (!_hooksMap.hasOwnProperty(id)) {
+    _hooksMap[id] = [];
+  }
+
+  if (!_hooksMap[id][cursor]) {
+    _hooksMap[id].push({
+      type: type,
+      vnode: cVnode,
+      data: args
+    });
+
+    console.log("NEW hook ".concat(type, " for ").concat(id, " at ").concat(cursor), args);
+  } else {
+    var runHook = _hooksMap[id][cursor];
+    console.log("RUN hook ".concat(type, " for ").concat(id), runHook);
+
+    switch (runHook.type) {
+      case 'useState':
+        console.log("useState: ", runHook.data);
+        break;
+
+      case 'useEffect':
+        console.log("useEffect: ", runHook.data);
+        break;
+
+      default:
+        console.warn("unknown hook type: ".concat(runHook.type));
+    }
+  }
+
+  cursor++;
+};
+
+var unregisterHook = function unregisterHook(vnode, type) {
+  console.log("unregisterHook for ", vnode, type);
+};
+
+var performHook = function performHook(vnode) {
+  console.log("performHook for ", vnode);
+};
+
+var useState = function useState(initialState) {
+  registerHook('useState', initialState);
+};
+
+exports.useState = useState;
+
+var useEffect = function useEffect(didUpdateFn) {
+  registerHook('useEffect', didUpdateFn);
+};
+
+exports.useEffect = useEffect;
+},{"./Reconciler":"js/nori/Reconciler.js"}],"js/components/Greeter.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -43877,6 +43897,8 @@ exports.default = void 0;
 var _NoriComponent2 = _interopRequireDefault(require("../nori/NoriComponent"));
 
 var _Nori = require("../nori/Nori");
+
+var _Hooks = require("../nori/Hooks");
 
 var L = _interopRequireWildcard(require("../nori/util/Lorem"));
 
@@ -43969,16 +43991,16 @@ function (_NoriComponent) {
   _createClass(Greeter, [{
     key: "render",
     value: function render() {
-      var us1 = (0, _Nori.useState)({
+      var us1 = (0, _Hooks.useState)({
         foo: 'greet 1!'
       });
-      var us2 = (0, _Nori.useState)({
+      var us2 = (0, _Hooks.useState)({
         foo: 'greet 2!'
       });
-      (0, _Nori.useEffect)(function () {
+      (0, _Hooks.useEffect)(function () {
         console.log('greeter effect 1!!!');
       });
-      var us3 = (0, _Nori.useState)({
+      var us3 = (0, _Hooks.useState)({
         foo: 'greet 3!'
       }); // console.log(`  - ${this.props.id} GREETER : render ${this.state.name}`);
 
@@ -43996,7 +44018,7 @@ function (_NoriComponent) {
 }(_NoriComponent2.default);
 
 exports.default = Greeter;
-},{"../nori/NoriComponent":"js/nori/NoriComponent.js","../nori/Nori":"js/nori/Nori.js","../nori/util/Lorem":"js/nori/util/Lorem.js","emotion":"../node_modules/emotion/dist/index.esm.js"}],"js/components/Lister.js":[function(require,module,exports) {
+},{"../nori/NoriComponent":"js/nori/NoriComponent.js","../nori/Nori":"js/nori/Nori.js","../nori/Hooks":"js/nori/Hooks.js","../nori/util/Lorem":"js/nori/util/Lorem.js","emotion":"../node_modules/emotion/dist/index.esm.js"}],"js/components/Lister.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -44007,6 +44029,8 @@ exports.default = void 0;
 var _NoriComponent2 = _interopRequireDefault(require("../nori/NoriComponent"));
 
 var _Nori = require("../nori/Nori");
+
+var _Hooks = require("../nori/Hooks");
 
 var _emotion = require("emotion");
 
@@ -44102,10 +44126,10 @@ function (_NoriComponent) {
       var _this2 = this;
 
       //console.log('render lister');
-      var us = (0, _Nori.useState)({
+      var us = (0, _Hooks.useState)({
         foo: 'lister'
       });
-      (0, _Nori.useEffect)(function () {
+      (0, _Hooks.useEffect)(function () {
         console.log('lister effect!!!');
       });
       return (0, _Nori.h)("div", {
@@ -44133,7 +44157,7 @@ function (_NoriComponent) {
 }(_NoriComponent2.default);
 
 exports.default = Lister;
-},{"../nori/NoriComponent":"js/nori/NoriComponent.js","../nori/Nori":"js/nori/Nori.js","emotion":"../node_modules/emotion/dist/index.esm.js","../theme/Theme":"js/theme/Theme.js","../nori/util/ArrayUtils":"js/nori/util/ArrayUtils.js","./Greeter":"js/components/Greeter.js"}],"js/components/ColorSwatch.js":[function(require,module,exports) {
+},{"../nori/NoriComponent":"js/nori/NoriComponent.js","../nori/Nori":"js/nori/Nori.js","../nori/Hooks":"js/nori/Hooks.js","emotion":"../node_modules/emotion/dist/index.esm.js","../theme/Theme":"js/theme/Theme.js","../nori/util/ArrayUtils":"js/nori/util/ArrayUtils.js","./Greeter":"js/components/Greeter.js"}],"js/components/ColorSwatch.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {

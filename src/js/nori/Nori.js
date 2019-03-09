@@ -52,7 +52,6 @@ const STAGE_STEADY      = 'steady';
 const UPDATE_TIMEOUT = 10;  // how ofter the update queue runs
 
 let _currentVDOM,
-    _currentVnode,
     _updateTimeOutID,
     _currentStage = STAGE_UNITIALIZED;
 
@@ -65,11 +64,6 @@ export const isInitialized      = _ => _currentStage !== STAGE_UNITIALIZED;
 export const isRendering        = _ => _currentStage === STAGE_RENDERING;
 export const isUpdating         = _ => _currentStage === STAGE_UPDATING;
 export const isSteady           = _ => _currentStage === STAGE_STEADY;
-export const getCurrentVnode    = _ => _currentVnode;
-export const setCurrentVnode    = vnode => {
-  _currentVnodeHookCursor = 0;
-  _currentVnode           = vnode;
-};
 
 //------------------------------------------------------------------------------
 //PUBLICPUBLICPUBLICPUBLICPUBLICPUBLICPUBLICPUBLICPUBLICPUBLICPUBLICPUBLICPUBLIC
@@ -128,63 +122,4 @@ const performUpdates = () => {
   performDidUpdateQueue(getComponentInstances());
   _currentStage = STAGE_STEADY;
   // console.timeEnd('update');
-};
-
-
-/* Let's play with _hooksMap!
-https://reactjs.org/docs/_hooksMap-reference.html
-React's Rules:
-  1. must be called at in the redner fn
-  2. called in the same order - not in a conditional
-  3. No loops
-*/
-
-let _hooksMap = {},
-    _currentVnodeHookCursor;
-
-const registerHook = (type, ...args) => {
-  let cVnode = getCurrentVnode();
-  if (!cVnode) {
-    console.warn(`registerHook : Can't register hook, no current vnode!`);
-    return;
-  }
-  const id = cVnode.props.id;
-
-  if (!_hooksMap.hasOwnProperty(id)) {
-    _hooksMap[id] = [];
-  }
-  if (!_hooksMap[id][_currentVnodeHookCursor]) {
-    _hooksMap[id].push({type, vnode: cVnode, data: args});
-    //console.log(`NEW hook ${type} for ${id} at ${_currentVnodeHookCursor}`, args);
-  } else {
-    const runHook = _hooksMap[id][_currentVnodeHookCursor];
-    console.log(`RUN hook ${type} for ${id}`, runHook);
-    switch (runHook.type) {
-      case 'useState':
-        console.log(`useState: `, runHook.data);
-        break;
-      case 'useEffect':
-        console.log(`useEffect: `, runHook.data);
-        break;
-      default:
-        console.warn(`unknown hook type: ${runHook.type}`)
-    }
-  }
-  _currentVnodeHookCursor++;
-};
-
-const unregisterHook = (vnode, type) => {
-  console.log(`unregisterHook for `, vnode, type);
-};
-
-const performHook = vnode => {
-  console.log(`performHook for `, vnode);
-};
-
-export const useState = (initialState) => {
-  //registerHook('useState', initialState);
-};
-
-export const useEffect = (didUpdateFn) => {
-  //registerHook('useEffect', didUpdateFn);
 };

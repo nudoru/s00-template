@@ -1,10 +1,12 @@
 import {compose} from "ramda";
 import Is from "./util/is";
 import {getNextId} from "./util/ElementIDCreator";
-import {isComponentElement, isNoriComponent, setCurrentVnode} from "./Nori";
+import {isComponentElement, isNoriComponent} from "./Nori";
 import {cloneDeep} from "lodash";
 
-let _componentInstanceMap = {};
+let _componentInstanceMap = {},
+    _currentVnode,
+    _currentVnodeHookCursor = 0;
 
 const getKeyOrId        = vnode => vnode.props.key ? vnode.props.key : vnode.props.id;
 const isVDOMNode        = vnode => typeof vnode === 'object' && vnode.hasOwnProperty('type') && vnode.hasOwnProperty('props') && vnode.hasOwnProperty('children');
@@ -13,6 +15,13 @@ const reconcileComponentInstance = vnode => compose(renderComponent, getComponen
 
 export const cloneNode         = vnode => cloneDeep(vnode); // Warning: Potentially expensive
 export const getComponentInstances = _ => _componentInstanceMap;
+export const getCurrentVnode    = _ => _currentVnode;
+export const setCurrentVnode    = vnode => {
+  _currentVnodeHookCursor = 0;
+  _currentVnode           = vnode;
+};
+export const getHookCursor = _ => _currentVnodeHookCursor++;
+
 
 const reconcileChildren = (vnode, mapper) => {
   if (vnode.hasOwnProperty('children')) {
@@ -23,6 +32,7 @@ const reconcileChildren = (vnode, mapper) => {
 
 export const reconcile = vnode => {
   vnode = cloneNode(vnode);
+  setCurrentVnode(vnode);
   if (isComponentElement(vnode)) {
     vnode = reconcileComponentInstance(vnode);
   }
@@ -31,6 +41,7 @@ export const reconcile = vnode => {
 
 export const reconcileOnly = id => vnode => {
   vnode = cloneNode(vnode);
+  setCurrentVnode(vnode);
   if (hasOwnerComponent(vnode) && vnode.props.id === id) {
     vnode = reconcileComponentInstance(vnode);
   } else if (isComponentElement(vnode)) {
