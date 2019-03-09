@@ -13,7 +13,6 @@ export default class NoriComponent {
     this._isDirty          = true;
     this._memoRenderResult = null;
     this._lastRenderedDOMEl = null;
-    this.$$typeof          = Symbol.for('nori.component');
 
     if (typeof this.render !== 'function') {
       console.error(`Component ${this.props.id} doesn't have a render() method!`);

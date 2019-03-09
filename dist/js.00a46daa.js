@@ -42467,7 +42467,7 @@ var getEventName = function getEventName(event) {
 }; // "Special props should be updated as new props are added to components.
 
 
-var specialProps = ['tweens', 'state', 'actions', 'children', 'element', 'min', 'max', 'mode'];
+var specialProps = ['tweens', 'state', 'actions', 'children', 'element', 'min', 'max', 'mode']; // TODO move this to another file
 
 var isSpecialProp = function isSpecialProp(test) {
   return specialProps.includes(test);
@@ -42482,6 +42482,7 @@ var render = function render(component, hostNode) {
   (0, _DOMToolbox.removeAllElements)(hostNode);
   $documentHostNode = hostNode;
   var vdom = (0, _Nori.renderVDOM)(component);
+  console.log(vdom);
   patch(vdom, null); // $documentHostNode.appendChild(createElement(vdom));
 
   (0, _LifecycleQueue.performDidMountQueue)();
@@ -42597,8 +42598,6 @@ var createElement = function createElement(vnode) {
 
   if (typeof vnode === 'string' || typeof vnode === 'number') {
     $element = createTextNode(vnode);
-  } else if (typeof vnode.type === 'function') {
-    $element = createElement((0, _Nori.renderComponentVDOM)(vnode));
   } else if (_typeof(vnode) === 'object' && typeof vnode.type === 'string') {
     $element = document.createElement(vnode.type);
 
@@ -42833,7 +42832,6 @@ function () {
     this._isDirty = true;
     this._memoRenderResult = null;
     this._lastRenderedDOMEl = null;
-    this.$$typeof = Symbol.for('nori.component');
 
     if (typeof this.render !== 'function') {
       console.error("Component ".concat(this.props.id, " doesn't have a render() method!"));
@@ -42921,7 +42919,7 @@ exports.default = NoriComponent;
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.useEffect = exports.useState = exports.removeComponentInstance = exports.renderComponentVDOM = exports.enqueueUpdate = exports.renderVDOM = exports.h = exports.setCurrentVnode = exports.getCurrentVnode = exports.isSteady = exports.isUpdating = exports.isRendering = exports.isInitialized = exports.getCurrentVDOM = exports.setCurrentVDOM = exports.isNoriComponentInstance = exports.isNoriComponent = void 0;
+exports.useEffect = exports.useState = exports.removeComponentInstance = exports.enqueueUpdate = exports.renderVDOM = exports.h = exports.setCurrentVnode = exports.getCurrentVnode = exports.isSteady = exports.isUpdating = exports.isRendering = exports.isInitialized = exports.getCurrentVDOM = exports.setCurrentVDOM = exports.isComponentElement = exports.isNoriComponent = exports.isNoriElement = void 0;
 
 var _is = _interopRequireDefault(require("./util/is"));
 
@@ -42980,17 +42978,23 @@ var getKeyOrId = function getKeyOrId(vnode) {
   return vnode.props.key ? vnode.props.key : vnode.props.id;
 };
 
+var isNoriElement = function isNoriElement(test) {
+  return test.$$typeof && Symbol.keyFor(test.$$typeof) === 'nori.element';
+};
+
+exports.isNoriElement = isNoriElement;
+
 var isNoriComponent = function isNoriComponent(vnode) {
   return Object.getPrototypeOf(vnode.type) === _NoriComponent.default;
 };
 
 exports.isNoriComponent = isNoriComponent;
 
-var isNoriComponentInstance = function isNoriComponentInstance(test) {
-  return test.$$typeof && Symbol.keyFor(test.$$typeof) === 'nori.component';
+var isComponentElement = function isComponentElement(vnode) {
+  return _typeof(vnode) === 'object' && typeof vnode.type === 'function';
 };
 
-exports.isNoriComponentInstance = isNoriComponentInstance;
+exports.isComponentElement = isComponentElement;
 
 var setCurrentVDOM = function setCurrentVDOM(tree) {
   return _currentVDOM = tree;
@@ -43054,8 +43058,9 @@ var h = function h(type, props) {
     type: type,
     props: props || {},
     children: args.length ? (0, _ArrayUtils.flatten)(args) : [],
-    _owner: null // will be the NoriComponent instance that generated the node
-
+    _owner: null,
+    // will be the NoriComponent instance that generated the node
+    $$typeof: Symbol.for('nori.element')
   };
 }; // Called from NoriDOM to render the first vdom
 
@@ -43064,7 +43069,7 @@ exports.h = h;
 
 var renderVDOM = function renderVDOM(node) {
   _currentStage = STAGE_RENDERING;
-  var vdom = renderComponentVDOM(node);
+  var vdom = reconcile(node);
   setCurrentVDOM(vdom);
   _currentStage = STAGE_STEADY;
   return vdom;
@@ -43110,24 +43115,27 @@ var performUpdates = function performUpdates() {
   (0, _LifecycleQueue.performDidUpdateQueue)(_componentInstanceMap);
   _currentStage = STAGE_STEADY; // console.timeEnd('update');
 }; //------------------------------------------------------------------------------
-//CREATIONCREATIONCREATIONCREATIONCREATIONCREATIONCREATIONCREATIONCREATIONCREATI
+//RECONCILIATIONRECONCILIATIONRECONCILIATIONRECONCILIATIONRECONCILIATIONRECONCIL
 //------------------------------------------------------------------------------
 // Renders out components to get a vdom tree for the first render of a component or tree
+// Component -> Element
+// Element -> Element
 
 
-var renderComponentVDOM = function renderComponentVDOM(vnode) {
+var reconcile = function reconcile(vnode) {
   vnode = cloneNode(vnode);
 
-  if (_typeof(vnode) === 'object' && typeof vnode.type === 'function') {
+  if (isComponentElement(vnode)) {
     vnode = (0, _ramda.compose)(renderComponentNode, instantiateNewComponent)(vnode);
-    vnode.children = renderChildFunctions(vnode).map(renderComponentVDOM);
+  }
+
+  if (vnode.hasOwnProperty('children')) {
+    vnode.children = reconcileComponent(vnode).map(reconcile);
   }
 
   return vnode;
 }; // Updates the vdom rerendering only the nodes that match an id
 
-
-exports.renderComponentVDOM = renderComponentVDOM;
 
 var updateComponentVDOM = function updateComponentVDOM(id) {
   return function (vnode) {
@@ -43137,12 +43145,12 @@ var updateComponentVDOM = function updateComponentVDOM(id) {
       if (hasOwnerComponent(vnode) && vnode.props.id === id) {
         //
         vnode = renderComponentNode(instantiateNewComponent(vnode));
-      } else if (typeof vnode.type === 'function') {
-        vnode = renderComponentVDOM(vnode); // new component added
+      } else if (isComponentElement(vnode)) {
+        vnode = reconcile(vnode); // new component added
       }
 
       if (vnode.hasOwnProperty('children')) {
-        vnode.children = renderChildFunctions(vnode).map(updateComponentVDOM(id));
+        vnode.children = reconcileComponent(vnode).map(updateComponentVDOM(id));
       }
     }
 
@@ -43153,7 +43161,7 @@ var updateComponentVDOM = function updateComponentVDOM(id) {
 // works backwards so the insertion indices are correct
 
 
-var renderChildFunctions = function renderChildFunctions(vnode) {
+var reconcileComponent = function reconcileComponent(vnode) {
   var children = vnode.children,
       result = [],
       resultIndex = [],
@@ -43163,7 +43171,7 @@ var renderChildFunctions = function renderChildFunctions(vnode) {
       var childResult = child();
       childResult = childResult.map(function (c, i) {
         if (typeof c.type === 'function') {
-          c = renderComponentVDOM(c);
+          c = reconcile(c);
         } else if (_typeof(c) === 'object' && !getKeyOrId(c)) {
           //c.props.id
           c.props.id = c.props.id ? c.props.id : vnode.props.id + ".".concat(i, ".").concat(index++);
@@ -43174,7 +43182,7 @@ var renderChildFunctions = function renderChildFunctions(vnode) {
       result.unshift(childResult);
       resultIndex.unshift(i);
     } else {
-      child = renderComponentVDOM(child);
+      child = reconcile(child);
     }
 
     return child;

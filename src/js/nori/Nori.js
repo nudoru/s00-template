@@ -1,5 +1,10 @@
 /*
 TODO
+  - HOOKS
+    - move hooks to new files
+    - how to separate currentVnode cursor
+    - use hooks outside of render?
+    - use hooks in SFC?
   - update lister with my usestate as a test
   - test render props pattern https://www.robinwieruch.de/react-render-props-pattern/
   - use this list to preinit common tags? https://www.npmjs.com/package/html-tags
@@ -12,7 +17,6 @@ TODO
   - pure components - no update if state didn't change
   - context?
   - refs?
-  - _hooksMap?
   - spinner https://github.com/davidhu2000/react-spinners/blob/master/src/BarLoader.jsx
   - create a fn that will determine if the vnode has been rendered and call render or update as appropriate
   - test form input
@@ -56,19 +60,21 @@ const cloneNode         = vnode => cloneDeep(vnode); // Warning: Potentially exp
 const hasOwnerComponent = vnode => vnode.hasOwnProperty('_owner') && vnode._owner !== null;
 const getKeyOrId        = vnode => vnode.props.key ? vnode.props.key : vnode.props.id;
 
-export const isNoriComponent         = vnode => Object.getPrototypeOf(vnode.type) === NoriComponent;
-export const isNoriComponentInstance = test => test.$$typeof && Symbol.keyFor(test.$$typeof) === 'nori.component';
-export const setCurrentVDOM          = tree => _currentVDOM = tree;
-export const getCurrentVDOM          = _ => cloneNode(_currentVDOM);
-export const isInitialized           = _ => _currentStage !== STAGE_UNITIALIZED;
-export const isRendering             = _ => _currentStage === STAGE_RENDERING;
-export const isUpdating              = _ => _currentStage === STAGE_UPDATING;
-export const isSteady                = _ => _currentStage === STAGE_STEADY;
-export const getCurrentVnode         = _ => _currentVnode;
-export const setCurrentVnode         = vnode => {
+export const isNoriElement   = test => test.$$typeof && Symbol.keyFor(test.$$typeof) === 'nori.element';
+export const isNoriComponent = vnode => Object.getPrototypeOf(vnode.type) === NoriComponent;
+export const isComponentElement = vnode => typeof vnode === 'object' && typeof vnode.type === 'function';
+export const setCurrentVDOM  = tree => _currentVDOM = tree;
+export const getCurrentVDOM  = _ => cloneNode(_currentVDOM);
+export const isInitialized   = _ => _currentStage !== STAGE_UNITIALIZED;
+export const isRendering     = _ => _currentStage === STAGE_RENDERING;
+export const isUpdating      = _ => _currentStage === STAGE_UPDATING;
+export const isSteady        = _ => _currentStage === STAGE_STEADY;
+export const getCurrentVnode = _ => _currentVnode;
+export const setCurrentVnode = vnode => {
   _currentVnodeHookCursor = 0;
   _currentVnode           = vnode;
 };
+
 //------------------------------------------------------------------------------
 //PUBLICPUBLICPUBLICPUBLICPUBLICPUBLICPUBLICPUBLICPUBLICPUBLICPUBLICPUBLICPUBLIC
 //------------------------------------------------------------------------------
@@ -78,13 +84,14 @@ export const h = (type, props, ...args) => ({
   type,
   props   : props || {},
   children: args.length ? flatten(args) : [],
-  _owner  : null // will be the NoriComponent instance that generated the node
+  _owner  : null, // will be the NoriComponent instance that generated the node
+  $$typeof: Symbol.for('nori.element')
 });
 
 // Called from NoriDOM to render the first vdom
 export const renderVDOM = node => {
   _currentStage = STAGE_RENDERING;
-  const vdom   = renderComponentVDOM(node);
+  const vdom    = reconcile(node);
   setCurrentVDOM(vdom);
   _currentStage = STAGE_STEADY;
   return vdom;
@@ -133,15 +140,19 @@ const performUpdates = () => {
 };
 
 //------------------------------------------------------------------------------
-//CREATIONCREATIONCREATIONCREATIONCREATIONCREATIONCREATIONCREATIONCREATIONCREATI
+//RECONCILIATIONRECONCILIATIONRECONCILIATIONRECONCILIATIONRECONCILIATIONRECONCIL
 //------------------------------------------------------------------------------
 
 // Renders out components to get a vdom tree for the first render of a component or tree
-export const renderComponentVDOM = vnode => {
+// Component -> Element
+// Element -> Element
+const reconcile = vnode => {
   vnode = cloneNode(vnode);
-  if (typeof vnode === 'object' && typeof vnode.type === 'function') {
+  if (isComponentElement(vnode)) {
     vnode          = compose(renderComponentNode, instantiateNewComponent)(vnode);
-    vnode.children = renderChildFunctions(vnode).map(renderComponentVDOM);
+  }
+  if (vnode.hasOwnProperty('children')) {
+    vnode.children = reconcileComponent(vnode).map(reconcile);
   }
   return vnode;
 };
@@ -152,11 +163,11 @@ const updateComponentVDOM = id => vnode => {
   if (typeof vnode === 'object') {
     if (hasOwnerComponent(vnode) && vnode.props.id === id) { //
       vnode = renderComponentNode(instantiateNewComponent(vnode));
-    } else if (typeof vnode.type === 'function') {
-      vnode = renderComponentVDOM(vnode); // new component added
+    } else if (isComponentElement(vnode)) {
+      vnode = reconcile(vnode); // new component added
     }
     if (vnode.hasOwnProperty('children')) {
-      vnode.children = renderChildFunctions(vnode).map(updateComponentVDOM(id));
+      vnode.children = reconcileComponent(vnode).map(updateComponentVDOM(id));
     }
   }
   return vnode;
@@ -165,7 +176,7 @@ const updateComponentVDOM = id => vnode => {
 // If children are an inline fn, render and insert the resulting children in to the
 // child array at the location of the fn
 // works backwards so the insertion indices are correct
-const renderChildFunctions = vnode => {
+const reconcileComponent = vnode => {
   let children    = vnode.children,
       result      = [],
       resultIndex = [],
@@ -176,7 +187,7 @@ const renderChildFunctions = vnode => {
       let childResult = child();
       childResult     = childResult.map((c, i) => {
         if (typeof c.type === 'function') {
-          c = renderComponentVDOM(c);
+          c = reconcile(c);
         } else if (typeof c === 'object' && !getKeyOrId(c)) { //c.props.id
           c.props.id = c.props.id ? c.props.id : vnode.props.id + `.${i}.${index++}`;
         }
@@ -185,7 +196,7 @@ const renderChildFunctions = vnode => {
       result.unshift(childResult);
       resultIndex.unshift(i);
     } else {
-      child = renderComponentVDOM(child);
+      child = reconcile(child);
     }
     return child;
   });
@@ -205,12 +216,12 @@ const instantiateNewComponent = vnode => {
     instance             = new vnode.type(vnode.props);
     if (isNoriComponent(vnode)) {
       // Only cache NoriComps, not SFCs
-      id                       = instance.props.id; // id could change during construction
+      id                        = instance.props.id; // id could change during construction
       _componentInstanceMap[id] = instance;
     }
   } else if (vnode.hasOwnProperty('_owner')) {
-    instance                 = vnode._owner;
-    id                       = instance.props.id;
+    instance                  = vnode._owner;
+    id                        = instance.props.id;
     _componentInstanceMap[id] = instance;
   } else {
     console.warn(`instantiateNewComponent : vnode is not component type`, typeof vnode.type, vnode);
@@ -254,7 +265,7 @@ React's Rules:
   3. No loops
 */
 
-let _hooksMap             = {},
+let _hooksMap = {},
     _currentVnodeHookCursor;
 
 const registerHook = (type, ...args) => {

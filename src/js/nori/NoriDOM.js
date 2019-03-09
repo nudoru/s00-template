@@ -1,6 +1,6 @@
 import decalelize from 'decamelize';
 import {enqueueDidMount, performDidMountQueue} from './LifecycleQueue';
-import {removeComponentInstance, renderComponentVDOM, renderVDOM} from "./Nori";
+import {removeComponentInstance, renderVDOM} from "./Nori";
 import {removeAllElements} from "./browser/DOMToolbox";
 
 const ID_KEY        = 'data-nori-id';
@@ -8,7 +8,7 @@ const SHOW_ID_KEYS  = false;
 const isEvent       = event => /^on/.test(event);
 const getEventName  = event => event.slice(2).toLowerCase();
 // "Special props should be updated as new props are added to components.
-const specialProps  = ['tweens', 'state', 'actions', 'children', 'element', 'min', 'max', 'mode'];
+const specialProps  = ['tweens', 'state', 'actions', 'children', 'element', 'min', 'max', 'mode']; // TODO move this to another file
 const isSpecialProp = test => specialProps.includes(test);
 
 let eventMap            = {},
@@ -20,6 +20,7 @@ export const render = (component, hostNode) => {
   removeAllElements(hostNode);
   $documentHostNode = hostNode;
   const vdom        = renderVDOM(component);
+  console.log(vdom);
   patch(vdom, null);
   // $documentHostNode.appendChild(createElement(vdom));
   performDidMountQueue();
@@ -125,8 +126,6 @@ const createElement = vnode => {
 
   if (typeof vnode === 'string' || typeof vnode === 'number') {
     $element = createTextNode(vnode);
-  } else if (typeof vnode.type === 'function') {
-    $element = createElement(renderComponentVDOM(vnode));
   } else if (typeof vnode === 'object' && typeof vnode.type === 'string') {
     $element = document.createElement(vnode.type);
     if (vnode.hasOwnProperty('children')) {
