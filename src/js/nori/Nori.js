@@ -28,10 +28,7 @@ TODO
   - Memoize? https://blog.javascripting.com/2016/10/05/building-your-own-react-clone-in-five-easy-steps/
  */
 
-import Is from './util/is';
 import {flatten} from "./util/ArrayUtils";
-import {getNextId} from "./util/ElementIDCreator";
-import {cloneDeep} from 'lodash';
 import {
   enqueueDidUpdate,
   getDidUpdateQueue,
@@ -39,8 +36,13 @@ import {
   performDidUpdateQueue
 } from './LifecycleQueue';
 import {patch} from './NoriDOM';
-import {compose} from 'ramda';
 import NoriComponent from "./NoriComponent";
+import {
+  reconcile,
+  reconcileOnly,
+  getComponentInstances,
+  cloneNode
+} from "./Reconciler";
 
 const STAGE_UNITIALIZED = 'uninitialized';
 const STAGE_RENDERING   = 'rendering';
@@ -51,26 +53,20 @@ const UPDATE_TIMEOUT = 10;  // how ofter the update queue runs
 
 let _currentVDOM,
     _currentVnode,
-    _componentInstanceMap = {},
     _updateTimeOutID,
-    _currentStage         = STAGE_UNITIALIZED;
+    _currentStage = STAGE_UNITIALIZED;
 
-const isVDOMNode        = vnode => typeof vnode === 'object' && vnode.hasOwnProperty('type') && vnode.hasOwnProperty('props') && vnode.hasOwnProperty('children');
-const cloneNode         = vnode => cloneDeep(vnode); // Warning: Potentially expensive
-const hasOwnerComponent = vnode => vnode.hasOwnProperty('_owner') && vnode._owner !== null;
-const getKeyOrId        = vnode => vnode.props.key ? vnode.props.key : vnode.props.id;
-
-export const isNoriElement   = test => test.$$typeof && Symbol.keyFor(test.$$typeof) === 'nori.element';
-export const isNoriComponent = vnode => Object.getPrototypeOf(vnode.type) === NoriComponent;
+export const isNoriElement      = test => test.$$typeof && Symbol.keyFor(test.$$typeof) === 'nori.element';
+export const isNoriComponent    = vnode => Object.getPrototypeOf(vnode.type) === NoriComponent;
 export const isComponentElement = vnode => typeof vnode === 'object' && typeof vnode.type === 'function';
-export const setCurrentVDOM  = tree => _currentVDOM = tree;
-export const getCurrentVDOM  = _ => cloneNode(_currentVDOM);
-export const isInitialized   = _ => _currentStage !== STAGE_UNITIALIZED;
-export const isRendering     = _ => _currentStage === STAGE_RENDERING;
-export const isUpdating      = _ => _currentStage === STAGE_UPDATING;
-export const isSteady        = _ => _currentStage === STAGE_STEADY;
-export const getCurrentVnode = _ => _currentVnode;
-export const setCurrentVnode = vnode => {
+export const setCurrentVDOM     = tree => _currentVDOM = tree;
+export const getCurrentVDOM     = _ => cloneNode(_currentVDOM);
+export const isInitialized      = _ => _currentStage !== STAGE_UNITIALIZED;
+export const isRendering        = _ => _currentStage === STAGE_RENDERING;
+export const isUpdating         = _ => _currentStage === STAGE_UPDATING;
+export const isSteady           = _ => _currentStage === STAGE_STEADY;
+export const getCurrentVnode    = _ => _currentVnode;
+export const setCurrentVnode    = vnode => {
   _currentVnodeHookCursor = 0;
   _currentVnode           = vnode;
 };
@@ -97,13 +93,13 @@ export const renderVDOM = node => {
   return vdom;
 };
 
+
 //------------------------------------------------------------------------------
 //STATEUPDATESTATEUPDATESTATEUPDATESTATEUPDATESTATEUPDATESTATEUPDATESTATEUPDATES
 //------------------------------------------------------------------------------
 
 // Queue updates from components and batch update every so often
 // Called from NoriComponent set state
-// TODO What about requestIdleCallback https://github.com/aFarkas/requestIdleCallback
 export const enqueueUpdate = id => {
   enqueueDidUpdate(id);
   if (!_updateTimeOutID) {
@@ -116,144 +112,22 @@ const performUpdates = () => {
     console.log(`>>> Update called while rendering`);
     return;
   }
-
   // console.time('update');
   clearTimeout(_updateTimeOutID);
-  _updateTimeOutID = null;
-
-  _currentStage = STAGE_RENDERING;
-
+  _updateTimeOutID      = null;
+  _currentStage         = STAGE_RENDERING;
+  // TODO put in a box and map
   const updatedVDOMTree = getDidUpdateQueue().reduce((acc, id) => {
-    acc = updateComponentVDOM(id)(acc);
+    acc = reconcileOnly(id)(acc);
     return acc;
   }, getCurrentVDOM());
-  // TODO FOPT => get updatedVDOM tree to flow into patch and setCurrentVDOM
-  patch(updatedVDOMTree, getCurrentVDOM());
+  patch(getCurrentVDOM())(updatedVDOMTree);
   setCurrentVDOM(updatedVDOMTree);
-
   performDidMountQueue();
-
   _currentStage = STAGE_UPDATING;
-  performDidUpdateQueue(_componentInstanceMap);
+  performDidUpdateQueue(getComponentInstances());
   _currentStage = STAGE_STEADY;
   // console.timeEnd('update');
-};
-
-//------------------------------------------------------------------------------
-//RECONCILIATIONRECONCILIATIONRECONCILIATIONRECONCILIATIONRECONCILIATIONRECONCIL
-//------------------------------------------------------------------------------
-
-// Renders out components to get a vdom tree for the first render of a component or tree
-// Component -> Element
-// Element -> Element
-const reconcile = vnode => {
-  vnode = cloneNode(vnode);
-  if (isComponentElement(vnode)) {
-    vnode          = compose(renderComponentNode, instantiateNewComponent)(vnode);
-  }
-  if (vnode.hasOwnProperty('children')) {
-    vnode.children = reconcileComponent(vnode).map(reconcile);
-  }
-  return vnode;
-};
-
-// Updates the vdom rerendering only the nodes that match an id
-const updateComponentVDOM = id => vnode => {
-  vnode = cloneNode(vnode);
-  if (typeof vnode === 'object') {
-    if (hasOwnerComponent(vnode) && vnode.props.id === id) { //
-      vnode = renderComponentNode(instantiateNewComponent(vnode));
-    } else if (isComponentElement(vnode)) {
-      vnode = reconcile(vnode); // new component added
-    }
-    if (vnode.hasOwnProperty('children')) {
-      vnode.children = reconcileComponent(vnode).map(updateComponentVDOM(id));
-    }
-  }
-  return vnode;
-};
-
-// If children are an inline fn, render and insert the resulting children in to the
-// child array at the location of the fn
-// works backwards so the insertion indices are correct
-const reconcileComponent = vnode => {
-  let children    = vnode.children,
-      result      = [],
-      resultIndex = [],
-      index       = 0;
-
-  children = children.map((child, i) => {
-    if (typeof child === 'function') {
-      let childResult = child();
-      childResult     = childResult.map((c, i) => {
-        if (typeof c.type === 'function') {
-          c = reconcile(c);
-        } else if (typeof c === 'object' && !getKeyOrId(c)) { //c.props.id
-          c.props.id = c.props.id ? c.props.id : vnode.props.id + `.${i}.${index++}`;
-        }
-        return c;
-      });
-      result.unshift(childResult);
-      resultIndex.unshift(i);
-    } else {
-      child = reconcile(child);
-    }
-    return child;
-  });
-  resultIndex.forEach((idx, i) => {
-    children.splice(idx, 1, ...result[i]);
-  });
-  return children;
-};
-
-const instantiateNewComponent = vnode => {
-  let instance = vnode,
-      id       = getKeyOrId(vnode);
-  if (_componentInstanceMap.hasOwnProperty(id)) {
-    instance = _componentInstanceMap[id];
-  } else if (typeof vnode.type === 'function') {
-    vnode.props.children = Is.array(vnode.children) ? vnode.children : [vnode.children];
-    instance             = new vnode.type(vnode.props);
-    if (isNoriComponent(vnode)) {
-      // Only cache NoriComps, not SFCs
-      id                        = instance.props.id; // id could change during construction
-      _componentInstanceMap[id] = instance;
-    }
-  } else if (vnode.hasOwnProperty('_owner')) {
-    instance                  = vnode._owner;
-    id                        = instance.props.id;
-    _componentInstanceMap[id] = instance;
-  } else {
-    console.warn(`instantiateNewComponent : vnode is not component type`, typeof vnode.type, vnode);
-  }
-  return instance;
-};
-
-const renderComponentNode = instance => {
-  if (typeof instance.internalRender === 'function') {
-    // Set currently rendering for hook
-    setCurrentVnode(instance);
-    let vnode    = instance.internalRender();
-    vnode._owner = instance;
-    setCurrentVnode(null);
-    return vnode;
-  } else if (isVDOMNode(instance)) {
-    if (!instance.props.id) {
-      instance.props.id = instance.props.key ? '' + instance.props.key : getNextId();
-    }
-    return instance;
-  }
-  return null;
-};
-
-export const removeComponentInstance = vnode => {
-  if (hasOwnerComponent(vnode)) {
-    if (typeof vnode._owner.componentWillUnmount === 'function') {
-      vnode._owner.componentWillUnmount();
-      vnode._owner.remove();
-    }
-    delete _componentInstanceMap[vnode._owner.props.id];
-  }
 };
 
 
@@ -308,9 +182,9 @@ const performHook = vnode => {
 };
 
 export const useState = (initialState) => {
-  registerHook('useState', initialState);
+  //registerHook('useState', initialState);
 };
 
 export const useEffect = (didUpdateFn) => {
-  registerHook('useEffect', didUpdateFn);
+  //registerHook('useEffect', didUpdateFn);
 };

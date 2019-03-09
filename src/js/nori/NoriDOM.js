@@ -1,6 +1,7 @@
 import decalelize from 'decamelize';
 import {enqueueDidMount, performDidMountQueue} from './LifecycleQueue';
-import {removeComponentInstance, renderVDOM} from "./Nori";
+import {renderVDOM} from "./Nori";
+import {removeComponentInstance} from './Reconciler';
 import {removeAllElements} from "./browser/DOMToolbox";
 
 const ID_KEY        = 'data-nori-id';
@@ -21,7 +22,7 @@ export const render = (component, hostNode) => {
   $documentHostNode = hostNode;
   const vdom        = renderVDOM(component);
   console.log(vdom);
-  patch(vdom, null);
+  patch(null)(vdom);
   // $documentHostNode.appendChild(createElement(vdom));
   performDidMountQueue();
   console.timeEnd('render');
@@ -29,7 +30,8 @@ export const render = (component, hostNode) => {
 
 // This approach is bassackward since getting the patches and then applying them are
 // done in separate steps
-export const patch = (newvdom, currentvdom) => {
+// export const patch = (newvdom, currentvdom) => {
+export const patch = currentvdom => newvdom => {
   let patches = [];
   updateDOM($documentHostNode, newvdom, currentvdom, 0, patches);
   return patches;

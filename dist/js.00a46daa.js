@@ -1596,63 +1596,7 @@ function _taggedTemplateLiteral(strings, raw) { if (!raw) { raw = strings.slice(
 // normalize.css v8.0.0 | MIT License | github.com/necolas/normalize.css
 // + Customs
 (0, _emotion.injectGlobal)(_templateObject(), _Theme.modularScale.ms2, _Theme.theme.fontSizes[2]);
-},{"emotion":"../node_modules/emotion/dist/index.esm.js","./Theme":"js/theme/Theme.js"}],"js/nori/util/is.js":[function(require,module,exports) {
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.default = void 0;
-
-function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
-
-var _default = {
-  existy: function existy(x) {
-    return x !== null;
-  },
-  truthy: function truthy(x) {
-    return x !== false && this.existy(x);
-  },
-  falsey: function falsey(x) {
-    return !this.truthy(x);
-  },
-  func: function func(object) {
-    return typeof object === "function";
-  },
-  object: function object(_object) {
-    return Object.prototype.toString.call(_object) === "[object Object]";
-  },
-  objectEmpty: function objectEmpty(object) {
-    for (var key in object) {
-      if (object.hasOwnProperty(key)) {
-        return false;
-      }
-    }
-
-    return true;
-  },
-  string: function string(object) {
-    return Object.prototype.toString.call(object) === "[object String]";
-  },
-  array: function array(object) {
-    return Array.isArray(object); //return Object.prototype.toString.call(object) === '[object Array]';
-  },
-  promise: function promise(_promise) {
-    return _promise && typeof _promise.then === 'function';
-  },
-  observable: function observable(_observable) {
-    return _observable && typeof _observable.subscribe === 'function';
-  },
-  element: function element(obj) {
-    return (typeof HTMLElement === "undefined" ? "undefined" : _typeof(HTMLElement)) === 'object' ? obj instanceof HTMLElement || obj instanceof DocumentFragment : //DOM2
-    obj && _typeof(obj) === 'object' && obj !== null && (obj.nodeType === 1 || obj.nodeType === 11) && typeof obj.nodeName === 'string';
-  },
-  integer: function integer(str) {
-    return /^-?\d+$/.test(str);
-  }
-};
-exports.default = _default;
-},{}],"js/nori/util/NumberUtils.js":[function(require,module,exports) {
+},{"emotion":"../node_modules/emotion/dist/index.esm.js","./Theme":"js/theme/Theme.js"}],"js/nori/util/NumberUtils.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -1850,28 +1794,7 @@ var flatten = function flatten(arry) {
 };
 
 exports.flatten = flatten;
-},{"./NumberUtils":"js/nori/util/NumberUtils.js"}],"js/nori/util/ElementIDCreator.js":[function(require,module,exports) {
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.getNextId = exports.resetId = void 0;
-//https://gist.githubusercontent.com/davidgilbertson/0377b00b31afc4ac7c9bbb9b8706cca7/raw/ff81c7332d8ec6725ec6749d7459268b82a821b6/elementIdCreator.js
-var count = 1;
-
-var resetId = function resetId() {
-  count = 1;
-};
-
-exports.resetId = resetId;
-
-var getNextId = function getNextId() {
-  return "element-id-".concat(count++);
-};
-
-exports.getNextId = getNextId;
-},{}],"../node_modules/base64-js/index.js":[function(require,module,exports) {
+},{"./NumberUtils":"js/nori/util/NumberUtils.js"}],"../node_modules/base64-js/index.js":[function(require,module,exports) {
 'use strict'
 
 exports.byteLength = byteLength
@@ -42138,7 +42061,278 @@ var _zipObj = _interopRequireDefault(require("./zipObj"));
 var _zipWith = _interopRequireDefault(require("./zipWith"));
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-},{"./F":"../node_modules/ramda/es/F.js","./T":"../node_modules/ramda/es/T.js","./__":"../node_modules/ramda/es/__.js","./add":"../node_modules/ramda/es/add.js","./addIndex":"../node_modules/ramda/es/addIndex.js","./adjust":"../node_modules/ramda/es/adjust.js","./all":"../node_modules/ramda/es/all.js","./allPass":"../node_modules/ramda/es/allPass.js","./always":"../node_modules/ramda/es/always.js","./and":"../node_modules/ramda/es/and.js","./any":"../node_modules/ramda/es/any.js","./anyPass":"../node_modules/ramda/es/anyPass.js","./ap":"../node_modules/ramda/es/ap.js","./aperture":"../node_modules/ramda/es/aperture.js","./append":"../node_modules/ramda/es/append.js","./apply":"../node_modules/ramda/es/apply.js","./applySpec":"../node_modules/ramda/es/applySpec.js","./applyTo":"../node_modules/ramda/es/applyTo.js","./ascend":"../node_modules/ramda/es/ascend.js","./assoc":"../node_modules/ramda/es/assoc.js","./assocPath":"../node_modules/ramda/es/assocPath.js","./binary":"../node_modules/ramda/es/binary.js","./bind":"../node_modules/ramda/es/bind.js","./both":"../node_modules/ramda/es/both.js","./call":"../node_modules/ramda/es/call.js","./chain":"../node_modules/ramda/es/chain.js","./clamp":"../node_modules/ramda/es/clamp.js","./clone":"../node_modules/ramda/es/clone.js","./comparator":"../node_modules/ramda/es/comparator.js","./complement":"../node_modules/ramda/es/complement.js","./compose":"../node_modules/ramda/es/compose.js","./composeK":"../node_modules/ramda/es/composeK.js","./composeP":"../node_modules/ramda/es/composeP.js","./concat":"../node_modules/ramda/es/concat.js","./cond":"../node_modules/ramda/es/cond.js","./construct":"../node_modules/ramda/es/construct.js","./constructN":"../node_modules/ramda/es/constructN.js","./contains":"../node_modules/ramda/es/contains.js","./converge":"../node_modules/ramda/es/converge.js","./countBy":"../node_modules/ramda/es/countBy.js","./curry":"../node_modules/ramda/es/curry.js","./curryN":"../node_modules/ramda/es/curryN.js","./dec":"../node_modules/ramda/es/dec.js","./defaultTo":"../node_modules/ramda/es/defaultTo.js","./descend":"../node_modules/ramda/es/descend.js","./difference":"../node_modules/ramda/es/difference.js","./differenceWith":"../node_modules/ramda/es/differenceWith.js","./dissoc":"../node_modules/ramda/es/dissoc.js","./dissocPath":"../node_modules/ramda/es/dissocPath.js","./divide":"../node_modules/ramda/es/divide.js","./drop":"../node_modules/ramda/es/drop.js","./dropLast":"../node_modules/ramda/es/dropLast.js","./dropLastWhile":"../node_modules/ramda/es/dropLastWhile.js","./dropRepeats":"../node_modules/ramda/es/dropRepeats.js","./dropRepeatsWith":"../node_modules/ramda/es/dropRepeatsWith.js","./dropWhile":"../node_modules/ramda/es/dropWhile.js","./either":"../node_modules/ramda/es/either.js","./empty":"../node_modules/ramda/es/empty.js","./endsWith":"../node_modules/ramda/es/endsWith.js","./eqBy":"../node_modules/ramda/es/eqBy.js","./eqProps":"../node_modules/ramda/es/eqProps.js","./equals":"../node_modules/ramda/es/equals.js","./evolve":"../node_modules/ramda/es/evolve.js","./filter":"../node_modules/ramda/es/filter.js","./find":"../node_modules/ramda/es/find.js","./findIndex":"../node_modules/ramda/es/findIndex.js","./findLast":"../node_modules/ramda/es/findLast.js","./findLastIndex":"../node_modules/ramda/es/findLastIndex.js","./flatten":"../node_modules/ramda/es/flatten.js","./flip":"../node_modules/ramda/es/flip.js","./forEach":"../node_modules/ramda/es/forEach.js","./forEachObjIndexed":"../node_modules/ramda/es/forEachObjIndexed.js","./fromPairs":"../node_modules/ramda/es/fromPairs.js","./groupBy":"../node_modules/ramda/es/groupBy.js","./groupWith":"../node_modules/ramda/es/groupWith.js","./gt":"../node_modules/ramda/es/gt.js","./gte":"../node_modules/ramda/es/gte.js","./has":"../node_modules/ramda/es/has.js","./hasIn":"../node_modules/ramda/es/hasIn.js","./head":"../node_modules/ramda/es/head.js","./identical":"../node_modules/ramda/es/identical.js","./identity":"../node_modules/ramda/es/identity.js","./ifElse":"../node_modules/ramda/es/ifElse.js","./inc":"../node_modules/ramda/es/inc.js","./indexBy":"../node_modules/ramda/es/indexBy.js","./indexOf":"../node_modules/ramda/es/indexOf.js","./init":"../node_modules/ramda/es/init.js","./innerJoin":"../node_modules/ramda/es/innerJoin.js","./insert":"../node_modules/ramda/es/insert.js","./insertAll":"../node_modules/ramda/es/insertAll.js","./intersection":"../node_modules/ramda/es/intersection.js","./intersperse":"../node_modules/ramda/es/intersperse.js","./into":"../node_modules/ramda/es/into.js","./invert":"../node_modules/ramda/es/invert.js","./invertObj":"../node_modules/ramda/es/invertObj.js","./invoker":"../node_modules/ramda/es/invoker.js","./is":"../node_modules/ramda/es/is.js","./isEmpty":"../node_modules/ramda/es/isEmpty.js","./isNil":"../node_modules/ramda/es/isNil.js","./join":"../node_modules/ramda/es/join.js","./juxt":"../node_modules/ramda/es/juxt.js","./keys":"../node_modules/ramda/es/keys.js","./keysIn":"../node_modules/ramda/es/keysIn.js","./last":"../node_modules/ramda/es/last.js","./lastIndexOf":"../node_modules/ramda/es/lastIndexOf.js","./length":"../node_modules/ramda/es/length.js","./lens":"../node_modules/ramda/es/lens.js","./lensIndex":"../node_modules/ramda/es/lensIndex.js","./lensPath":"../node_modules/ramda/es/lensPath.js","./lensProp":"../node_modules/ramda/es/lensProp.js","./lift":"../node_modules/ramda/es/lift.js","./liftN":"../node_modules/ramda/es/liftN.js","./lt":"../node_modules/ramda/es/lt.js","./lte":"../node_modules/ramda/es/lte.js","./map":"../node_modules/ramda/es/map.js","./mapAccum":"../node_modules/ramda/es/mapAccum.js","./mapAccumRight":"../node_modules/ramda/es/mapAccumRight.js","./mapObjIndexed":"../node_modules/ramda/es/mapObjIndexed.js","./match":"../node_modules/ramda/es/match.js","./mathMod":"../node_modules/ramda/es/mathMod.js","./max":"../node_modules/ramda/es/max.js","./maxBy":"../node_modules/ramda/es/maxBy.js","./mean":"../node_modules/ramda/es/mean.js","./median":"../node_modules/ramda/es/median.js","./memoize":"../node_modules/ramda/es/memoize.js","./memoizeWith":"../node_modules/ramda/es/memoizeWith.js","./merge":"../node_modules/ramda/es/merge.js","./mergeAll":"../node_modules/ramda/es/mergeAll.js","./mergeDeepLeft":"../node_modules/ramda/es/mergeDeepLeft.js","./mergeDeepRight":"../node_modules/ramda/es/mergeDeepRight.js","./mergeDeepWith":"../node_modules/ramda/es/mergeDeepWith.js","./mergeDeepWithKey":"../node_modules/ramda/es/mergeDeepWithKey.js","./mergeWith":"../node_modules/ramda/es/mergeWith.js","./mergeWithKey":"../node_modules/ramda/es/mergeWithKey.js","./min":"../node_modules/ramda/es/min.js","./minBy":"../node_modules/ramda/es/minBy.js","./modulo":"../node_modules/ramda/es/modulo.js","./multiply":"../node_modules/ramda/es/multiply.js","./nAry":"../node_modules/ramda/es/nAry.js","./negate":"../node_modules/ramda/es/negate.js","./none":"../node_modules/ramda/es/none.js","./not":"../node_modules/ramda/es/not.js","./nth":"../node_modules/ramda/es/nth.js","./nthArg":"../node_modules/ramda/es/nthArg.js","./o":"../node_modules/ramda/es/o.js","./objOf":"../node_modules/ramda/es/objOf.js","./of":"../node_modules/ramda/es/of.js","./omit":"../node_modules/ramda/es/omit.js","./once":"../node_modules/ramda/es/once.js","./or":"../node_modules/ramda/es/or.js","./over":"../node_modules/ramda/es/over.js","./pair":"../node_modules/ramda/es/pair.js","./partial":"../node_modules/ramda/es/partial.js","./partialRight":"../node_modules/ramda/es/partialRight.js","./partition":"../node_modules/ramda/es/partition.js","./path":"../node_modules/ramda/es/path.js","./pathEq":"../node_modules/ramda/es/pathEq.js","./pathOr":"../node_modules/ramda/es/pathOr.js","./pathSatisfies":"../node_modules/ramda/es/pathSatisfies.js","./pick":"../node_modules/ramda/es/pick.js","./pickAll":"../node_modules/ramda/es/pickAll.js","./pickBy":"../node_modules/ramda/es/pickBy.js","./pipe":"../node_modules/ramda/es/pipe.js","./pipeK":"../node_modules/ramda/es/pipeK.js","./pipeP":"../node_modules/ramda/es/pipeP.js","./pluck":"../node_modules/ramda/es/pluck.js","./prepend":"../node_modules/ramda/es/prepend.js","./product":"../node_modules/ramda/es/product.js","./project":"../node_modules/ramda/es/project.js","./prop":"../node_modules/ramda/es/prop.js","./propEq":"../node_modules/ramda/es/propEq.js","./propIs":"../node_modules/ramda/es/propIs.js","./propOr":"../node_modules/ramda/es/propOr.js","./propSatisfies":"../node_modules/ramda/es/propSatisfies.js","./props":"../node_modules/ramda/es/props.js","./range":"../node_modules/ramda/es/range.js","./reduce":"../node_modules/ramda/es/reduce.js","./reduceBy":"../node_modules/ramda/es/reduceBy.js","./reduceRight":"../node_modules/ramda/es/reduceRight.js","./reduceWhile":"../node_modules/ramda/es/reduceWhile.js","./reduced":"../node_modules/ramda/es/reduced.js","./reject":"../node_modules/ramda/es/reject.js","./remove":"../node_modules/ramda/es/remove.js","./repeat":"../node_modules/ramda/es/repeat.js","./replace":"../node_modules/ramda/es/replace.js","./reverse":"../node_modules/ramda/es/reverse.js","./scan":"../node_modules/ramda/es/scan.js","./sequence":"../node_modules/ramda/es/sequence.js","./set":"../node_modules/ramda/es/set.js","./slice":"../node_modules/ramda/es/slice.js","./sort":"../node_modules/ramda/es/sort.js","./sortBy":"../node_modules/ramda/es/sortBy.js","./sortWith":"../node_modules/ramda/es/sortWith.js","./split":"../node_modules/ramda/es/split.js","./splitAt":"../node_modules/ramda/es/splitAt.js","./splitEvery":"../node_modules/ramda/es/splitEvery.js","./splitWhen":"../node_modules/ramda/es/splitWhen.js","./startsWith":"../node_modules/ramda/es/startsWith.js","./subtract":"../node_modules/ramda/es/subtract.js","./sum":"../node_modules/ramda/es/sum.js","./symmetricDifference":"../node_modules/ramda/es/symmetricDifference.js","./symmetricDifferenceWith":"../node_modules/ramda/es/symmetricDifferenceWith.js","./tail":"../node_modules/ramda/es/tail.js","./take":"../node_modules/ramda/es/take.js","./takeLast":"../node_modules/ramda/es/takeLast.js","./takeLastWhile":"../node_modules/ramda/es/takeLastWhile.js","./takeWhile":"../node_modules/ramda/es/takeWhile.js","./tap":"../node_modules/ramda/es/tap.js","./test":"../node_modules/ramda/es/test.js","./times":"../node_modules/ramda/es/times.js","./toLower":"../node_modules/ramda/es/toLower.js","./toPairs":"../node_modules/ramda/es/toPairs.js","./toPairsIn":"../node_modules/ramda/es/toPairsIn.js","./toString":"../node_modules/ramda/es/toString.js","./toUpper":"../node_modules/ramda/es/toUpper.js","./transduce":"../node_modules/ramda/es/transduce.js","./transpose":"../node_modules/ramda/es/transpose.js","./traverse":"../node_modules/ramda/es/traverse.js","./trim":"../node_modules/ramda/es/trim.js","./tryCatch":"../node_modules/ramda/es/tryCatch.js","./type":"../node_modules/ramda/es/type.js","./unapply":"../node_modules/ramda/es/unapply.js","./unary":"../node_modules/ramda/es/unary.js","./uncurryN":"../node_modules/ramda/es/uncurryN.js","./unfold":"../node_modules/ramda/es/unfold.js","./union":"../node_modules/ramda/es/union.js","./unionWith":"../node_modules/ramda/es/unionWith.js","./uniq":"../node_modules/ramda/es/uniq.js","./uniqBy":"../node_modules/ramda/es/uniqBy.js","./uniqWith":"../node_modules/ramda/es/uniqWith.js","./unless":"../node_modules/ramda/es/unless.js","./unnest":"../node_modules/ramda/es/unnest.js","./until":"../node_modules/ramda/es/until.js","./update":"../node_modules/ramda/es/update.js","./useWith":"../node_modules/ramda/es/useWith.js","./values":"../node_modules/ramda/es/values.js","./valuesIn":"../node_modules/ramda/es/valuesIn.js","./view":"../node_modules/ramda/es/view.js","./when":"../node_modules/ramda/es/when.js","./where":"../node_modules/ramda/es/where.js","./whereEq":"../node_modules/ramda/es/whereEq.js","./without":"../node_modules/ramda/es/without.js","./xprod":"../node_modules/ramda/es/xprod.js","./zip":"../node_modules/ramda/es/zip.js","./zipObj":"../node_modules/ramda/es/zipObj.js","./zipWith":"../node_modules/ramda/es/zipWith.js"}],"js/nori/browser/DOMToolbox.js":[function(require,module,exports) {
+},{"./F":"../node_modules/ramda/es/F.js","./T":"../node_modules/ramda/es/T.js","./__":"../node_modules/ramda/es/__.js","./add":"../node_modules/ramda/es/add.js","./addIndex":"../node_modules/ramda/es/addIndex.js","./adjust":"../node_modules/ramda/es/adjust.js","./all":"../node_modules/ramda/es/all.js","./allPass":"../node_modules/ramda/es/allPass.js","./always":"../node_modules/ramda/es/always.js","./and":"../node_modules/ramda/es/and.js","./any":"../node_modules/ramda/es/any.js","./anyPass":"../node_modules/ramda/es/anyPass.js","./ap":"../node_modules/ramda/es/ap.js","./aperture":"../node_modules/ramda/es/aperture.js","./append":"../node_modules/ramda/es/append.js","./apply":"../node_modules/ramda/es/apply.js","./applySpec":"../node_modules/ramda/es/applySpec.js","./applyTo":"../node_modules/ramda/es/applyTo.js","./ascend":"../node_modules/ramda/es/ascend.js","./assoc":"../node_modules/ramda/es/assoc.js","./assocPath":"../node_modules/ramda/es/assocPath.js","./binary":"../node_modules/ramda/es/binary.js","./bind":"../node_modules/ramda/es/bind.js","./both":"../node_modules/ramda/es/both.js","./call":"../node_modules/ramda/es/call.js","./chain":"../node_modules/ramda/es/chain.js","./clamp":"../node_modules/ramda/es/clamp.js","./clone":"../node_modules/ramda/es/clone.js","./comparator":"../node_modules/ramda/es/comparator.js","./complement":"../node_modules/ramda/es/complement.js","./compose":"../node_modules/ramda/es/compose.js","./composeK":"../node_modules/ramda/es/composeK.js","./composeP":"../node_modules/ramda/es/composeP.js","./concat":"../node_modules/ramda/es/concat.js","./cond":"../node_modules/ramda/es/cond.js","./construct":"../node_modules/ramda/es/construct.js","./constructN":"../node_modules/ramda/es/constructN.js","./contains":"../node_modules/ramda/es/contains.js","./converge":"../node_modules/ramda/es/converge.js","./countBy":"../node_modules/ramda/es/countBy.js","./curry":"../node_modules/ramda/es/curry.js","./curryN":"../node_modules/ramda/es/curryN.js","./dec":"../node_modules/ramda/es/dec.js","./defaultTo":"../node_modules/ramda/es/defaultTo.js","./descend":"../node_modules/ramda/es/descend.js","./difference":"../node_modules/ramda/es/difference.js","./differenceWith":"../node_modules/ramda/es/differenceWith.js","./dissoc":"../node_modules/ramda/es/dissoc.js","./dissocPath":"../node_modules/ramda/es/dissocPath.js","./divide":"../node_modules/ramda/es/divide.js","./drop":"../node_modules/ramda/es/drop.js","./dropLast":"../node_modules/ramda/es/dropLast.js","./dropLastWhile":"../node_modules/ramda/es/dropLastWhile.js","./dropRepeats":"../node_modules/ramda/es/dropRepeats.js","./dropRepeatsWith":"../node_modules/ramda/es/dropRepeatsWith.js","./dropWhile":"../node_modules/ramda/es/dropWhile.js","./either":"../node_modules/ramda/es/either.js","./empty":"../node_modules/ramda/es/empty.js","./endsWith":"../node_modules/ramda/es/endsWith.js","./eqBy":"../node_modules/ramda/es/eqBy.js","./eqProps":"../node_modules/ramda/es/eqProps.js","./equals":"../node_modules/ramda/es/equals.js","./evolve":"../node_modules/ramda/es/evolve.js","./filter":"../node_modules/ramda/es/filter.js","./find":"../node_modules/ramda/es/find.js","./findIndex":"../node_modules/ramda/es/findIndex.js","./findLast":"../node_modules/ramda/es/findLast.js","./findLastIndex":"../node_modules/ramda/es/findLastIndex.js","./flatten":"../node_modules/ramda/es/flatten.js","./flip":"../node_modules/ramda/es/flip.js","./forEach":"../node_modules/ramda/es/forEach.js","./forEachObjIndexed":"../node_modules/ramda/es/forEachObjIndexed.js","./fromPairs":"../node_modules/ramda/es/fromPairs.js","./groupBy":"../node_modules/ramda/es/groupBy.js","./groupWith":"../node_modules/ramda/es/groupWith.js","./gt":"../node_modules/ramda/es/gt.js","./gte":"../node_modules/ramda/es/gte.js","./has":"../node_modules/ramda/es/has.js","./hasIn":"../node_modules/ramda/es/hasIn.js","./head":"../node_modules/ramda/es/head.js","./identical":"../node_modules/ramda/es/identical.js","./identity":"../node_modules/ramda/es/identity.js","./ifElse":"../node_modules/ramda/es/ifElse.js","./inc":"../node_modules/ramda/es/inc.js","./indexBy":"../node_modules/ramda/es/indexBy.js","./indexOf":"../node_modules/ramda/es/indexOf.js","./init":"../node_modules/ramda/es/init.js","./innerJoin":"../node_modules/ramda/es/innerJoin.js","./insert":"../node_modules/ramda/es/insert.js","./insertAll":"../node_modules/ramda/es/insertAll.js","./intersection":"../node_modules/ramda/es/intersection.js","./intersperse":"../node_modules/ramda/es/intersperse.js","./into":"../node_modules/ramda/es/into.js","./invert":"../node_modules/ramda/es/invert.js","./invertObj":"../node_modules/ramda/es/invertObj.js","./invoker":"../node_modules/ramda/es/invoker.js","./is":"../node_modules/ramda/es/is.js","./isEmpty":"../node_modules/ramda/es/isEmpty.js","./isNil":"../node_modules/ramda/es/isNil.js","./join":"../node_modules/ramda/es/join.js","./juxt":"../node_modules/ramda/es/juxt.js","./keys":"../node_modules/ramda/es/keys.js","./keysIn":"../node_modules/ramda/es/keysIn.js","./last":"../node_modules/ramda/es/last.js","./lastIndexOf":"../node_modules/ramda/es/lastIndexOf.js","./length":"../node_modules/ramda/es/length.js","./lens":"../node_modules/ramda/es/lens.js","./lensIndex":"../node_modules/ramda/es/lensIndex.js","./lensPath":"../node_modules/ramda/es/lensPath.js","./lensProp":"../node_modules/ramda/es/lensProp.js","./lift":"../node_modules/ramda/es/lift.js","./liftN":"../node_modules/ramda/es/liftN.js","./lt":"../node_modules/ramda/es/lt.js","./lte":"../node_modules/ramda/es/lte.js","./map":"../node_modules/ramda/es/map.js","./mapAccum":"../node_modules/ramda/es/mapAccum.js","./mapAccumRight":"../node_modules/ramda/es/mapAccumRight.js","./mapObjIndexed":"../node_modules/ramda/es/mapObjIndexed.js","./match":"../node_modules/ramda/es/match.js","./mathMod":"../node_modules/ramda/es/mathMod.js","./max":"../node_modules/ramda/es/max.js","./maxBy":"../node_modules/ramda/es/maxBy.js","./mean":"../node_modules/ramda/es/mean.js","./median":"../node_modules/ramda/es/median.js","./memoize":"../node_modules/ramda/es/memoize.js","./memoizeWith":"../node_modules/ramda/es/memoizeWith.js","./merge":"../node_modules/ramda/es/merge.js","./mergeAll":"../node_modules/ramda/es/mergeAll.js","./mergeDeepLeft":"../node_modules/ramda/es/mergeDeepLeft.js","./mergeDeepRight":"../node_modules/ramda/es/mergeDeepRight.js","./mergeDeepWith":"../node_modules/ramda/es/mergeDeepWith.js","./mergeDeepWithKey":"../node_modules/ramda/es/mergeDeepWithKey.js","./mergeWith":"../node_modules/ramda/es/mergeWith.js","./mergeWithKey":"../node_modules/ramda/es/mergeWithKey.js","./min":"../node_modules/ramda/es/min.js","./minBy":"../node_modules/ramda/es/minBy.js","./modulo":"../node_modules/ramda/es/modulo.js","./multiply":"../node_modules/ramda/es/multiply.js","./nAry":"../node_modules/ramda/es/nAry.js","./negate":"../node_modules/ramda/es/negate.js","./none":"../node_modules/ramda/es/none.js","./not":"../node_modules/ramda/es/not.js","./nth":"../node_modules/ramda/es/nth.js","./nthArg":"../node_modules/ramda/es/nthArg.js","./o":"../node_modules/ramda/es/o.js","./objOf":"../node_modules/ramda/es/objOf.js","./of":"../node_modules/ramda/es/of.js","./omit":"../node_modules/ramda/es/omit.js","./once":"../node_modules/ramda/es/once.js","./or":"../node_modules/ramda/es/or.js","./over":"../node_modules/ramda/es/over.js","./pair":"../node_modules/ramda/es/pair.js","./partial":"../node_modules/ramda/es/partial.js","./partialRight":"../node_modules/ramda/es/partialRight.js","./partition":"../node_modules/ramda/es/partition.js","./path":"../node_modules/ramda/es/path.js","./pathEq":"../node_modules/ramda/es/pathEq.js","./pathOr":"../node_modules/ramda/es/pathOr.js","./pathSatisfies":"../node_modules/ramda/es/pathSatisfies.js","./pick":"../node_modules/ramda/es/pick.js","./pickAll":"../node_modules/ramda/es/pickAll.js","./pickBy":"../node_modules/ramda/es/pickBy.js","./pipe":"../node_modules/ramda/es/pipe.js","./pipeK":"../node_modules/ramda/es/pipeK.js","./pipeP":"../node_modules/ramda/es/pipeP.js","./pluck":"../node_modules/ramda/es/pluck.js","./prepend":"../node_modules/ramda/es/prepend.js","./product":"../node_modules/ramda/es/product.js","./project":"../node_modules/ramda/es/project.js","./prop":"../node_modules/ramda/es/prop.js","./propEq":"../node_modules/ramda/es/propEq.js","./propIs":"../node_modules/ramda/es/propIs.js","./propOr":"../node_modules/ramda/es/propOr.js","./propSatisfies":"../node_modules/ramda/es/propSatisfies.js","./props":"../node_modules/ramda/es/props.js","./range":"../node_modules/ramda/es/range.js","./reduce":"../node_modules/ramda/es/reduce.js","./reduceBy":"../node_modules/ramda/es/reduceBy.js","./reduceRight":"../node_modules/ramda/es/reduceRight.js","./reduceWhile":"../node_modules/ramda/es/reduceWhile.js","./reduced":"../node_modules/ramda/es/reduced.js","./reject":"../node_modules/ramda/es/reject.js","./remove":"../node_modules/ramda/es/remove.js","./repeat":"../node_modules/ramda/es/repeat.js","./replace":"../node_modules/ramda/es/replace.js","./reverse":"../node_modules/ramda/es/reverse.js","./scan":"../node_modules/ramda/es/scan.js","./sequence":"../node_modules/ramda/es/sequence.js","./set":"../node_modules/ramda/es/set.js","./slice":"../node_modules/ramda/es/slice.js","./sort":"../node_modules/ramda/es/sort.js","./sortBy":"../node_modules/ramda/es/sortBy.js","./sortWith":"../node_modules/ramda/es/sortWith.js","./split":"../node_modules/ramda/es/split.js","./splitAt":"../node_modules/ramda/es/splitAt.js","./splitEvery":"../node_modules/ramda/es/splitEvery.js","./splitWhen":"../node_modules/ramda/es/splitWhen.js","./startsWith":"../node_modules/ramda/es/startsWith.js","./subtract":"../node_modules/ramda/es/subtract.js","./sum":"../node_modules/ramda/es/sum.js","./symmetricDifference":"../node_modules/ramda/es/symmetricDifference.js","./symmetricDifferenceWith":"../node_modules/ramda/es/symmetricDifferenceWith.js","./tail":"../node_modules/ramda/es/tail.js","./take":"../node_modules/ramda/es/take.js","./takeLast":"../node_modules/ramda/es/takeLast.js","./takeLastWhile":"../node_modules/ramda/es/takeLastWhile.js","./takeWhile":"../node_modules/ramda/es/takeWhile.js","./tap":"../node_modules/ramda/es/tap.js","./test":"../node_modules/ramda/es/test.js","./times":"../node_modules/ramda/es/times.js","./toLower":"../node_modules/ramda/es/toLower.js","./toPairs":"../node_modules/ramda/es/toPairs.js","./toPairsIn":"../node_modules/ramda/es/toPairsIn.js","./toString":"../node_modules/ramda/es/toString.js","./toUpper":"../node_modules/ramda/es/toUpper.js","./transduce":"../node_modules/ramda/es/transduce.js","./transpose":"../node_modules/ramda/es/transpose.js","./traverse":"../node_modules/ramda/es/traverse.js","./trim":"../node_modules/ramda/es/trim.js","./tryCatch":"../node_modules/ramda/es/tryCatch.js","./type":"../node_modules/ramda/es/type.js","./unapply":"../node_modules/ramda/es/unapply.js","./unary":"../node_modules/ramda/es/unary.js","./uncurryN":"../node_modules/ramda/es/uncurryN.js","./unfold":"../node_modules/ramda/es/unfold.js","./union":"../node_modules/ramda/es/union.js","./unionWith":"../node_modules/ramda/es/unionWith.js","./uniq":"../node_modules/ramda/es/uniq.js","./uniqBy":"../node_modules/ramda/es/uniqBy.js","./uniqWith":"../node_modules/ramda/es/uniqWith.js","./unless":"../node_modules/ramda/es/unless.js","./unnest":"../node_modules/ramda/es/unnest.js","./until":"../node_modules/ramda/es/until.js","./update":"../node_modules/ramda/es/update.js","./useWith":"../node_modules/ramda/es/useWith.js","./values":"../node_modules/ramda/es/values.js","./valuesIn":"../node_modules/ramda/es/valuesIn.js","./view":"../node_modules/ramda/es/view.js","./when":"../node_modules/ramda/es/when.js","./where":"../node_modules/ramda/es/where.js","./whereEq":"../node_modules/ramda/es/whereEq.js","./without":"../node_modules/ramda/es/without.js","./xprod":"../node_modules/ramda/es/xprod.js","./zip":"../node_modules/ramda/es/zip.js","./zipObj":"../node_modules/ramda/es/zipObj.js","./zipWith":"../node_modules/ramda/es/zipWith.js"}],"js/nori/util/is.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = void 0;
+
+function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
+
+var _default = {
+  existy: function existy(x) {
+    return x !== null;
+  },
+  truthy: function truthy(x) {
+    return x !== false && this.existy(x);
+  },
+  falsey: function falsey(x) {
+    return !this.truthy(x);
+  },
+  func: function func(object) {
+    return typeof object === "function";
+  },
+  object: function object(_object) {
+    return Object.prototype.toString.call(_object) === "[object Object]";
+  },
+  objectEmpty: function objectEmpty(object) {
+    for (var key in object) {
+      if (object.hasOwnProperty(key)) {
+        return false;
+      }
+    }
+
+    return true;
+  },
+  string: function string(object) {
+    return Object.prototype.toString.call(object) === "[object String]";
+  },
+  array: function array(object) {
+    return Array.isArray(object); //return Object.prototype.toString.call(object) === '[object Array]';
+  },
+  promise: function promise(_promise) {
+    return _promise && typeof _promise.then === 'function';
+  },
+  observable: function observable(_observable) {
+    return _observable && typeof _observable.subscribe === 'function';
+  },
+  element: function element(obj) {
+    return (typeof HTMLElement === "undefined" ? "undefined" : _typeof(HTMLElement)) === 'object' ? obj instanceof HTMLElement || obj instanceof DocumentFragment : //DOM2
+    obj && _typeof(obj) === 'object' && obj !== null && (obj.nodeType === 1 || obj.nodeType === 11) && typeof obj.nodeName === 'string';
+  },
+  integer: function integer(str) {
+    return /^-?\d+$/.test(str);
+  }
+};
+exports.default = _default;
+},{}],"js/nori/util/ElementIDCreator.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.getNextId = exports.resetId = void 0;
+//https://gist.githubusercontent.com/davidgilbertson/0377b00b31afc4ac7c9bbb9b8706cca7/raw/ff81c7332d8ec6725ec6749d7459268b82a821b6/elementIdCreator.js
+var count = 1;
+
+var resetId = function resetId() {
+  count = 1;
+};
+
+exports.resetId = resetId;
+
+var getNextId = function getNextId() {
+  return "element-id-".concat(count++);
+};
+
+exports.getNextId = getNextId;
+},{}],"js/nori/Reconciler.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.removeComponentInstance = exports.reconcileOnly = exports.reconcile = exports.getComponentInstances = exports.cloneNode = void 0;
+
+var _ramda = require("ramda");
+
+var _is = _interopRequireDefault(require("./util/is"));
+
+var _ElementIDCreator = require("./util/ElementIDCreator");
+
+var _Nori = require("./Nori");
+
+var _lodash = require("lodash");
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+function _toConsumableArray(arr) { return _arrayWithoutHoles(arr) || _iterableToArray(arr) || _nonIterableSpread(); }
+
+function _nonIterableSpread() { throw new TypeError("Invalid attempt to spread non-iterable instance"); }
+
+function _iterableToArray(iter) { if (Symbol.iterator in Object(iter) || Object.prototype.toString.call(iter) === "[object Arguments]") return Array.from(iter); }
+
+function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = new Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } }
+
+function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
+
+var _componentInstanceMap = {};
+
+var getKeyOrId = function getKeyOrId(vnode) {
+  return vnode.props.key ? vnode.props.key : vnode.props.id;
+};
+
+var isVDOMNode = function isVDOMNode(vnode) {
+  return _typeof(vnode) === 'object' && vnode.hasOwnProperty('type') && vnode.hasOwnProperty('props') && vnode.hasOwnProperty('children');
+};
+
+var hasOwnerComponent = function hasOwnerComponent(vnode) {
+  return vnode.hasOwnProperty('_owner') && vnode._owner !== null;
+};
+
+var reconcileComponentInstance = function reconcileComponentInstance(vnode) {
+  return (0, _ramda.compose)(renderComponent, getComponentInstance)(vnode);
+};
+
+var cloneNode = function cloneNode(vnode) {
+  return (0, _lodash.cloneDeep)(vnode);
+}; // Warning: Potentially expensive
+
+
+exports.cloneNode = cloneNode;
+
+var getComponentInstances = function getComponentInstances(_) {
+  return _componentInstanceMap;
+};
+
+exports.getComponentInstances = getComponentInstances;
+
+var reconcileChildren = function reconcileChildren(vnode, mapper) {
+  if (vnode.hasOwnProperty('children')) {
+    vnode.children = reconcileComponent(vnode).map(mapper);
+  }
+
+  return vnode;
+};
+
+var reconcile = function reconcile(vnode) {
+  vnode = cloneNode(vnode);
+
+  if ((0, _Nori.isComponentElement)(vnode)) {
+    vnode = reconcileComponentInstance(vnode);
+  }
+
+  return reconcileChildren(vnode, reconcile);
+};
+
+exports.reconcile = reconcile;
+
+var reconcileOnly = function reconcileOnly(id) {
+  return function (vnode) {
+    vnode = cloneNode(vnode);
+
+    if (hasOwnerComponent(vnode) && vnode.props.id === id) {
+      vnode = reconcileComponentInstance(vnode);
+    } else if ((0, _Nori.isComponentElement)(vnode)) {
+      vnode = reconcile(vnode);
+    }
+
+    return reconcileChildren(vnode, reconcileOnly(id));
+  };
+}; // If children are an inline fn, render and insert the resulting children in to the
+// child array at the location of the fn
+// works backwards so the insertion indices are correct
+
+
+exports.reconcileOnly = reconcileOnly;
+
+var reconcileComponent = function reconcileComponent(vnode) {
+  var children = vnode.children,
+      result = [],
+      resultIndex = [],
+      index = 0;
+  children = children.map(function (child, i) {
+    if (typeof child === 'function') {
+      var childResult = child();
+      childResult = childResult.map(function (c, i) {
+        if (typeof c.type === 'function') {
+          c = reconcile(c);
+        } else if (_typeof(c) === 'object' && !getKeyOrId(c)) {
+          //c.props.id
+          c.props.id = c.props.id ? c.props.id : vnode.props.id + ".".concat(i, ".").concat(index++);
+        }
+
+        return c;
+      });
+      result.unshift(childResult);
+      resultIndex.unshift(i);
+    } else {
+      child = reconcile(child);
+    }
+
+    return child;
+  });
+  resultIndex.forEach(function (idx, i) {
+    var _children;
+
+    (_children = children).splice.apply(_children, [idx, 1].concat(_toConsumableArray(result[i])));
+  });
+  return children;
+};
+
+var getComponentInstance = function getComponentInstance(vnode) {
+  var instance = vnode,
+      id = getKeyOrId(vnode);
+
+  if (_componentInstanceMap.hasOwnProperty(id)) {
+    instance = _componentInstanceMap[id];
+  } else if (typeof vnode.type === 'function') {
+    vnode.props.children = _is.default.array(vnode.children) ? vnode.children : [vnode.children];
+    instance = new vnode.type(vnode.props);
+
+    if ((0, _Nori.isNoriComponent)(vnode)) {
+      // Only cache NoriComps, not SFCs
+      id = instance.props.id; // id could change during construction
+
+      _componentInstanceMap[id] = instance;
+    }
+  } else if (vnode.hasOwnProperty('_owner')) {
+    instance = vnode._owner;
+    id = instance.props.id;
+    _componentInstanceMap[id] = instance;
+  } else {
+    console.warn("instantiateNewComponent : vnode is not component type", _typeof(vnode.type), vnode);
+  }
+
+  return instance;
+};
+
+var renderComponent = function renderComponent(instance) {
+  if (typeof instance.internalRender === 'function') {
+    // Set currently rendering for hook
+    // setCurrentVnode(instance);
+    var vnode = instance.internalRender();
+    vnode._owner = instance; // setCurrentVnode(null);
+
+    return vnode;
+  } else if (isVDOMNode(instance)) {
+    if (!instance.props.id) {
+      instance.props.id = instance.props.key ? '' + instance.props.key : (0, _ElementIDCreator.getNextId)();
+    }
+
+    return instance;
+  }
+
+  return null;
+}; // Called from NoriDOM when an element isn't in the new vdom tree
+
+
+var removeComponentInstance = function removeComponentInstance(vnode) {
+  if (hasOwnerComponent(vnode)) {
+    if (typeof vnode._owner.componentWillUnmount === 'function') {
+      vnode._owner.componentWillUnmount();
+
+      vnode._owner.remove();
+    }
+
+    delete _componentInstanceMap[vnode._owner.props.id];
+  }
+};
+
+exports.removeComponentInstance = removeComponentInstance;
+},{"ramda":"../node_modules/ramda/es/index.js","./util/is":"js/nori/util/is.js","./util/ElementIDCreator":"js/nori/util/ElementIDCreator.js","./Nori":"js/nori/Nori.js","lodash":"../node_modules/lodash/lodash.js"}],"js/nori/browser/DOMToolbox.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -42449,6 +42643,8 @@ var _LifecycleQueue = require("./LifecycleQueue");
 
 var _Nori = require("./Nori");
 
+var _Reconciler = require("./Reconciler");
+
 var _DOMToolbox = require("./browser/DOMToolbox");
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
@@ -42483,20 +42679,23 @@ var render = function render(component, hostNode) {
   $documentHostNode = hostNode;
   var vdom = (0, _Nori.renderVDOM)(component);
   console.log(vdom);
-  patch(vdom, null); // $documentHostNode.appendChild(createElement(vdom));
+  patch(null)(vdom); // $documentHostNode.appendChild(createElement(vdom));
 
   (0, _LifecycleQueue.performDidMountQueue)();
   console.timeEnd('render');
 }; // This approach is bassackward since getting the patches and then applying them are
 // done in separate steps
+// export const patch = (newvdom, currentvdom) => {
 
 
 exports.render = render;
 
-var patch = function patch(newvdom, currentvdom) {
-  var patches = [];
-  updateDOM($documentHostNode, newvdom, currentvdom, 0, patches);
-  return patches;
+var patch = function patch(currentvdom) {
+  return function (newvdom) {
+    var patches = [];
+    updateDOM($documentHostNode, newvdom, currentvdom, 0, patches);
+    return patches;
+  };
 };
 
 exports.patch = patch;
@@ -42520,7 +42719,7 @@ var updateDOM = function updateDOM($element, newvdom, currentvdom) {
 
     if ($toRemove) {
       //console.log('Remove', currentvdom, $toRemove);
-      (0, _Nori.removeComponentInstance)(currentvdom);
+      (0, _Reconciler.removeComponentInstance)(currentvdom);
 
       if (currentvdom.hasOwnProperty('props')) {
         removeEvents(currentvdom.props.id);
@@ -42793,7 +42992,7 @@ var removeBooleanProp = function removeBooleanProp($element, key) {
   $element.removeAttribute(key);
   $element[key] = false;
 };
-},{"decamelize":"../node_modules/decamelize/index.js","./LifecycleQueue":"js/nori/LifecycleQueue.js","./Nori":"js/nori/Nori.js","./browser/DOMToolbox":"js/nori/browser/DOMToolbox.js"}],"js/nori/NoriComponent.js":[function(require,module,exports) {
+},{"decamelize":"../node_modules/decamelize/index.js","./LifecycleQueue":"js/nori/LifecycleQueue.js","./Nori":"js/nori/Nori.js","./Reconciler":"js/nori/Reconciler.js","./browser/DOMToolbox":"js/nori/browser/DOMToolbox.js"}],"js/nori/NoriComponent.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -42919,33 +43118,19 @@ exports.default = NoriComponent;
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.useEffect = exports.useState = exports.removeComponentInstance = exports.enqueueUpdate = exports.renderVDOM = exports.h = exports.setCurrentVnode = exports.getCurrentVnode = exports.isSteady = exports.isUpdating = exports.isRendering = exports.isInitialized = exports.getCurrentVDOM = exports.setCurrentVDOM = exports.isComponentElement = exports.isNoriComponent = exports.isNoriElement = void 0;
-
-var _is = _interopRequireDefault(require("./util/is"));
+exports.useEffect = exports.useState = exports.enqueueUpdate = exports.renderVDOM = exports.h = exports.setCurrentVnode = exports.getCurrentVnode = exports.isSteady = exports.isUpdating = exports.isRendering = exports.isInitialized = exports.getCurrentVDOM = exports.setCurrentVDOM = exports.isComponentElement = exports.isNoriComponent = exports.isNoriElement = void 0;
 
 var _ArrayUtils = require("./util/ArrayUtils");
-
-var _ElementIDCreator = require("./util/ElementIDCreator");
-
-var _lodash = require("lodash");
 
 var _LifecycleQueue = require("./LifecycleQueue");
 
 var _NoriDOM = require("./NoriDOM");
 
-var _ramda = require("ramda");
-
 var _NoriComponent = _interopRequireDefault(require("./NoriComponent"));
 
+var _Reconciler = require("./Reconciler");
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-function _toConsumableArray(arr) { return _arrayWithoutHoles(arr) || _iterableToArray(arr) || _nonIterableSpread(); }
-
-function _nonIterableSpread() { throw new TypeError("Invalid attempt to spread non-iterable instance"); }
-
-function _iterableToArray(iter) { if (Symbol.iterator in Object(iter) || Object.prototype.toString.call(iter) === "[object Arguments]") return Array.from(iter); }
-
-function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = new Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } }
 
 function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
 
@@ -42957,26 +43142,8 @@ var UPDATE_TIMEOUT = 10; // how ofter the update queue runs
 
 var _currentVDOM,
     _currentVnode,
-    _componentInstanceMap = {},
     _updateTimeOutID,
     _currentStage = STAGE_UNITIALIZED;
-
-var isVDOMNode = function isVDOMNode(vnode) {
-  return _typeof(vnode) === 'object' && vnode.hasOwnProperty('type') && vnode.hasOwnProperty('props') && vnode.hasOwnProperty('children');
-};
-
-var cloneNode = function cloneNode(vnode) {
-  return (0, _lodash.cloneDeep)(vnode);
-}; // Warning: Potentially expensive
-
-
-var hasOwnerComponent = function hasOwnerComponent(vnode) {
-  return vnode.hasOwnProperty('_owner') && vnode._owner !== null;
-};
-
-var getKeyOrId = function getKeyOrId(vnode) {
-  return vnode.props.key ? vnode.props.key : vnode.props.id;
-};
 
 var isNoriElement = function isNoriElement(test) {
   return test.$$typeof && Symbol.keyFor(test.$$typeof) === 'nori.element';
@@ -43003,7 +43170,7 @@ var setCurrentVDOM = function setCurrentVDOM(tree) {
 exports.setCurrentVDOM = setCurrentVDOM;
 
 var getCurrentVDOM = function getCurrentVDOM(_) {
-  return cloneNode(_currentVDOM);
+  return (0, _Reconciler.cloneNode)(_currentVDOM);
 };
 
 exports.getCurrentVDOM = getCurrentVDOM;
@@ -43069,7 +43236,7 @@ exports.h = h;
 
 var renderVDOM = function renderVDOM(node) {
   _currentStage = STAGE_RENDERING;
-  var vdom = reconcile(node);
+  var vdom = (0, _Reconciler.reconcile)(node);
   setCurrentVDOM(vdom);
   _currentStage = STAGE_STEADY;
   return vdom;
@@ -43078,7 +43245,6 @@ var renderVDOM = function renderVDOM(node) {
 //------------------------------------------------------------------------------
 // Queue updates from components and batch update every so often
 // Called from NoriComponent set state
-// TODO What about requestIdleCallback https://github.com/aFarkas/requestIdleCallback
 
 
 exports.renderVDOM = renderVDOM;
@@ -43102,155 +43268,18 @@ var performUpdates = function performUpdates() {
 
   clearTimeout(_updateTimeOutID);
   _updateTimeOutID = null;
-  _currentStage = STAGE_RENDERING;
-  var updatedVDOMTree = (0, _LifecycleQueue.getDidUpdateQueue)().reduce(function (acc, id) {
-    acc = updateComponentVDOM(id)(acc);
-    return acc;
-  }, getCurrentVDOM()); // TODO FOPT => get updatedVDOM tree to flow into patch and setCurrentVDOM
+  _currentStage = STAGE_RENDERING; // TODO put in a box and map
 
-  (0, _NoriDOM.patch)(updatedVDOMTree, getCurrentVDOM());
+  var updatedVDOMTree = (0, _LifecycleQueue.getDidUpdateQueue)().reduce(function (acc, id) {
+    acc = (0, _Reconciler.reconcileOnly)(id)(acc);
+    return acc;
+  }, getCurrentVDOM());
+  (0, _NoriDOM.patch)(getCurrentVDOM())(updatedVDOMTree);
   setCurrentVDOM(updatedVDOMTree);
   (0, _LifecycleQueue.performDidMountQueue)();
   _currentStage = STAGE_UPDATING;
-  (0, _LifecycleQueue.performDidUpdateQueue)(_componentInstanceMap);
+  (0, _LifecycleQueue.performDidUpdateQueue)((0, _Reconciler.getComponentInstances)());
   _currentStage = STAGE_STEADY; // console.timeEnd('update');
-}; //------------------------------------------------------------------------------
-//RECONCILIATIONRECONCILIATIONRECONCILIATIONRECONCILIATIONRECONCILIATIONRECONCIL
-//------------------------------------------------------------------------------
-// Renders out components to get a vdom tree for the first render of a component or tree
-// Component -> Element
-// Element -> Element
-
-
-var reconcile = function reconcile(vnode) {
-  vnode = cloneNode(vnode);
-
-  if (isComponentElement(vnode)) {
-    vnode = (0, _ramda.compose)(renderComponentNode, instantiateNewComponent)(vnode);
-  }
-
-  if (vnode.hasOwnProperty('children')) {
-    vnode.children = reconcileComponent(vnode).map(reconcile);
-  }
-
-  return vnode;
-}; // Updates the vdom rerendering only the nodes that match an id
-
-
-var updateComponentVDOM = function updateComponentVDOM(id) {
-  return function (vnode) {
-    vnode = cloneNode(vnode);
-
-    if (_typeof(vnode) === 'object') {
-      if (hasOwnerComponent(vnode) && vnode.props.id === id) {
-        //
-        vnode = renderComponentNode(instantiateNewComponent(vnode));
-      } else if (isComponentElement(vnode)) {
-        vnode = reconcile(vnode); // new component added
-      }
-
-      if (vnode.hasOwnProperty('children')) {
-        vnode.children = reconcileComponent(vnode).map(updateComponentVDOM(id));
-      }
-    }
-
-    return vnode;
-  };
-}; // If children are an inline fn, render and insert the resulting children in to the
-// child array at the location of the fn
-// works backwards so the insertion indices are correct
-
-
-var reconcileComponent = function reconcileComponent(vnode) {
-  var children = vnode.children,
-      result = [],
-      resultIndex = [],
-      index = 0;
-  children = children.map(function (child, i) {
-    if (typeof child === 'function') {
-      var childResult = child();
-      childResult = childResult.map(function (c, i) {
-        if (typeof c.type === 'function') {
-          c = reconcile(c);
-        } else if (_typeof(c) === 'object' && !getKeyOrId(c)) {
-          //c.props.id
-          c.props.id = c.props.id ? c.props.id : vnode.props.id + ".".concat(i, ".").concat(index++);
-        }
-
-        return c;
-      });
-      result.unshift(childResult);
-      resultIndex.unshift(i);
-    } else {
-      child = reconcile(child);
-    }
-
-    return child;
-  });
-  resultIndex.forEach(function (idx, i) {
-    var _children;
-
-    (_children = children).splice.apply(_children, [idx, 1].concat(_toConsumableArray(result[i])));
-  });
-  return children;
-};
-
-var instantiateNewComponent = function instantiateNewComponent(vnode) {
-  var instance = vnode,
-      id = getKeyOrId(vnode);
-
-  if (_componentInstanceMap.hasOwnProperty(id)) {
-    instance = _componentInstanceMap[id];
-  } else if (typeof vnode.type === 'function') {
-    vnode.props.children = _is.default.array(vnode.children) ? vnode.children : [vnode.children];
-    instance = new vnode.type(vnode.props);
-
-    if (isNoriComponent(vnode)) {
-      // Only cache NoriComps, not SFCs
-      id = instance.props.id; // id could change during construction
-
-      _componentInstanceMap[id] = instance;
-    }
-  } else if (vnode.hasOwnProperty('_owner')) {
-    instance = vnode._owner;
-    id = instance.props.id;
-    _componentInstanceMap[id] = instance;
-  } else {
-    console.warn("instantiateNewComponent : vnode is not component type", _typeof(vnode.type), vnode);
-  }
-
-  return instance;
-};
-
-var renderComponentNode = function renderComponentNode(instance) {
-  if (typeof instance.internalRender === 'function') {
-    // Set currently rendering for hook
-    setCurrentVnode(instance);
-    var vnode = instance.internalRender();
-    vnode._owner = instance;
-    setCurrentVnode(null);
-    return vnode;
-  } else if (isVDOMNode(instance)) {
-    if (!instance.props.id) {
-      instance.props.id = instance.props.key ? '' + instance.props.key : (0, _ElementIDCreator.getNextId)();
-    }
-
-    return instance;
-  }
-
-  return null;
-};
-
-var removeComponentInstance = function removeComponentInstance(vnode) {
-  if (hasOwnerComponent(vnode)) {
-    if (typeof vnode._owner.componentWillUnmount === 'function') {
-      vnode._owner.componentWillUnmount();
-
-      vnode._owner.remove();
-    }
-
-    delete _componentInstanceMap[vnode._owner.props.id];
-  }
 };
 /* Let's play with _hooksMap!
 https://reactjs.org/docs/_hooksMap-reference.html
@@ -43260,8 +43289,6 @@ React's Rules:
   3. No loops
 */
 
-
-exports.removeComponentInstance = removeComponentInstance;
 
 var _hooksMap = {},
     _currentVnodeHookCursor;
@@ -43320,18 +43347,16 @@ var performHook = function performHook(vnode) {
   console.log("performHook for ", vnode);
 };
 
-var useState = function useState(initialState) {
-  registerHook('useState', initialState);
+var useState = function useState(initialState) {//registerHook('useState', initialState);
 };
 
 exports.useState = useState;
 
-var useEffect = function useEffect(didUpdateFn) {
-  registerHook('useEffect', didUpdateFn);
+var useEffect = function useEffect(didUpdateFn) {//registerHook('useEffect', didUpdateFn);
 };
 
 exports.useEffect = useEffect;
-},{"./util/is":"js/nori/util/is.js","./util/ArrayUtils":"js/nori/util/ArrayUtils.js","./util/ElementIDCreator":"js/nori/util/ElementIDCreator.js","lodash":"../node_modules/lodash/lodash.js","./LifecycleQueue":"js/nori/LifecycleQueue.js","./NoriDOM":"js/nori/NoriDOM.js","ramda":"../node_modules/ramda/es/index.js","./NoriComponent":"js/nori/NoriComponent.js"}],"js/components/Box.js":[function(require,module,exports) {
+},{"./util/ArrayUtils":"js/nori/util/ArrayUtils.js","./LifecycleQueue":"js/nori/LifecycleQueue.js","./NoriDOM":"js/nori/NoriDOM.js","./NoriComponent":"js/nori/NoriComponent.js","./Reconciler":"js/nori/Reconciler.js"}],"js/components/Box.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
