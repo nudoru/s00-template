@@ -1,4 +1,4 @@
-import decalelize from 'decamelize';
+import decamelize from 'decamelize';
 import {enqueueDidMount, performDidMountQueue} from './LifecycleQueue';
 import {renderVDOM} from "./Nori";
 import {removeComponentInstance} from './Reconciler';
@@ -21,16 +21,13 @@ export const render = (component, hostNode) => {
   removeAllElements(hostNode);
   $documentHostNode = hostNode;
   const vdom        = renderVDOM(component);
-  console.log(vdom);
   patch(null)(vdom);
-  // $documentHostNode.appendChild(createElement(vdom));
+  // mount not using path : $documentHostNode.appendChild(createElement(vdom));
   performDidMountQueue();
   console.timeEnd('render');
+  console.log('----------------------------------------------------------------------\n\n\n');
 };
 
-// This approach is bassackward since getting the patches and then applying them are
-// done in separate steps
-// export const patch = (newvdom, currentvdom) => {
 export const patch = currentvdom => newvdom => {
   let patches = [];
   updateDOM($documentHostNode, newvdom, currentvdom, 0, patches);
@@ -48,10 +45,10 @@ const updateDOM = ($element, newvdom, currentvdom, index = 0, patches) => {
       parent: $element,
       vnode : newvdom
     });
-  } else if (!newvdom) {
+  } else if (newvdom === null || newvdom === undefined) {
     const $toRemove = getELForVNode(currentvdom, $element);
-    if ($toRemove) {
-      //console.log('Remove', currentvdom, $toRemove);
+    if ($toRemove && $toRemove.parentNode === $element) {
+      // console.log('Remove', currentvdom, $toRemove);
       removeComponentInstance(currentvdom);
       if (currentvdom.hasOwnProperty('props')) {
         removeEvents(currentvdom.props.id);
@@ -67,7 +64,8 @@ const updateDOM = ($element, newvdom, currentvdom, index = 0, patches) => {
         vnode : currentvdom
       });
     } else {
-      console.warn(`wanted to remove`, currentvdom, `but it wasn't there`);
+      console.warn(`wanted to remove`, currentvdom, `but it wasn't there or the parent is wrong`);
+      console.warn('$element, $toRemove',$element, $toRemove);
     }
   } else if (changed(newvdom, currentvdom)) {
     // This needs to be smarter - Rearrange rather than replace and append
@@ -264,7 +262,7 @@ const setProp = ($element, key, value) => {
 
 // convert "object" style css prop names back to hyphenated html/css styles
 const convertStylePropObjToHTML = obj => Object.keys(obj).reduce((acc, k) => {
-  acc.push(`${decalelize(k, '-')}: ${obj[k]}`);
+  acc.push(`${decamelize(k, '-')}: ${obj[k]}`);
   return acc;
 }, []).join('; ');
 

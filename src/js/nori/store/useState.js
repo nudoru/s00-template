@@ -33,19 +33,13 @@ export function useState(initial) {
   // console.log('useState', __stateValueMap);
 
   let setState = (newState) => {
-
     let currentValue = __stateValueMap[stateIdx];
-
-    // console.log('updating the index at ', stateIdx, 'current value', currentValue);
-
     if (typeof newState === "function") {
       currentValue = newState(currentValue);
     } else {
       currentValue = newState;
     }
-
     __stateValueMap[stateIdx] = currentValue;
-
     return currentValue;
   };
 

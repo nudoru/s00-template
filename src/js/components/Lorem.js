@@ -37,6 +37,7 @@ export default class Lorem extends NoriComponent {
         break;
     }
 
+    // TODO don't set internal state
     this.state = {lorem};
   }
 

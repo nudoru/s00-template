@@ -42190,8 +42190,7 @@ var reconcileComponentInstance = function reconcileComponentInstance(vnode) {
 
 var cloneNode = function cloneNode(vnode) {
   return (0, _lodash.cloneDeep)(vnode);
-}; // Warning: Potentially expensive
-
+};
 
 exports.cloneNode = cloneNode;
 
@@ -42220,19 +42219,11 @@ var getHookCursor = function getHookCursor(_) {
 
 exports.getHookCursor = getHookCursor;
 
-var reconcileChildren = function reconcileChildren(vnode, mapper) {
-  if (vnode.hasOwnProperty('children')) {
-    vnode.children = reconcileComponent(vnode).map(mapper);
-  }
-
-  return vnode;
-};
-
 var reconcile = function reconcile(vnode) {
   vnode = cloneNode(vnode);
   setCurrentVnode(vnode);
 
-  if ((0, _Nori.isComponentElement)(vnode)) {
+  if ((0, _Nori.isTypeFunction)(vnode)) {
     vnode = reconcileComponentInstance(vnode);
   }
 
@@ -42241,6 +42232,14 @@ var reconcile = function reconcile(vnode) {
 
 exports.reconcile = reconcile;
 
+var reconcileChildren = function reconcileChildren(vnode, mapper) {
+  if (vnode.hasOwnProperty('children') && vnode.children.length) {
+    vnode.children = reconcileChildFunctions(vnode).map(mapper);
+  }
+
+  return vnode;
+};
+
 var reconcileOnly = function reconcileOnly(id) {
   return function (vnode) {
     vnode = cloneNode(vnode);
@@ -42248,7 +42247,10 @@ var reconcileOnly = function reconcileOnly(id) {
 
     if (hasOwnerComponent(vnode) && vnode.props.id === id) {
       vnode = reconcileComponentInstance(vnode);
-    } else if ((0, _Nori.isComponentElement)(vnode)) {
+    } else if (hasOwnerComponent(vnode) && vnode._owner.props.id === id) {
+      console.log('ReconcileOnly SFC?', vnode);
+      vnode = reconcileComponentInstance(vnode._owner);
+    } else if ((0, _Nori.isTypeFunction)(vnode)) {
       vnode = reconcile(vnode);
     }
 
@@ -42261,7 +42263,7 @@ var reconcileOnly = function reconcileOnly(id) {
 
 exports.reconcileOnly = reconcileOnly;
 
-var reconcileComponent = function reconcileComponent(vnode) {
+var reconcileChildFunctions = function reconcileChildFunctions(vnode) {
   var children = vnode.children,
       result = [],
       resultIndex = [],
@@ -42270,10 +42272,10 @@ var reconcileComponent = function reconcileComponent(vnode) {
     if (typeof child === 'function') {
       var childResult = child();
       childResult = childResult.map(function (c, i) {
-        if (typeof c.type === 'function') {
+        if ((0, _Nori.isTypeFunction)(c)) {
           c = reconcile(c);
         } else if (_typeof(c) === 'object' && !getKeyOrId(c)) {
-          //c.props.id
+          // TODO Take in to account keys?
           c.props.id = c.props.id ? c.props.id : vnode.props.id + ".".concat(i, ".").concat(index++);
         }
 
@@ -42293,43 +42295,49 @@ var reconcileComponent = function reconcileComponent(vnode) {
     (_children = children).splice.apply(_children, [idx, 1].concat(_toConsumableArray(result[i])));
   });
   return children;
-};
+}; // SFCs will pass to renderComponent
+
 
 var getComponentInstance = function getComponentInstance(vnode) {
-  var instance = vnode,
-      id = getKeyOrId(vnode);
+  var id = getKeyOrId(vnode);
 
   if (_componentInstanceMap.hasOwnProperty(id)) {
-    instance = _componentInstanceMap[id];
-  } else if (typeof vnode.type === 'function') {
-    vnode.props.children = _is.default.array(vnode.children) ? vnode.children : [vnode.children];
-    instance = new vnode.type(vnode.props);
-
-    if ((0, _Nori.isNoriComponent)(vnode)) {
-      // Only cache NoriComps, not SFCs
-      id = instance.props.id; // id could change during construction
-
-      _componentInstanceMap[id] = instance;
-    }
-  } else if (vnode.hasOwnProperty('_owner')) {
-    instance = vnode._owner;
-    id = instance.props.id;
-    _componentInstanceMap[id] = instance;
-  } else {
-    console.warn("instantiateNewComponent : vnode is not component type", _typeof(vnode.type), vnode);
+    vnode = _componentInstanceMap[id];
+  } else if ((0, _Nori.isNoriComponent)(vnode)) {
+    vnode = getNoriInstance(vnode);
   }
 
+  return vnode;
+};
+
+var getNoriInstance = function getNoriInstance(vnode) {
+  vnode.props.children = _is.default.array(vnode.children) ? vnode.children : [vnode.children];
+  var instance = new vnode.type(vnode.props);
+  var id = instance.props.id; // id could change during construction
+
+  _componentInstanceMap[id] = instance;
   return instance;
 };
+/*
+To do
+- Memoize result and return if props or state are the same?
+- SFC tell if state or props changed?
+ */
+
 
 var renderComponent = function renderComponent(instance) {
   if (typeof instance.internalRender === 'function') {
-    // Set currently rendering for hook
-    // setCurrentVnode(instance);
     var vnode = instance.internalRender();
-    vnode._owner = instance; // setCurrentVnode(null);
-
+    vnode._owner = instance;
     return vnode;
+  } else if ((0, _Nori.isTypeFunction)(instance)) {
+    return renderSFC(instance);
+  } else if (hasOwnerComponent(instance)) {
+    if ((0, _Nori.isNori)(instance._owner)) {
+      return renderComponent(instance._owner);
+    }
+
+    return renderSFC(instance._owner);
   } else if (isVDOMNode(instance)) {
     if (!instance.props.id) {
       instance.props.id = instance.props.key ? '' + instance.props.key : (0, _ElementIDCreator.getNextId)();
@@ -42339,7 +42347,24 @@ var renderComponent = function renderComponent(instance) {
   }
 
   return null;
-}; // Called from NoriDOM when an element isn't in the new vdom tree
+};
+
+var renderSFC = function renderSFC(instance) {
+  if (instance && _typeof(instance) === 'object' && !instance.hasOwnProperty('type')) {
+    console.warn("renderSFC : This isn't a SFC!", instance);
+    return instance;
+  }
+
+  var vnode = instance.type(instance.props);
+
+  if (!vnode.props.id) {
+    vnode.props.id = instance.props.key ? '' + instance.props.key : instance.props.id;
+  }
+
+  vnode._owner = instance;
+  return vnode;
+}; // TODO need to clear hooks
+// Called from NoriDOM when an element isn't in the new vdom tree
 
 
 var removeComponentInstance = function removeComponentInstance(vnode) {
@@ -42701,15 +42726,12 @@ var render = function render(component, hostNode) {
   (0, _DOMToolbox.removeAllElements)(hostNode);
   $documentHostNode = hostNode;
   var vdom = (0, _Nori.renderVDOM)(component);
-  console.log(vdom);
-  patch(null)(vdom); // $documentHostNode.appendChild(createElement(vdom));
+  patch(null)(vdom); // mount not using path : $documentHostNode.appendChild(createElement(vdom));
 
   (0, _LifecycleQueue.performDidMountQueue)();
   console.timeEnd('render');
-}; // This approach is bassackward since getting the patches and then applying them are
-// done in separate steps
-// export const patch = (newvdom, currentvdom) => {
-
+  console.log('----------------------------------------------------------------------\n\n\n');
+};
 
 exports.render = render;
 
@@ -42737,11 +42759,11 @@ var updateDOM = function updateDOM($element, newvdom, currentvdom) {
       parent: $element,
       vnode: newvdom
     });
-  } else if (!newvdom) {
+  } else if (newvdom === null || newvdom === undefined) {
     var $toRemove = getELForVNode(currentvdom, $element);
 
-    if ($toRemove) {
-      //console.log('Remove', currentvdom, $toRemove);
+    if ($toRemove && $toRemove.parentNode === $element) {
+      // console.log('Remove', currentvdom, $toRemove);
       (0, _Reconciler.removeComponentInstance)(currentvdom);
 
       if (currentvdom.hasOwnProperty('props')) {
@@ -42761,7 +42783,8 @@ var updateDOM = function updateDOM($element, newvdom, currentvdom) {
         vnode: currentvdom
       });
     } else {
-      console.warn("wanted to remove", currentvdom, "but it wasn't there");
+      console.warn("wanted to remove", currentvdom, "but it wasn't there or the parent is wrong");
+      console.warn('$element, $toRemove', $element, $toRemove);
     }
   } else if (changed(newvdom, currentvdom)) {
     // This needs to be smarter - Rearrange rather than replace and append
@@ -43141,7 +43164,7 @@ exports.default = NoriComponent;
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.enqueueUpdate = exports.renderVDOM = exports.h = exports.isSteady = exports.isUpdating = exports.isRendering = exports.isInitialized = exports.getCurrentVDOM = exports.setCurrentVDOM = exports.isComponentElement = exports.isNoriComponent = exports.isNoriElement = void 0;
+exports.enqueueUpdate = exports.renderVDOM = exports.h = exports.isSteady = exports.isUpdating = exports.isRendering = exports.isFirstRender = exports.isInitialized = exports.isUninitialized = exports.getCurrentVDOM = exports.setCurrentVDOM = exports.isNoriComponent = exports.isNori = exports.isTypeFunction = exports.isNoriElement = void 0;
 
 var _ArrayUtils = require("./util/ArrayUtils");
 
@@ -43158,6 +43181,7 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
 
 var STAGE_UNITIALIZED = 'uninitialized';
+var STAGE_FIRSTRENDER = 'first_render';
 var STAGE_RENDERING = 'rendering';
 var STAGE_UPDATING = 'updating';
 var STAGE_STEADY = 'steady';
@@ -43173,17 +43197,23 @@ var isNoriElement = function isNoriElement(test) {
 
 exports.isNoriElement = isNoriElement;
 
-var isNoriComponent = function isNoriComponent(vnode) {
-  return Object.getPrototypeOf(vnode.type) === _NoriComponent.default;
-};
-
-exports.isNoriComponent = isNoriComponent;
-
-var isComponentElement = function isComponentElement(vnode) {
+var isTypeFunction = function isTypeFunction(vnode) {
   return _typeof(vnode) === 'object' && typeof vnode.type === 'function';
 };
 
-exports.isComponentElement = isComponentElement;
+exports.isTypeFunction = isTypeFunction;
+
+var isNori = function isNori(test) {
+  return Object.getPrototypeOf(test) === _NoriComponent.default;
+};
+
+exports.isNori = isNori;
+
+var isNoriComponent = function isNoriComponent(vnode) {
+  return isTypeFunction(vnode) && isNori(vnode.type);
+};
+
+exports.isNoriComponent = isNoriComponent;
 
 var setCurrentVDOM = function setCurrentVDOM(tree) {
   return _currentVDOM = tree;
@@ -43197,11 +43227,23 @@ var getCurrentVDOM = function getCurrentVDOM(_) {
 
 exports.getCurrentVDOM = getCurrentVDOM;
 
+var isUninitialized = function isUninitialized(_) {
+  return _currentStage === STAGE_UNITIALIZED;
+};
+
+exports.isUninitialized = isUninitialized;
+
 var isInitialized = function isInitialized(_) {
   return _currentStage !== STAGE_UNITIALIZED;
 };
 
 exports.isInitialized = isInitialized;
+
+var isFirstRender = function isFirstRender(_) {
+  return _currentStage === STAGE_FIRSTRENDER;
+};
+
+exports.isFirstRender = isFirstRender;
 
 var isRendering = function isRendering(_) {
   return _currentStage === STAGE_RENDERING;
@@ -43244,7 +43286,7 @@ var h = function h(type, props) {
 exports.h = h;
 
 var renderVDOM = function renderVDOM(node) {
-  _currentStage = STAGE_RENDERING;
+  _currentStage = isUninitialized() ? STAGE_FIRSTRENDER : STAGE_RENDERING;
   var vdom = (0, _Reconciler.reconcile)(node);
   setCurrentVDOM(vdom);
   _currentStage = STAGE_STEADY;
@@ -43259,6 +43301,11 @@ var renderVDOM = function renderVDOM(node) {
 exports.renderVDOM = renderVDOM;
 
 var enqueueUpdate = function enqueueUpdate(id) {
+  if (isFirstRender()) {
+    //console.warn(`not enqueuing updates on first render! ${id}`);
+    return;
+  }
+
   (0, _LifecycleQueue.enqueueDidUpdate)(id);
 
   if (!_updateTimeOutID) {
@@ -43270,20 +43317,21 @@ exports.enqueueUpdate = enqueueUpdate;
 
 var performUpdates = function performUpdates() {
   if (isRendering()) {
-    console.log(">>> Update called while rendering");
+    console.warn(">>> Update called while rendering");
     return;
   } // console.time('update');
 
 
   clearTimeout(_updateTimeOutID);
   _updateTimeOutID = null;
-  _currentStage = STAGE_RENDERING; // TODO put in a box and map
+  _currentStage = STAGE_RENDERING;
+  var currentVdom = getCurrentVDOM(); // TODO put in a box and map
 
   var updatedVDOMTree = (0, _LifecycleQueue.getDidUpdateQueue)().reduce(function (acc, id) {
     acc = (0, _Reconciler.reconcileOnly)(id)(acc);
     return acc;
-  }, getCurrentVDOM());
-  (0, _NoriDOM.patch)(getCurrentVDOM())(updatedVDOMTree);
+  }, currentVdom);
+  (0, _NoriDOM.patch)(currentVdom)(updatedVDOMTree);
   setCurrentVDOM(updatedVDOMTree);
   (0, _LifecycleQueue.performDidMountQueue)();
   _currentStage = STAGE_UPDATING;
@@ -43675,7 +43723,8 @@ function (_NoriComponent) {
       case 'fullNameFL':
         lorem = L.firstLastName();
         break;
-    }
+    } // TODO don't set internal state
+
 
     _this.state = {
       lorem: lorem
@@ -43810,21 +43859,25 @@ exports.useEffect = exports.useState = void 0;
 
 var _Reconciler = require("./Reconciler");
 
-/* Let's play with _hooksMap!
-https://reactjs.org/docs/_hooksMap-reference.html
+var _Nori = require("./Nori");
+
+/* Let's play with hooks!
+https://reactjs.org/docs/hooks-reference.html
 React's Rules:
   1. must be called at in the redner fn
   2. called in the same order - not in a conditional
   3. No loops
+
+  Some hooks are called as soon as they are encountered like useState
+  Some are called AFTER the element has mounted like useEffect
+    - need to add a the cDM queue in lifecycle
+
 */
-var _hooksMap = {};
+var _hooksMap = {}; // Returns true if first call, false if n+ call
 
-var registerHook = function registerHook(type) {
-  for (var _len = arguments.length, args = new Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
-    args[_key - 1] = arguments[_key];
-  }
-
-  var cVnode = (0, _Reconciler.getCurrentVnode)(),
+var registerHook = function registerHook(type, value) {
+  var initial = false,
+      cVnode = (0, _Reconciler.getCurrentVnode)(),
       cursor = (0, _Reconciler.getHookCursor)();
 
   if (!cVnode) {
@@ -43839,13 +43892,14 @@ var registerHook = function registerHook(type) {
   }
 
   if (!_hooksMap[id][cursor]) {
+    initial = true;
+
     _hooksMap[id].push({
       type: type,
       vnode: cVnode,
-      data: args
-    });
+      data: value
+    }); //console.log(`NEW hook ${type} for ${id} at ${cursor}`, value);
 
-    console.log("NEW hook ".concat(type, " for ").concat(id, " at ").concat(cursor), args);
   } else {
     var runHook = _hooksMap[id][cursor];
     console.log("RUN hook ".concat(type, " for ").concat(id), runHook);
@@ -43864,20 +43918,42 @@ var registerHook = function registerHook(type) {
     }
   }
 
-  cursor++;
+  return {
+    initial: initial,
+    id: id,
+    cursor: cursor,
+    hook: _hooksMap[id][cursor]
+  };
 };
+
+var updateHookData = function updateHookData(id, cursor, data) {
+  console.log("updateHookData : ".concat(id, ",").concat(cursor, " : "), data);
+  _hooksMap[id][cursor].data = data;
+  (0, _Nori.enqueueUpdate)(id);
+}; // TODO when the component is removed need to unregister
+
 
 var unregisterHook = function unregisterHook(vnode, type) {
   console.log("unregisterHook for ", vnode, type);
-};
+}; // HOW to get the component to update when setState is called?
 
-var performHook = function performHook(vnode) {
-  console.log("performHook for ", vnode);
-};
 
 var useState = function useState(initialState) {
-  registerHook('useState', initialState);
-};
+  var res = registerHook('useState', initialState);
+  var currentState = res.hook.data;
+  console.log('useState : ', res);
+
+  var setState = function setState(newState) {
+    if (typeof newState === "function") {
+      newState = newState(currentValue);
+    }
+
+    updateHookData(res.id, res.cursor, newState);
+  };
+
+  return [currentState, setState];
+}; // This needs to run on cDM and cDU
+
 
 exports.useState = useState;
 
@@ -43886,7 +43962,7 @@ var useEffect = function useEffect(didUpdateFn) {
 };
 
 exports.useEffect = useEffect;
-},{"./Reconciler":"js/nori/Reconciler.js"}],"js/components/Greeter.js":[function(require,module,exports) {
+},{"./Reconciler":"js/nori/Reconciler.js","./Nori":"js/nori/Nori.js"}],"js/components/Greeter.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -44272,6 +44348,10 @@ var _Lister = _interopRequireDefault(require("./components/Lister"));
 
 var _ColorSwatch = _interopRequireDefault(require("./components/ColorSwatch"));
 
+var _Hooks = require("./nori/Hooks");
+
+var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 function _templateObject3() {
@@ -44315,21 +44395,29 @@ var blackBox = (0, _emotion.css)(_templateObject3(), _Theme.theme.gradients['pre
 
 var Sfc = function Sfc(props) {
   return (0, _Nori.h)("span", null, (0, _Nori.h)("h1", null, props.message), (0, _Nori.h)(_Greeter.default, null));
-}; //https://overreacted.io/how-are-function-components-different-from-classes/
-
+};
 
 var SFCWithJuice = function SFCWithJuice(props) {
-  var showMessage = function showMessage() {
-    alert('Followed ' + props.user);
-  };
+  var _useState = (0, _Hooks.useState)({
+    label: 'JOICE!',
+    count: 0
+  }),
+      _useState2 = _slicedToArray(_useState, 2);
+
+  var buttonLabel = _useState2[0],
+      updateButton = _useState2[1];
+  console.log('!!! SFC RUN');
 
   var handleClick = function handleClick() {
-    setTimeout(showMessage, 1000);
+    updateButton({
+      label: 'You pushed me!',
+      count: ++buttonLabel.count
+    });
   };
 
   return (0, _Nori.h)("button", {
     onClick: handleClick
-  }, "SFC With Juice");
+  }, "SFC With Juice: ", buttonLabel.label, " ", buttonLabel.count);
 };
 
 var testBox = (0, _Nori.h)(_Box.default, {
@@ -44343,9 +44431,10 @@ var testBox = (0, _Nori.h)(_Box.default, {
   className: whiteBox
 }, (0, _Nori.h)(Sfc, {
   message: "IMA sfc"
-}), (0, _Nori.h)(_Ticker.default, null), (0, _Nori.h)("span", null, (0, _Nori.h)(_ColorSwatch.default, null)), (0, _Nori.h)(_Greeter.default, null), (0, _Nori.h)(_Lister.default, null))));
+}), (0, _Nori.h)(_Ticker.default, null), (0, _Nori.h)(SFCWithJuice, null), (0, _Nori.h)("span", null, (0, _Nori.h)(_ColorSwatch.default, null)), (0, _Nori.h)(_Greeter.default, null), (0, _Nori.h)(_Lister.default, null)))); //<Box><SFCWithJuice/><Ticker/></Box>
+
 (0, _NoriDOM.render)(testBox, document.querySelector('#js-application'));
-},{"./theme/Global":"js/theme/Global.js","./theme/Theme":"js/theme/Theme.js","emotion":"../node_modules/emotion/dist/index.esm.js","./nori/Nori":"js/nori/Nori.js","./nori/NoriDOM":"js/nori/NoriDOM.js","./components/Box":"js/components/Box.js","./components/Lorem":"js/components/Lorem.js","./components/Ticker":"js/components/Ticker.js","./components/Greeter":"js/components/Greeter.js","./components/Lister":"js/components/Lister.js","./components/ColorSwatch":"js/components/ColorSwatch.js","../img/pattern/shattered.png":"img/pattern/shattered.png"}],"../node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
+},{"./theme/Global":"js/theme/Global.js","./theme/Theme":"js/theme/Theme.js","emotion":"../node_modules/emotion/dist/index.esm.js","./nori/Nori":"js/nori/Nori.js","./nori/NoriDOM":"js/nori/NoriDOM.js","./components/Box":"js/components/Box.js","./components/Lorem":"js/components/Lorem.js","./components/Ticker":"js/components/Ticker.js","./components/Greeter":"js/components/Greeter.js","./components/Lister":"js/components/Lister.js","./components/ColorSwatch":"js/components/ColorSwatch.js","./nori/Hooks":"js/nori/Hooks.js","../img/pattern/shattered.png":"img/pattern/shattered.png"}],"../node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
 var global = arguments[3];
 var OVERLAY_ID = '__parcel__error__overlay__';
 var OldModule = module.bundle.Module;

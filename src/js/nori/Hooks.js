@@ -1,18 +1,26 @@
 
-/* Let's play with _hooksMap!
-https://reactjs.org/docs/_hooksMap-reference.html
+/* Let's play with hooks!
+https://reactjs.org/docs/hooks-reference.html
 React's Rules:
   1. must be called at in the redner fn
   2. called in the same order - not in a conditional
   3. No loops
+
+  Some hooks are called as soon as they are encountered like useState
+  Some are called AFTER the element has mounted like useEffect
+    - need to add a the cDM queue in lifecycle
+
 */
 
 import {getCurrentVnode, getHookCursor} from "./Reconciler";
+import {enqueueUpdate} from "./Nori";
 
 let _hooksMap = {};
 
-const registerHook = (type, ...args) => {
-  let cVnode = getCurrentVnode(),
+// Returns true if first call, false if n+ call
+const registerHook = (type, value) => {
+  let initial = false,
+      cVnode = getCurrentVnode(),
       cursor = getHookCursor();
 
   if (!cVnode) {
@@ -25,8 +33,9 @@ const registerHook = (type, ...args) => {
     _hooksMap[id] = [];
   }
   if (!_hooksMap[id][cursor]) {
-    _hooksMap[id].push({type, vnode: cVnode, data: args});
-    console.log(`NEW hook ${type} for ${id} at ${cursor}`, args);
+    initial = true;
+    _hooksMap[id].push({type, vnode: cVnode, data: value});
+    //console.log(`NEW hook ${type} for ${id} at ${cursor}`, value);
   } else {
     const runHook = _hooksMap[id][cursor];
     console.log(`RUN hook ${type} for ${id}`, runHook);
@@ -41,21 +50,39 @@ const registerHook = (type, ...args) => {
         console.warn(`unknown hook type: ${runHook.type}`)
     }
   }
-  cursor++;
+  return {initial, id, cursor, hook: _hooksMap[id][cursor]};
 };
 
+const updateHookData = (id, cursor, data) => {
+  console.log(`updateHookData : ${id},${cursor} : `,data);
+  _hooksMap[id][cursor].data = data;
+  enqueueUpdate(id);
+};
+
+// TODO when the component is removed need to unregister
 const unregisterHook = (vnode, type) => {
   console.log(`unregisterHook for `, vnode, type);
 };
 
-const performHook = vnode => {
-  console.log(`performHook for `, vnode);
+
+// HOW to get the component to update when setState is called?
+export const useState = initialState => {
+  const res = registerHook('useState', initialState);
+  const currentState = res.hook.data;
+  console.log('useState : ',res);
+
+  const setState = newState => {
+    if (typeof newState === "function") {
+      newState = newState(currentValue);
+    }
+    updateHookData(res.id, res.cursor, newState);
+  };
+
+  return [currentState, setState];
+
 };
 
-export const useState = (initialState) => {
-  registerHook('useState', initialState);
-};
-
-export const useEffect = (didUpdateFn) => {
+// This needs to run on cDM and cDU
+export const useEffect = didUpdateFn => {
   registerHook('useEffect', didUpdateFn);
 };

@@ -1,5 +1,6 @@
 /*
 TODO
+  - Catch state setter during construction or initial render and don't update or rerender
   - HOOKS
     - move hooks to new files
     - how to separate currentVnode cursor
@@ -45,6 +46,7 @@ import {
 } from "./Reconciler";
 
 const STAGE_UNITIALIZED = 'uninitialized';
+const STAGE_FIRSTRENDER = 'first_render';
 const STAGE_RENDERING   = 'rendering';
 const STAGE_UPDATING    = 'updating';
 const STAGE_STEADY      = 'steady';
@@ -55,15 +57,18 @@ let _currentVDOM,
     _updateTimeOutID,
     _currentStage = STAGE_UNITIALIZED;
 
-export const isNoriElement      = test => test.$$typeof && Symbol.keyFor(test.$$typeof) === 'nori.element';
-export const isNoriComponent    = vnode => Object.getPrototypeOf(vnode.type) === NoriComponent;
-export const isComponentElement = vnode => typeof vnode === 'object' && typeof vnode.type === 'function';
-export const setCurrentVDOM     = tree => _currentVDOM = tree;
-export const getCurrentVDOM     = _ => cloneNode(_currentVDOM);
-export const isInitialized      = _ => _currentStage !== STAGE_UNITIALIZED;
-export const isRendering        = _ => _currentStage === STAGE_RENDERING;
-export const isUpdating         = _ => _currentStage === STAGE_UPDATING;
-export const isSteady           = _ => _currentStage === STAGE_STEADY;
+export const isNoriElement   = test => test.$$typeof && Symbol.keyFor(test.$$typeof) === 'nori.element';
+export const isTypeFunction  = vnode => typeof vnode === 'object' && typeof vnode.type === 'function';
+export const isNori          = test => Object.getPrototypeOf(test) === NoriComponent;
+export const isNoriComponent = vnode => isTypeFunction(vnode) && isNori(vnode.type);
+export const setCurrentVDOM  = tree => _currentVDOM = tree;
+export const getCurrentVDOM  = _ => cloneNode(_currentVDOM);
+export const isUninitialized = _ => _currentStage === STAGE_UNITIALIZED;
+export const isInitialized   = _ => _currentStage !== STAGE_UNITIALIZED;
+export const isFirstRender   = _ => _currentStage === STAGE_FIRSTRENDER;
+export const isRendering     = _ => _currentStage === STAGE_RENDERING;
+export const isUpdating      = _ => _currentStage === STAGE_UPDATING;
+export const isSteady        = _ => _currentStage === STAGE_STEADY;
 
 //------------------------------------------------------------------------------
 //PUBLICPUBLICPUBLICPUBLICPUBLICPUBLICPUBLICPUBLICPUBLICPUBLICPUBLICPUBLICPUBLIC
@@ -80,7 +85,7 @@ export const h = (type, props, ...args) => ({
 
 // Called from NoriDOM to render the first vdom
 export const renderVDOM = node => {
-  _currentStage = STAGE_RENDERING;
+  _currentStage = isUninitialized() ? STAGE_FIRSTRENDER : STAGE_RENDERING;
   const vdom    = reconcile(node);
   setCurrentVDOM(vdom);
   _currentStage = STAGE_STEADY;
@@ -95,6 +100,11 @@ export const renderVDOM = node => {
 // Queue updates from components and batch update every so often
 // Called from NoriComponent set state
 export const enqueueUpdate = id => {
+  if (isFirstRender()) {
+    //console.warn(`not enqueuing updates on first render! ${id}`);
+    return;
+  }
+
   enqueueDidUpdate(id);
   if (!_updateTimeOutID) {
     _updateTimeOutID = setTimeout(performUpdates, UPDATE_TIMEOUT);
@@ -103,19 +113,20 @@ export const enqueueUpdate = id => {
 
 const performUpdates = () => {
   if (isRendering()) {
-    console.log(`>>> Update called while rendering`);
+    console.warn(`>>> Update called while rendering`);
     return;
   }
   // console.time('update');
   clearTimeout(_updateTimeOutID);
   _updateTimeOutID      = null;
   _currentStage         = STAGE_RENDERING;
+  const currentVdom     = getCurrentVDOM();
   // TODO put in a box and map
   const updatedVDOMTree = getDidUpdateQueue().reduce((acc, id) => {
     acc = reconcileOnly(id)(acc);
     return acc;
-  }, getCurrentVDOM());
-  patch(getCurrentVDOM())(updatedVDOMTree);
+  }, currentVdom);
+  patch(currentVdom)(updatedVDOMTree);
   setCurrentVDOM(updatedVDOMTree);
   performDidMountQueue();
   _currentStage = STAGE_UPDATING;
