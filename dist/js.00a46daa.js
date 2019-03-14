@@ -42072,6 +42072,12 @@ exports.default = void 0;
 function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
 
 var _default = {
+  exists: function exists(x) {
+    return x !== null || x !== undefined;
+  },
+  undef: function undef(x) {
+    return x === null || x === undefined;
+  },
   existy: function existy(x) {
     return x !== null;
   },
@@ -42100,7 +42106,7 @@ var _default = {
     return Object.prototype.toString.call(object) === "[object String]";
   },
   array: function array(object) {
-    return Array.isArray(object); //return Object.prototype.toString.call(object) === '[object Array]';
+    return Array.isArray(object);
   },
   promise: function promise(_promise) {
     return _promise && typeof _promise.then === 'function';
@@ -42695,6 +42701,8 @@ var _Reconciler = require("./Reconciler");
 
 var _DOMToolbox = require("./browser/DOMToolbox");
 
+var _is = _interopRequireDefault(require("./util/is"));
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
@@ -42749,9 +42757,9 @@ var updateDOM = function updateDOM($element, newvdom, currentvdom) {
   var index = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : 0;
   var patches = arguments.length > 4 ? arguments[4] : undefined;
 
-  if (currentvdom !== 0 && !currentvdom) {
+  if (newvdom && _is.default.undef(currentvdom)) {
     var $newElement = createElement(newvdom);
-    $element.appendChild($newElement); //console.log('Append', newvdom, $newElement);
+    $element.appendChild($newElement); // console.log('Append', currentvdom,'vs',newvdom, $newElement);
 
     patches.push({
       type: 'APPEND',
@@ -42759,7 +42767,7 @@ var updateDOM = function updateDOM($element, newvdom, currentvdom) {
       parent: $element,
       vnode: newvdom
     });
-  } else if (newvdom === null || newvdom === undefined) {
+  } else if (_is.default.undef(newvdom)) {
     var $toRemove = getELForVNode(currentvdom, $element);
 
     if ($toRemove && $toRemove.parentNode === $element) {
@@ -42791,10 +42799,9 @@ var updateDOM = function updateDOM($element, newvdom, currentvdom) {
     // There is problem when multiple new nodes are inserted at separate indices in that
     // existing nodes are mutated to a new node type and the reference to that original
     // element is lost.
-    var _$newElement = createElement(newvdom);
+    var _$newElement = createElement(newvdom); //, $newElement,$element.childNodes[index]
+    // console.log('Replace', currentvdom,'vs',newvdom, $element.childNodes[index],'with',$newElement);
 
-    if (newvdom.type) {//console.log('Replace', newvdom, currentvdom, $newElement,$element.childNodes[index]);
-    }
 
     $element.replaceChild(_$newElement, $element.childNodes[index]);
     patches.push({
@@ -42825,11 +42832,9 @@ var getELForVNode = function getELForVNode(vnode, $domRoot) {
   if (!vnode) {
     return $domRoot;
   } else {
-    // const $element = document.querySelector(`[${ID_KEY}="${vnode.props.id}"]`);
     var $element = vnode.hasOwnProperty('props') ? renderedElementsMap[vnode.props.id] : null;
 
     if (!$element) {
-      // console.warn(`getELForVNode : Couldn't get [${ID_KEY}="${vnode.props.id}"]`);
       console.warn("correlateVDOMNode : Couldn't get rendered element ".concat(vnode.props.id));
     }
 
@@ -43038,7 +43043,7 @@ var removeBooleanProp = function removeBooleanProp($element, key) {
   $element.removeAttribute(key);
   $element[key] = false;
 };
-},{"decamelize":"../node_modules/decamelize/index.js","./LifecycleQueue":"js/nori/LifecycleQueue.js","./Nori":"js/nori/Nori.js","./Reconciler":"js/nori/Reconciler.js","./browser/DOMToolbox":"js/nori/browser/DOMToolbox.js"}],"js/nori/NoriComponent.js":[function(require,module,exports) {
+},{"decamelize":"../node_modules/decamelize/index.js","./LifecycleQueue":"js/nori/LifecycleQueue.js","./Nori":"js/nori/Nori.js","./Reconciler":"js/nori/Reconciler.js","./browser/DOMToolbox":"js/nori/browser/DOMToolbox.js","./util/is":"js/nori/util/is.js"}],"js/nori/NoriComponent.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -43901,16 +43906,15 @@ var registerHook = function registerHook(type, value) {
     }); //console.log(`NEW hook ${type} for ${id} at ${cursor}`, value);
 
   } else {
-    var runHook = _hooksMap[id][cursor];
-    console.log("RUN hook ".concat(type, " for ").concat(id), runHook);
+    var runHook = _hooksMap[id][cursor]; //console.log(`RUN hook ${type} for ${id}`, runHook);
 
     switch (runHook.type) {
       case 'useState':
-        console.log("useState: ", runHook.data);
+        //console.log(`   useState: `, runHook.data);
         break;
 
       case 'useEffect':
-        console.log("useEffect: ", runHook.data);
+        console.log("   useEffect: ", runHook.data);
         break;
 
       default:
@@ -43927,7 +43931,7 @@ var registerHook = function registerHook(type, value) {
 };
 
 var updateHookData = function updateHookData(id, cursor, data) {
-  console.log("updateHookData : ".concat(id, ",").concat(cursor, " : "), data);
+  //console.log(`updateHookData : ${id},${cursor} : `,data);
   _hooksMap[id][cursor].data = data;
   (0, _Nori.enqueueUpdate)(id);
 }; // TODO when the component is removed need to unregister
@@ -43940,12 +43944,11 @@ var unregisterHook = function unregisterHook(vnode, type) {
 
 var useState = function useState(initialState) {
   var res = registerHook('useState', initialState);
-  var currentState = res.hook.data;
-  console.log('useState : ', res);
+  var currentState = res.hook.data; //console.log('useState : ',res);
 
   var setState = function setState(newState) {
     if (typeof newState === "function") {
-      newState = newState(currentValue);
+      newState = newState(currentState);
     }
 
     updateHookData(res.id, res.cursor, newState);
@@ -43953,12 +43956,14 @@ var useState = function useState(initialState) {
 
   return [currentState, setState];
 }; // This needs to run on cDM and cDU
+//https://twitter.com/swyx/status/1100833207451185152
 
 
 exports.useState = useState;
 
-var useEffect = function useEffect(didUpdateFn) {
-  registerHook('useEffect', didUpdateFn);
+var useEffect = function useEffect(callbackFn) {
+  var deps = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : [];
+  registerHook('useEffect', callbackFn);
 };
 
 exports.useEffect = useEffect;
@@ -44321,7 +44326,69 @@ function (_NoriComponent) {
 }(_NoriComponent2.default);
 
 exports.default = ColorSwatch;
-},{"../nori/NoriComponent":"js/nori/NoriComponent.js","../nori/Nori":"js/nori/Nori.js"}],"img/pattern/shattered.png":[function(require,module,exports) {
+},{"../nori/NoriComponent":"js/nori/NoriComponent.js","../nori/Nori":"js/nori/Nori.js"}],"js/components/InputControls.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.InputControls = void 0;
+
+var _Nori = require("../nori/Nori");
+
+var _Hooks = require("../nori/Hooks");
+
+var _emotion = require("emotion");
+
+var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
+
+function _templateObject() {
+  var data = _taggedTemplateLiteral(["\n  padding-left: 1rem;\n  color: blue;\n"]);
+
+  _templateObject = function _templateObject() {
+    return data;
+  };
+
+  return data;
+}
+
+function _taggedTemplateLiteral(strings, raw) { if (!raw) { raw = strings.slice(0); } return Object.freeze(Object.defineProperties(strings, { raw: { value: Object.freeze(raw) } })); }
+
+var blue = (0, _emotion.css)(_templateObject());
+
+var InputControls = function InputControls(props) {
+  var _useState = (0, _Hooks.useState)(''),
+      _useState2 = _slicedToArray(_useState, 2);
+
+  var inputValue = _useState2[0],
+      setInputValue = _useState2[1];
+
+  var _onInputChange = function _onInputChange(e) {
+    //console.log('input',e);
+    setInputValue(e.target.value);
+  };
+
+  var _onInputFocus = function _onInputFocus(e) {
+    return console.log('focus', e);
+  };
+
+  var _onInputBlur = function _onInputBlur(e) {
+    return console.log('blur', e);
+  };
+
+  return (0, _Nori.h)("div", null, (0, _Nori.h)("input", {
+    type: "text",
+    placeholder: "Type here",
+    onInput: _onInputChange,
+    onFocus: _onInputFocus,
+    onBlur: _onInputBlur
+  }), (0, _Nori.h)("span", {
+    className: blue
+  }, inputValue));
+};
+
+exports.InputControls = InputControls;
+},{"../nori/Nori":"js/nori/Nori.js","../nori/Hooks":"js/nori/Hooks.js","emotion":"../node_modules/emotion/dist/index.esm.js"}],"img/pattern/shattered.png":[function(require,module,exports) {
 module.exports = "/shattered.a446e091.png";
 },{}],"js/index.js":[function(require,module,exports) {
 "use strict";
@@ -44349,6 +44416,8 @@ var _Lister = _interopRequireDefault(require("./components/Lister"));
 var _ColorSwatch = _interopRequireDefault(require("./components/ColorSwatch"));
 
 var _Hooks = require("./nori/Hooks");
+
+var _InputControls = require("./components/InputControls");
 
 var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
 
@@ -44406,7 +44475,7 @@ var SFCWithJuice = function SFCWithJuice(props) {
 
   var buttonLabel = _useState2[0],
       updateButton = _useState2[1];
-  console.log('!!! SFC RUN');
+  console.log('> Execute : SFCWithJuice');
 
   var handleClick = function handleClick() {
     updateButton({
@@ -44419,6 +44488,13 @@ var SFCWithJuice = function SFCWithJuice(props) {
     onClick: handleClick
   }, "SFC With Juice: ", buttonLabel.label, " ", buttonLabel.count);
 };
+/*
+      <Ticker/>
+
+      <span><ColorSwatch/></span>
+
+ */
+
 
 var testBox = (0, _Nori.h)(_Box.default, {
   key: "main",
@@ -44429,12 +44505,12 @@ var testBox = (0, _Nori.h)(_Box.default, {
   mode: _Lorem.default.TITLE
 }), (0, _Nori.h)(_Box.default, {
   className: whiteBox
-}, (0, _Nori.h)(Sfc, {
+}, (0, _Nori.h)(_InputControls.InputControls, null), (0, _Nori.h)("hr", null), (0, _Nori.h)(Sfc, {
   message: "IMA sfc"
-}), (0, _Nori.h)(_Ticker.default, null), (0, _Nori.h)(SFCWithJuice, null), (0, _Nori.h)("span", null, (0, _Nori.h)(_ColorSwatch.default, null)), (0, _Nori.h)(_Greeter.default, null), (0, _Nori.h)(_Lister.default, null)))); //<Box><SFCWithJuice/><Ticker/></Box>
+}), (0, _Nori.h)(SFCWithJuice, null), (0, _Nori.h)(_Greeter.default, null), (0, _Nori.h)(_Lister.default, null)))); //<Box><SFCWithJuice/><Ticker/></Box>
 
 (0, _NoriDOM.render)(testBox, document.querySelector('#js-application'));
-},{"./theme/Global":"js/theme/Global.js","./theme/Theme":"js/theme/Theme.js","emotion":"../node_modules/emotion/dist/index.esm.js","./nori/Nori":"js/nori/Nori.js","./nori/NoriDOM":"js/nori/NoriDOM.js","./components/Box":"js/components/Box.js","./components/Lorem":"js/components/Lorem.js","./components/Ticker":"js/components/Ticker.js","./components/Greeter":"js/components/Greeter.js","./components/Lister":"js/components/Lister.js","./components/ColorSwatch":"js/components/ColorSwatch.js","./nori/Hooks":"js/nori/Hooks.js","../img/pattern/shattered.png":"img/pattern/shattered.png"}],"../node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
+},{"./theme/Global":"js/theme/Global.js","./theme/Theme":"js/theme/Theme.js","emotion":"../node_modules/emotion/dist/index.esm.js","./nori/Nori":"js/nori/Nori.js","./nori/NoriDOM":"js/nori/NoriDOM.js","./components/Box":"js/components/Box.js","./components/Lorem":"js/components/Lorem.js","./components/Ticker":"js/components/Ticker.js","./components/Greeter":"js/components/Greeter.js","./components/Lister":"js/components/Lister.js","./components/ColorSwatch":"js/components/ColorSwatch.js","./nori/Hooks":"js/nori/Hooks.js","./components/InputControls":"js/components/InputControls.js","../img/pattern/shattered.png":"img/pattern/shattered.png"}],"../node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
 var global = arguments[3];
 var OVERLAY_ID = '__parcel__error__overlay__';
 var OldModule = module.bundle.Module;

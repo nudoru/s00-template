@@ -38,13 +38,13 @@ const registerHook = (type, value) => {
     //console.log(`NEW hook ${type} for ${id} at ${cursor}`, value);
   } else {
     const runHook = _hooksMap[id][cursor];
-    console.log(`RUN hook ${type} for ${id}`, runHook);
+    //console.log(`RUN hook ${type} for ${id}`, runHook);
     switch (runHook.type) {
       case 'useState':
-        console.log(`useState: `, runHook.data);
+        //console.log(`   useState: `, runHook.data);
         break;
       case 'useEffect':
-        console.log(`useEffect: `, runHook.data);
+        console.log(`   useEffect: `, runHook.data);
         break;
       default:
         console.warn(`unknown hook type: ${runHook.type}`)
@@ -54,7 +54,7 @@ const registerHook = (type, value) => {
 };
 
 const updateHookData = (id, cursor, data) => {
-  console.log(`updateHookData : ${id},${cursor} : `,data);
+  //console.log(`updateHookData : ${id},${cursor} : `,data);
   _hooksMap[id][cursor].data = data;
   enqueueUpdate(id);
 };
@@ -69,20 +69,20 @@ const unregisterHook = (vnode, type) => {
 export const useState = initialState => {
   const res = registerHook('useState', initialState);
   const currentState = res.hook.data;
-  console.log('useState : ',res);
+  //console.log('useState : ',res);
 
   const setState = newState => {
     if (typeof newState === "function") {
-      newState = newState(currentValue);
+      newState = newState(currentState);
     }
     updateHookData(res.id, res.cursor, newState);
   };
 
   return [currentState, setState];
-
 };
 
 // This needs to run on cDM and cDU
-export const useEffect = didUpdateFn => {
-  registerHook('useEffect', didUpdateFn);
+//https://twitter.com/swyx/status/1100833207451185152
+export const useEffect = (callbackFn, deps=[]) => {
+  registerHook('useEffect', callbackFn);
 };

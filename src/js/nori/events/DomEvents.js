@@ -18,7 +18,9 @@ export const domEventsList = [
   'wheel',
   'mouseleave',
   'mouseout',
-  'select'
+  'select',
+  'change',
+  'input'
 ];
 
 export const isDomEvent = e => domEventsList.includes(e);

@@ -3,6 +3,7 @@ import {enqueueDidMount, performDidMountQueue} from './LifecycleQueue';
 import {renderVDOM} from "./Nori";
 import {removeComponentInstance} from './Reconciler';
 import {removeAllElements} from "./browser/DOMToolbox";
+import is from './util/is';
 
 const ID_KEY        = 'data-nori-id';
 const SHOW_ID_KEYS  = false;
@@ -35,17 +36,17 @@ export const patch = currentvdom => newvdom => {
 };
 
 const updateDOM = ($element, newvdom, currentvdom, index = 0, patches) => {
-  if (currentvdom !== 0 && !currentvdom) {
+  if (newvdom && is.undef(currentvdom)) {
     const $newElement = createElement(newvdom);
     $element.appendChild($newElement);
-    //console.log('Append', newvdom, $newElement);
+    // console.log('Append', currentvdom,'vs',newvdom, $newElement);
     patches.push({
       type  : 'APPEND',
       node  : $newElement,
       parent: $element,
       vnode : newvdom
     });
-  } else if (newvdom === null || newvdom === undefined) {
+  } else if (is.undef(newvdom)) {
     const $toRemove = getELForVNode(currentvdom, $element);
     if ($toRemove && $toRemove.parentNode === $element) {
       // console.log('Remove', currentvdom, $toRemove);
@@ -73,9 +74,8 @@ const updateDOM = ($element, newvdom, currentvdom, index = 0, patches) => {
     // existing nodes are mutated to a new node type and the reference to that original
     // element is lost.
     const $newElement = createElement(newvdom);
-    if (newvdom.type) {
-      //console.log('Replace', newvdom, currentvdom, $newElement,$element.childNodes[index]);
-    }
+    //, $newElement,$element.childNodes[index]
+    // console.log('Replace', currentvdom,'vs',newvdom, $element.childNodes[index],'with',$newElement);
     $element.replaceChild($newElement, $element.childNodes[index]);
     patches.push({
       type   : 'REPLACE',
@@ -110,10 +110,8 @@ const getELForVNode = (vnode, $domRoot) => {
   if (!vnode) {
     return $domRoot;
   } else {
-    // const $element = document.querySelector(`[${ID_KEY}="${vnode.props.id}"]`);
     const $element = vnode.hasOwnProperty('props') ? renderedElementsMap[vnode.props.id] : null;
     if (!$element) {
-      // console.warn(`getELForVNode : Couldn't get [${ID_KEY}="${vnode.props.id}"]`);
       console.warn(`correlateVDOMNode : Couldn't get rendered element ${vnode.props.id}`);
     }
     return $element;

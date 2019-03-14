@@ -1,4 +1,10 @@
 export default {
+  exists     : function (x) {
+    return x !== null || x !== undefined;
+  },
+  undef    : function (x) {
+    return x === null || x === undefined;
+  },
   existy     : function (x) {
     return x !== null;
   },
@@ -27,7 +33,6 @@ export default {
   },
   array      : function (object) {
     return Array.isArray(object);
-    //return Object.prototype.toString.call(object) === '[object Array]';
   },
   promise    : function (promise) {
     return promise && typeof promise.then === 'function';

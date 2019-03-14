@@ -12,6 +12,7 @@ import Greeter from './components/Greeter';
 import Lister from './components/Lister';
 import ColorSwatch from './components/ColorSwatch';
 import {useState} from "./nori/Hooks";
+import {InputControls} from "./components/InputControls";
 
 // ${tme.gradients['premium-white']};
 const appContainerBG = require('../img/pattern/shattered.png');
@@ -51,7 +52,7 @@ const Sfc = props => <span><h1>{props.message}</h1><Greeter/></span>;
 
 const SFCWithJuice = (props) => {
   const [buttonLabel, updateButton] = useState({label:'JOICE!', count:0});
-  console.log('!!! SFC RUN');
+  console.log('> Execute : SFCWithJuice');
 
   const handleClick = () => {
     updateButton({label:'You pushed me!', count:++buttonLabel.count});
@@ -62,14 +63,21 @@ const SFCWithJuice = (props) => {
   );
 };
 
+/*
+      <Ticker/>
+
+      <span><ColorSwatch/></span>
+
+ */
+
 let testBox = <Box key='main' className={appContainer}>
   <Box className={blackBox}>
     <Lorem mode={Lorem.TITLE}/>
     <Box className={whiteBox}>
+      <InputControls/>
+      <hr/>
       <Sfc message='IMA sfc'/>
-      <Ticker/>
       <SFCWithJuice/>
-      <span><ColorSwatch/></span>
       <Greeter/>
       <Lister/>
     </Box>
