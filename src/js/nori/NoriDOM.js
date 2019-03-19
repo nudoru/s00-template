@@ -23,7 +23,7 @@ export const render = (component, hostNode) => {
   $documentHostNode = hostNode;
   const vdom        = renderVDOM(component);
   patch(null)(vdom);
-  // mount not using path : $documentHostNode.appendChild(createElement(vdom));
+  // mount not using path : $documentHostNode.appendChild(createDOMNode(vdom));
   performDidMountQueue();
   console.timeEnd('render');
   console.log('----------------------------------------------------------------------\n\n\n');
@@ -31,13 +31,14 @@ export const render = (component, hostNode) => {
 
 export const patch = currentvdom => newvdom => {
   let patches = [];
-  updateDOM($documentHostNode, newvdom, currentvdom, 0, patches);
+  paint($documentHostNode, newvdom, currentvdom, 0, patches);
   return patches;
 };
 
-const updateDOM = ($element, newvdom, currentvdom, index = 0, patches) => {
+// Affect the DOM
+const paint = ($element, newvdom, currentvdom, index = 0, patches) => {
   if (newvdom && is.undef(currentvdom)) {
-    const $newElement = createElement(newvdom);
+    const $newElement = createDOMNode(newvdom);
     $element.appendChild($newElement);
     // console.log('Append', currentvdom,'vs',newvdom, $newElement);
     patches.push({
@@ -73,7 +74,7 @@ const updateDOM = ($element, newvdom, currentvdom, index = 0, patches) => {
     // There is problem when multiple new nodes are inserted at separate indices in that
     // existing nodes are mutated to a new node type and the reference to that original
     // element is lost.
-    const $newElement = createElement(newvdom);
+    const $newElement = createDOMNode(newvdom);
     //, $newElement,$element.childNodes[index]
     // console.log('Replace', currentvdom,'vs',newvdom, $element.childNodes[index],'with',$newElement);
     $element.replaceChild($newElement, $element.childNodes[index]);
@@ -95,7 +96,7 @@ const updateDOM = ($element, newvdom, currentvdom, index = 0, patches) => {
     const oldLength = currentvdom.children.length;
     const len       = Math.max(newLength, oldLength);
     for (let i = 0; i < len; i++) {
-      updateDOM($element.childNodes[index], newvdom.children[i], currentvdom.children[i], i, patches);
+      paint($element.childNodes[index], newvdom.children[i], currentvdom.children[i], i, patches);
     }
   }
 };
@@ -118,7 +119,7 @@ const getELForVNode = (vnode, $domRoot) => {
   }
 };
 
-const createElement = vnode => {
+const createDOMNode = vnode => {
   let $element;
   const ownerComp = vnode._owner !== null && vnode._owner !== undefined ? vnode._owner : null;
 
@@ -128,13 +129,13 @@ const createElement = vnode => {
     $element = document.createElement(vnode.type);
     if (vnode.hasOwnProperty('children')) {
       vnode.children
-        .map(createElement)
+        .map(createDOMNode)
         .forEach(child => $element.appendChild(child));
     }
   } else if (typeof vnode === 'function') {
     // TODO shouldn't this be fixed in the vdom stage before it gets here?
-    // console.warn('createElement : expected vdom, vnode is a function', vnode);
-    return createTextNode('createElement : expected vdom, vnode is a function', vnode);
+    // console.warn('createDOMNode : expected vdom, vnode is a function', vnode);
+    return createTextNode('createDOMNode : expected vdom, vnode is a function', vnode);
   } else {
     console.warn(`createElement: Unknown node type ${typeof vnode} : ${vnode.type}`, vnode);
     return createTextNode(`createElement: Unknown node type ${typeof vnode} : ${vnode.type}`);
@@ -148,8 +149,8 @@ const createElement = vnode => {
   }
 
   // Is there any benefit to moving this work to after all of the DOM work is done?
-  setProps($element, vnode.props || {});
-  setEvents(vnode, $element);
+  applyProps($element, vnode.props || {});
+  applyEvents(vnode, $element);
 
   if (vnode.hasOwnProperty('props')) {
     renderedElementsMap[vnode.props.id] = $element;
@@ -163,7 +164,7 @@ const createTextNode = string => document.createTextNode(string);
 //EVENTSEVENTSEVENTSEVENTSEVENTSEVENTSEVENTSEVENTSEVENTSEVENTSEVENTSEVENTSEVENTS
 //------------------------------------------------------------------------------
 
-const setEvents = (vnode, $element) => {
+const applyEvents = (vnode, $element) => {
   const props = vnode.props || {};
   marshalEventProps(props).forEach(evt => {
     const nodeId        = vnode.props.id;
@@ -226,17 +227,17 @@ const updateProp = ($element, key, newValue, oldValue) => {
   if (!newValue) {
     removeProp($element, key, oldValue);
   } else if (!oldValue || newValue !== oldValue) {
-    setProp($element, key, newValue);
+    applyProp($element, key, newValue);
   }
 };
 
-const setProps = ($element, props) => Object.keys(props).forEach(key => {
+const applyProps = ($element, props) => Object.keys(props).forEach(key => {
   const value = props[key];
-  setProp($element, key, value);
+  applyProp($element, key, value);
   return $element;
 });
 
-const setProp = ($element, key, value) => {
+const applyProp = ($element, key, value) => {
   if (!isSpecialProp(key) && !isEvent(key)) {
     if (key === 'style') {
       value = convertStylePropObjToHTML(value);

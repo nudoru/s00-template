@@ -42220,6 +42220,12 @@ React's Rules:
 var _hooksMap = {}; // Returns true if first call, false if n+ call
 
 var registerHook = function registerHook(type, value) {
+  // Make sure hooks are only used during rendering
+  if ((0, _Nori.isSteady)()) {
+    console.warn('Hooks can only be called inside the body of a function component!');
+    return;
+  }
+
   var initial = false,
       cVnode = (0, _Reconciler.getCurrentVnode)(),
       cursor = (0, _Reconciler.getHookCursor)();
@@ -42949,7 +42955,7 @@ var render = function render(component, hostNode) {
   (0, _DOMToolbox.removeAllElements)(hostNode);
   $documentHostNode = hostNode;
   var vdom = (0, _Nori.renderVDOM)(component);
-  patch(null)(vdom); // mount not using path : $documentHostNode.appendChild(createElement(vdom));
+  patch(null)(vdom); // mount not using path : $documentHostNode.appendChild(createDOMNode(vdom));
 
   (0, _LifecycleQueue.performDidMountQueue)();
   console.timeEnd('render');
@@ -42961,19 +42967,20 @@ exports.render = render;
 var patch = function patch(currentvdom) {
   return function (newvdom) {
     var patches = [];
-    updateDOM($documentHostNode, newvdom, currentvdom, 0, patches);
+    paint($documentHostNode, newvdom, currentvdom, 0, patches);
     return patches;
   };
-};
+}; // Affect the DOM
+
 
 exports.patch = patch;
 
-var updateDOM = function updateDOM($element, newvdom, currentvdom) {
+var paint = function paint($element, newvdom, currentvdom) {
   var index = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : 0;
   var patches = arguments.length > 4 ? arguments[4] : undefined;
 
   if (newvdom && _is.default.undef(currentvdom)) {
-    var $newElement = createElement(newvdom);
+    var $newElement = createDOMNode(newvdom);
     $element.appendChild($newElement); // console.log('Append', currentvdom,'vs',newvdom, $newElement);
 
     patches.push({
@@ -43012,7 +43019,7 @@ var updateDOM = function updateDOM($element, newvdom, currentvdom) {
     // There is problem when multiple new nodes are inserted at separate indices in that
     // existing nodes are mutated to a new node type and the reference to that original
     // element is lost.
-    var _$newElement = createElement(newvdom); //, $newElement,$element.childNodes[index]
+    var _$newElement = createDOMNode(newvdom); //, $newElement,$element.childNodes[index]
     // console.log('Replace', currentvdom,'vs',newvdom, $element.childNodes[index],'with',$newElement);
 
 
@@ -43032,7 +43039,7 @@ var updateDOM = function updateDOM($element, newvdom, currentvdom) {
     var len = Math.max(newLength, oldLength);
 
     for (var i = 0; i < len; i++) {
-      updateDOM($element.childNodes[index], newvdom.children[i], currentvdom.children[i], i, patches);
+      paint($element.childNodes[index], newvdom.children[i], currentvdom.children[i], i, patches);
     }
   }
 };
@@ -43055,7 +43062,7 @@ var getELForVNode = function getELForVNode(vnode, $domRoot) {
   }
 };
 
-var createElement = function createElement(vnode) {
+var createDOMNode = function createDOMNode(vnode) {
   var $element;
   var ownerComp = vnode._owner !== null && vnode._owner !== undefined ? vnode._owner : null;
 
@@ -43065,14 +43072,14 @@ var createElement = function createElement(vnode) {
     $element = document.createElement(vnode.type);
 
     if (vnode.hasOwnProperty('children')) {
-      vnode.children.map(createElement).forEach(function (child) {
+      vnode.children.map(createDOMNode).forEach(function (child) {
         return $element.appendChild(child);
       });
     }
   } else if (typeof vnode === 'function') {
     // TODO shouldn't this be fixed in the vdom stage before it gets here?
-    // console.warn('createElement : expected vdom, vnode is a function', vnode);
-    return createTextNode('createElement : expected vdom, vnode is a function', vnode);
+    // console.warn('createDOMNode : expected vdom, vnode is a function', vnode);
+    return createTextNode('createDOMNode : expected vdom, vnode is a function', vnode);
   } else {
     console.warn("createElement: Unknown node type ".concat(_typeof(vnode), " : ").concat(vnode.type), vnode);
     return createTextNode("createElement: Unknown node type ".concat(_typeof(vnode), " : ").concat(vnode.type));
@@ -43087,8 +43094,8 @@ var createElement = function createElement(vnode) {
   } // Is there any benefit to moving this work to after all of the DOM work is done?
 
 
-  setProps($element, vnode.props || {});
-  setEvents(vnode, $element);
+  applyProps($element, vnode.props || {});
+  applyEvents(vnode, $element);
 
   if (vnode.hasOwnProperty('props')) {
     renderedElementsMap[vnode.props.id] = $element;
@@ -43104,7 +43111,7 @@ var createTextNode = function createTextNode(string) {
 //------------------------------------------------------------------------------
 
 
-var setEvents = function setEvents(vnode, $element) {
+var applyEvents = function applyEvents(vnode, $element) {
   var props = vnode.props || {};
   marshalEventProps(props).forEach(function (evt) {
     var nodeId = vnode.props.id; // if(evt.event === 'input') {
@@ -43184,19 +43191,19 @@ var updateProp = function updateProp($element, key, newValue, oldValue) {
   if (!newValue) {
     removeProp($element, key, oldValue);
   } else if (!oldValue || newValue !== oldValue) {
-    setProp($element, key, newValue);
+    applyProp($element, key, newValue);
   }
 };
 
-var setProps = function setProps($element, props) {
+var applyProps = function applyProps($element, props) {
   return Object.keys(props).forEach(function (key) {
     var value = props[key];
-    setProp($element, key, value);
+    applyProp($element, key, value);
     return $element;
   });
 };
 
-var setProp = function setProp($element, key, value) {
+var applyProp = function applyProp($element, key, value) {
   if (!isSpecialProp(key) && !isEvent(key)) {
     if (key === 'style') {
       value = convertStylePropObjToHTML(value);

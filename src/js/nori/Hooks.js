@@ -14,13 +14,19 @@ React's Rules:
 
 import {equals} from 'ramda';
 import {getCurrentVnode, getHookCursor} from "./Reconciler";
-import {enqueueUpdate} from "./Nori";
+import {enqueueUpdate, isSteady} from "./Nori";
 import {enqueuePostRenderHook} from "./LifecycleQueue";
 
 let _hooksMap = {};
 
 // Returns true if first call, false if n+ call
 const registerHook = (type, value) => {
+  // Make sure hooks are only used during rendering
+  if(isSteady()) {
+    console.warn('Hooks can only be called inside the body of a function component!');
+    return;
+  }
+
   let initial = false,
       cVnode = getCurrentVnode(),
       cursor = getHookCursor();
