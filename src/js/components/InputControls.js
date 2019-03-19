@@ -5,7 +5,7 @@
  */
 
 import {h} from "../nori/Nori";
-import {useState} from "../nori/Hooks";
+import {useState, useEffect, useMemo} from "../nori/Hooks";
 import {css} from 'emotion';
 
 const blue = css`
@@ -15,6 +15,18 @@ const blue = css`
 
 export const InputControls = props => {
   let [inputValue, setInputValue] = useState('');
+
+  let Output = useMemo(() => {
+    return <span className={blue}><span>{inputValue}</span></span>;
+  }, [inputValue]);
+
+  useEffect(() => {
+    //console.log('input effect', inputValue);
+    document.title = inputValue;
+    return function() {
+      //console.log('inputControls, useEffect cleanup');
+    };
+  });
 
   const _onInputChange = e => {
     //console.log('input',e);
@@ -31,6 +43,6 @@ export const InputControls = props => {
       onInput={_onInputChange}
       onFocus={_onInputFocus}
       onBlur={_onInputBlur}
-    /><span className={blue}>{inputValue}</span></div>
+    /><Output/></div>
   )
 };

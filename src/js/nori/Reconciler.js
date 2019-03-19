@@ -3,6 +3,9 @@ import Is from "./util/is";
 import {getNextId} from "./util/ElementIDCreator";
 import {isTypeFunction, isNoriComponent, isNori} from "./Nori";
 import {cloneDeep} from "lodash";
+import {performPostRenderHookCleanup} from "./LifecycleQueue";
+import {removeEvents} from "./NoriDOM";
+import {unregisterHooks} from "./Hooks";
 
 let _componentInstanceMap   = {},
     _currentVnode,
@@ -61,6 +64,9 @@ const reconcileChildFunctions = vnode => {
       resultIndex = [],
       index       = 0;
 
+  // if(vnode.props.hasOwnProperty('id')) {
+  //   console.log('reconcile',vnode.props.id);
+  // }
   children = children.map((child, i) => {
     if (typeof child === 'function') {
       let childResult = child();
@@ -75,6 +81,9 @@ const reconcileChildFunctions = vnode => {
       });
       result.unshift(childResult);
       resultIndex.unshift(i);
+    } else if (typeof child.type === 'object') {
+      // Occurs when a fn that returns JSX is used as a component in a component
+      child = child.type;
     } else {
       child = reconcile(child);
     }
@@ -92,12 +101,12 @@ const getComponentInstance = vnode => {
   if (_componentInstanceMap.hasOwnProperty(id)) {
     vnode = _componentInstanceMap[id];
   } else if (isNoriComponent(vnode)) {
-    vnode = getNoriInstance(vnode);
+    vnode = createNoriComponentInstance(vnode);
   }
   return vnode;
 };
 
-const getNoriInstance = vnode => {
+const createNoriComponentInstance = vnode => {
   vnode.props.children      = Is.array(vnode.children) ? vnode.children : [vnode.children];
   let instance              = new vnode.type(vnode.props);
   let id                        = instance.props.id; // id could change during construction
@@ -144,14 +153,21 @@ const renderSFC = instance => {
   return vnode;
 };
 
-// TODO need to clear hooks
-// Called from NoriDOM when an element isn't in the new vdom tree
+// NoriDOM update() on when an element isn't in the new vdom tree
 export const removeComponentInstance = vnode => {
-  if (hasOwnerComponent(vnode)) {
-    if (typeof vnode._owner.componentWillUnmount === 'function') {
-      vnode._owner.componentWillUnmount();
-      vnode._owner.remove();
+  const id = getKeyOrId(vnode);
+
+  performPostRenderHookCleanup(id);
+  unregisterHooks(id);
+  removeEvents(id);
+
+  // Components
+  if (_componentInstanceMap.hasOwnProperty(id)) {
+    const compInst = _componentInstanceMap[id];
+    if (typeof compInst.componentWillUnmount === 'function') {
+      compInst.componentWillUnmount();
+      compInst.remove();
     }
-    delete _componentInstanceMap[vnode._owner.props.id];
+    delete _componentInstanceMap[id];
   }
 };

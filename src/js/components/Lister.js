@@ -53,12 +53,6 @@ export default class Lister extends NoriComponent {
   render() {
     //console.log('render lister');
 
-    const us = useState({foo:'lister'});
-    useEffect(() => {
-      console.log('lister effect!!!');
-    });
-
-
     return <div className={bordered} key={this.props.id}>
       <button onClick={this.$onAddClick}>Add</button>
       <button onClick={this.$onRemoveClick}>Remove</button>

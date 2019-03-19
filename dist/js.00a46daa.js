@@ -20951,33 +20951,20 @@ var define;
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.performDidUpdateQueue = exports.getDidUpdateQueue = exports.enqueueDidUpdate = exports.performDidMountQueue = exports.getDidMountQueue = exports.enqueueDidMount = void 0;
+exports.performPostRenderHookCleanup = exports.performDidUpdateQueue = exports.performDidMountQueue = exports.getDidMountQueue = exports.enqueuePostRenderHook = exports.getDidUpdateQueue = exports.enqueueDidUpdate = exports.enqueueDidMount = void 0;
 
 var _lodash = require("lodash");
 
 var didMountQueue = [],
-    didUpdateQueue = [];
+    didUpdateQueue = [],
+    postRenderHookQueue = [],
+    postRenderHookCleanupQueue = [];
 
 var enqueueDidMount = function enqueueDidMount(id) {
   return didMountQueue.push(id);
 };
 
 exports.enqueueDidMount = enqueueDidMount;
-
-var getDidMountQueue = function getDidMountQueue(_) {
-  return (0, _lodash.clone)(didMountQueue);
-};
-
-exports.getDidMountQueue = getDidMountQueue;
-
-var performDidMountQueue = function performDidMountQueue() {
-  didMountQueue.forEach(function (fn) {
-    return fn();
-  });
-  didMountQueue = [];
-};
-
-exports.performDidMountQueue = performDidMountQueue;
 
 var enqueueDidUpdate = function enqueueDidUpdate(id) {
   return didUpdateQueue.push(id);
@@ -20991,6 +20978,31 @@ var getDidUpdateQueue = function getDidUpdateQueue(_) {
 
 exports.getDidUpdateQueue = getDidUpdateQueue;
 
+var enqueuePostRenderHook = function enqueuePostRenderHook(id, fn) {
+  return postRenderHookQueue.push({
+    id: id,
+    fn: fn
+  });
+};
+
+exports.enqueuePostRenderHook = enqueuePostRenderHook;
+
+var getDidMountQueue = function getDidMountQueue(_) {
+  return (0, _lodash.clone)(didMountQueue);
+};
+
+exports.getDidMountQueue = getDidMountQueue;
+
+var performDidMountQueue = function performDidMountQueue() {
+  didMountQueue.forEach(function (fn) {
+    return fn();
+  });
+  didMountQueue = [];
+  performPostRenderHooks();
+};
+
+exports.performDidMountQueue = performDidMountQueue;
+
 var performDidUpdateQueue = function performDidUpdateQueue(map) {
   didUpdateQueue.forEach(function (id) {
     if (map[id] && typeof map[id].componentDidUpdate === 'function') {
@@ -20998,9 +21010,42 @@ var performDidUpdateQueue = function performDidUpdateQueue(map) {
     }
   });
   didUpdateQueue = [];
+  performPostRenderHooks();
 };
 
 exports.performDidUpdateQueue = performDidUpdateQueue;
+
+var performPostRenderHooks = function performPostRenderHooks() {
+  postRenderHookQueue.forEach(function (hook) {
+    var id = hook.id,
+        fn = hook.fn,
+        result;
+    performPostRenderHookCleanup(id);
+    result = fn();
+
+    if (result) {
+      postRenderHookCleanupQueue.push({
+        id: id,
+        fn: result
+      });
+    }
+  });
+  postRenderHookQueue = [];
+};
+
+var performPostRenderHookCleanup = function performPostRenderHookCleanup(id) {
+  postRenderHookCleanupQueue = postRenderHookCleanupQueue.reduce(function (acc, hook) {
+    if (hook.id === id) {
+      hook.fn();
+    } else {
+      acc.push(hook);
+    }
+
+    return acc;
+  }, []);
+};
+
+exports.performPostRenderHookCleanup = performPostRenderHookCleanup;
 },{"lodash":"../node_modules/lodash/lodash.js"}],"../node_modules/decamelize/node_modules/xregexp/lib/xregexp.js":[function(require,module,exports) {
 var global = arguments[3];
 'use strict';
@@ -42144,7 +42189,160 @@ var getNextId = function getNextId() {
 };
 
 exports.getNextId = getNextId;
-},{}],"js/nori/Reconciler.js":[function(require,module,exports) {
+},{}],"js/nori/Hooks.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.useLayoutEffect = exports.useEffect = exports.useCallBack = exports.useMemo = exports.useState = exports.unregisterHooks = void 0;
+
+var _ramda = require("ramda");
+
+var _Reconciler = require("./Reconciler");
+
+var _Nori = require("./Nori");
+
+var _LifecycleQueue = require("./LifecycleQueue");
+
+/* Let's play with hooks!
+https://reactjs.org/docs/hooks-reference.html
+React's Rules:
+  1. must be called at in the redner fn
+  2. called in the same order - not in a conditional
+  3. No loops
+
+  Some hooks are called as soon as they are encountered like useState
+  Some are called AFTER the element has mounted like useEffect
+    - need to add a the cDM queue in lifecycle
+
+*/
+var _hooksMap = {}; // Returns true if first call, false if n+ call
+
+var registerHook = function registerHook(type, value) {
+  var initial = false,
+      cVnode = (0, _Reconciler.getCurrentVnode)(),
+      cursor = (0, _Reconciler.getHookCursor)();
+
+  if (!cVnode) {
+    console.warn("registerHook : Can't register hook, no current vnode!");
+    return;
+  }
+
+  var id = cVnode.props.id;
+
+  if (!_hooksMap.hasOwnProperty(id)) {
+    _hooksMap[id] = [];
+  }
+
+  if (!_hooksMap[id][cursor]) {
+    initial = true;
+
+    _hooksMap[id].push({
+      type: type,
+      vnode: cVnode,
+      data: value
+    }); //console.log(`NEW hook ${type} for ${id} at ${cursor}`, value);
+
+  }
+
+  return {
+    initial: initial,
+    id: id,
+    cursor: cursor,
+    hook: _hooksMap[id][cursor]
+  };
+};
+
+var updateHookData = function updateHookData(id, cursor, data) {
+  //console.log(`updateHookData : ${id},${cursor} : `,data);
+  _hooksMap[id][cursor].data = data;
+};
+
+var unregisterHooks = function unregisterHooks(id) {
+  if (_hooksMap.hasOwnProperty(id)) {
+    delete _hooksMap[id];
+  }
+}; // HOW to get the component to update when setState is called?
+
+
+exports.unregisterHooks = unregisterHooks;
+
+var useState = function useState(initialState) {
+  var res = registerHook('useState', initialState);
+  var currentState = res.hook.data;
+
+  var setState = function setState(newState) {
+    if (typeof newState === "function") {
+      newState = newState(currentState);
+    }
+
+    updateHookData(res.id, res.cursor, newState);
+    (0, _Nori.enqueueUpdate)(res.id);
+  };
+
+  return [currentState, setState];
+};
+
+exports.useState = useState;
+
+var useMemo = function useMemo(callbackFn, deps) {
+  var res = registerHook('useMemo', {
+    callback: callbackFn,
+    dependencies: deps,
+    output: null
+  });
+  var changedDeps = !(0, _ramda.equals)(deps, res.hook.data.dependencies);
+
+  if (res.initial || deps === undefined || changedDeps) {
+    var result = callbackFn();
+    updateHookData(res.id, res.cursor, {
+      callback: callbackFn,
+      dependencies: deps,
+      output: result
+    });
+    return result;
+  }
+
+  return res.hook.data.output;
+}; // https://twitter.com/dan_abramov/status/1055709764036943872?lang=en
+
+
+exports.useMemo = useMemo;
+
+var useCallBack = function useCallBack(callbackFn, deps) {
+  return useMemo(callbackFn, deps);
+};
+
+exports.useCallBack = useCallBack;
+
+var useEffect = function useEffect(callbackFn, deps) {
+  var res = registerHook('useEffect', {
+    callback: callbackFn,
+    dependencies: deps
+  });
+  var changedDeps = !(0, _ramda.equals)(deps, res.hook.data.dependencies);
+
+  if (deps === undefined || changedDeps) {
+    updateHookData(res.id, res.cursor, {
+      callback: callbackFn,
+      dependencies: deps
+    });
+    (0, _LifecycleQueue.enqueuePostRenderHook)(res.id, callbackFn);
+  } else if (res.initial || deps.length === 0) {
+    (0, _LifecycleQueue.enqueuePostRenderHook)(res.id, callbackFn);
+  }
+}; // TODO this needs to run right after the component is rendered not after everything renders
+
+
+exports.useEffect = useEffect;
+
+var useLayoutEffect = function useLayoutEffect(callbackFn, deps) {
+  useEffect(callbackFn, deps);
+};
+
+exports.useLayoutEffect = useLayoutEffect;
+},{"ramda":"../node_modules/ramda/es/index.js","./Reconciler":"js/nori/Reconciler.js","./Nori":"js/nori/Nori.js","./LifecycleQueue":"js/nori/LifecycleQueue.js"}],"js/nori/Reconciler.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -42161,6 +42359,12 @@ var _ElementIDCreator = require("./util/ElementIDCreator");
 var _Nori = require("./Nori");
 
 var _lodash = require("lodash");
+
+var _LifecycleQueue = require("./LifecycleQueue");
+
+var _NoriDOM = require("./NoriDOM");
+
+var _Hooks = require("./Hooks");
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -42273,7 +42477,10 @@ var reconcileChildFunctions = function reconcileChildFunctions(vnode) {
   var children = vnode.children,
       result = [],
       resultIndex = [],
-      index = 0;
+      index = 0; // if(vnode.props.hasOwnProperty('id')) {
+  //   console.log('reconcile',vnode.props.id);
+  // }
+
   children = children.map(function (child, i) {
     if (typeof child === 'function') {
       var childResult = child();
@@ -42289,6 +42496,9 @@ var reconcileChildFunctions = function reconcileChildFunctions(vnode) {
       });
       result.unshift(childResult);
       resultIndex.unshift(i);
+    } else if (_typeof(child.type) === 'object') {
+      // Occurs when a fn that returns JSX is used as a component in a component
+      child = child.type;
     } else {
       child = reconcile(child);
     }
@@ -42310,13 +42520,13 @@ var getComponentInstance = function getComponentInstance(vnode) {
   if (_componentInstanceMap.hasOwnProperty(id)) {
     vnode = _componentInstanceMap[id];
   } else if ((0, _Nori.isNoriComponent)(vnode)) {
-    vnode = getNoriInstance(vnode);
+    vnode = createNoriComponentInstance(vnode);
   }
 
   return vnode;
 };
 
-var getNoriInstance = function getNoriInstance(vnode) {
+var createNoriComponentInstance = function createNoriComponentInstance(vnode) {
   vnode.props.children = _is.default.array(vnode.children) ? vnode.children : [vnode.children];
   var instance = new vnode.type(vnode.props);
   var id = instance.props.id; // id could change during construction
@@ -42369,24 +42579,29 @@ var renderSFC = function renderSFC(instance) {
 
   vnode._owner = instance;
   return vnode;
-}; // TODO need to clear hooks
-// Called from NoriDOM when an element isn't in the new vdom tree
+}; // NoriDOM update() on when an element isn't in the new vdom tree
 
 
 var removeComponentInstance = function removeComponentInstance(vnode) {
-  if (hasOwnerComponent(vnode)) {
-    if (typeof vnode._owner.componentWillUnmount === 'function') {
-      vnode._owner.componentWillUnmount();
+  var id = getKeyOrId(vnode);
+  (0, _LifecycleQueue.performPostRenderHookCleanup)(id);
+  (0, _Hooks.unregisterHooks)(id);
+  (0, _NoriDOM.removeEvents)(id); // Components
 
-      vnode._owner.remove();
+  if (_componentInstanceMap.hasOwnProperty(id)) {
+    var compInst = _componentInstanceMap[id];
+
+    if (typeof compInst.componentWillUnmount === 'function') {
+      compInst.componentWillUnmount();
+      compInst.remove();
     }
 
-    delete _componentInstanceMap[vnode._owner.props.id];
+    delete _componentInstanceMap[id];
   }
 };
 
 exports.removeComponentInstance = removeComponentInstance;
-},{"ramda":"../node_modules/ramda/es/index.js","./util/is":"js/nori/util/is.js","./util/ElementIDCreator":"js/nori/util/ElementIDCreator.js","./Nori":"js/nori/Nori.js","lodash":"../node_modules/lodash/lodash.js"}],"js/nori/browser/DOMToolbox.js":[function(require,module,exports) {
+},{"ramda":"../node_modules/ramda/es/index.js","./util/is":"js/nori/util/is.js","./util/ElementIDCreator":"js/nori/util/ElementIDCreator.js","./Nori":"js/nori/Nori.js","lodash":"../node_modules/lodash/lodash.js","./LifecycleQueue":"js/nori/LifecycleQueue.js","./NoriDOM":"js/nori/NoriDOM.js","./Hooks":"js/nori/Hooks.js"}],"js/nori/browser/DOMToolbox.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -42689,7 +42904,7 @@ exports.centerElementInViewPort = centerElementInViewPort;
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.patch = exports.render = void 0;
+exports.removeEvents = exports.patch = exports.render = void 0;
 
 var _decamelize = _interopRequireDefault(require("decamelize"));
 
@@ -42772,11 +42987,9 @@ var updateDOM = function updateDOM($element, newvdom, currentvdom) {
 
     if ($toRemove && $toRemove.parentNode === $element) {
       // console.log('Remove', currentvdom, $toRemove);
-      (0, _Reconciler.removeComponentInstance)(currentvdom);
-
-      if (currentvdom.hasOwnProperty('props')) {
-        removeEvents(currentvdom.props.id);
-      }
+      (0, _Reconciler.removeComponentInstance)(currentvdom); // if (currentvdom.hasOwnProperty('props')) {
+      //   removeEvents(currentvdom.props.id); // This is done in removeComponentInstance
+      // }
 
       $element.removeChild($toRemove);
 
@@ -42894,7 +43107,10 @@ var createTextNode = function createTextNode(string) {
 var setEvents = function setEvents(vnode, $element) {
   var props = vnode.props || {};
   marshalEventProps(props).forEach(function (evt) {
-    var nodeId = vnode.props.id;
+    var nodeId = vnode.props.id; // if(evt.event === 'input') {
+    //   // Auto debounce?
+    // }
+
     evt.internalHandler = internalEventHandler(evt, vnode, $element);
     $element.addEventListener(evt.event, evt.internalHandler);
 
@@ -42953,6 +43169,8 @@ var removeEvents = function removeEvents(id) {
 //PROPSPROPSPROPSPROPSPROPSPROPSPROPSPROPSPROPSPROPSPROPSPROPSPROPSPROPSPROPSPRO
 //------------------------------------------------------------------------------
 
+
+exports.removeEvents = removeEvents;
 
 var updateProps = function updateProps($element, newProps) {
   var oldProps = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
@@ -43854,120 +44072,7 @@ function (_NoriComponent) {
 }(_NoriComponent2.default);
 
 exports.default = Ticker;
-},{"../nori/NoriComponent":"js/nori/NoriComponent.js","../nori/Nori":"js/nori/Nori.js","emotion":"../node_modules/emotion/dist/index.esm.js"}],"js/nori/Hooks.js":[function(require,module,exports) {
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.useEffect = exports.useState = void 0;
-
-var _Reconciler = require("./Reconciler");
-
-var _Nori = require("./Nori");
-
-/* Let's play with hooks!
-https://reactjs.org/docs/hooks-reference.html
-React's Rules:
-  1. must be called at in the redner fn
-  2. called in the same order - not in a conditional
-  3. No loops
-
-  Some hooks are called as soon as they are encountered like useState
-  Some are called AFTER the element has mounted like useEffect
-    - need to add a the cDM queue in lifecycle
-
-*/
-var _hooksMap = {}; // Returns true if first call, false if n+ call
-
-var registerHook = function registerHook(type, value) {
-  var initial = false,
-      cVnode = (0, _Reconciler.getCurrentVnode)(),
-      cursor = (0, _Reconciler.getHookCursor)();
-
-  if (!cVnode) {
-    console.warn("registerHook : Can't register hook, no current vnode!");
-    return;
-  }
-
-  var id = cVnode.props.id;
-
-  if (!_hooksMap.hasOwnProperty(id)) {
-    _hooksMap[id] = [];
-  }
-
-  if (!_hooksMap[id][cursor]) {
-    initial = true;
-
-    _hooksMap[id].push({
-      type: type,
-      vnode: cVnode,
-      data: value
-    }); //console.log(`NEW hook ${type} for ${id} at ${cursor}`, value);
-
-  } else {
-    var runHook = _hooksMap[id][cursor]; //console.log(`RUN hook ${type} for ${id}`, runHook);
-
-    switch (runHook.type) {
-      case 'useState':
-        //console.log(`   useState: `, runHook.data);
-        break;
-
-      case 'useEffect':
-        console.log("   useEffect: ", runHook.data);
-        break;
-
-      default:
-        console.warn("unknown hook type: ".concat(runHook.type));
-    }
-  }
-
-  return {
-    initial: initial,
-    id: id,
-    cursor: cursor,
-    hook: _hooksMap[id][cursor]
-  };
-};
-
-var updateHookData = function updateHookData(id, cursor, data) {
-  //console.log(`updateHookData : ${id},${cursor} : `,data);
-  _hooksMap[id][cursor].data = data;
-  (0, _Nori.enqueueUpdate)(id);
-}; // TODO when the component is removed need to unregister
-
-
-var unregisterHook = function unregisterHook(vnode, type) {
-  console.log("unregisterHook for ", vnode, type);
-}; // HOW to get the component to update when setState is called?
-
-
-var useState = function useState(initialState) {
-  var res = registerHook('useState', initialState);
-  var currentState = res.hook.data; //console.log('useState : ',res);
-
-  var setState = function setState(newState) {
-    if (typeof newState === "function") {
-      newState = newState(currentState);
-    }
-
-    updateHookData(res.id, res.cursor, newState);
-  };
-
-  return [currentState, setState];
-}; // This needs to run on cDM and cDU
-//https://twitter.com/swyx/status/1100833207451185152
-
-
-exports.useState = useState;
-
-var useEffect = function useEffect(callbackFn) {
-  var deps = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : [];
-  registerHook('useEffect', callbackFn);
-};
-
-exports.useEffect = useEffect;
-},{"./Reconciler":"js/nori/Reconciler.js","./Nori":"js/nori/Nori.js"}],"js/components/Greeter.js":[function(require,module,exports) {
+},{"../nori/NoriComponent":"js/nori/NoriComponent.js","../nori/Nori":"js/nori/Nori.js","emotion":"../node_modules/emotion/dist/index.esm.js"}],"js/components/Greeter.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -44072,19 +44177,7 @@ function (_NoriComponent) {
   _createClass(Greeter, [{
     key: "render",
     value: function render() {
-      var us1 = (0, _Hooks.useState)({
-        foo: 'greet 1!'
-      });
-      var us2 = (0, _Hooks.useState)({
-        foo: 'greet 2!'
-      });
-      (0, _Hooks.useEffect)(function () {
-        console.log('greeter effect 1!!!');
-      });
-      var us3 = (0, _Hooks.useState)({
-        foo: 'greet 3!'
-      }); // console.log(`  - ${this.props.id} GREETER : render ${this.state.name}`);
-
+      // console.log(`  - ${this.props.id} GREETER : render ${this.state.name}`);
       return (0, _Nori.h)("h1", {
         onClick: this.$onClick,
         onMouseOver: this.onOver,
@@ -44207,12 +44300,6 @@ function (_NoriComponent) {
       var _this2 = this;
 
       //console.log('render lister');
-      var us = (0, _Hooks.useState)({
-        foo: 'lister'
-      });
-      (0, _Hooks.useEffect)(function () {
-        console.log('lister effect!!!');
-      });
       return (0, _Nori.h)("div", {
         className: bordered,
         key: this.props.id
@@ -44362,6 +44449,17 @@ var InputControls = function InputControls(props) {
 
   var inputValue = _useState2[0],
       setInputValue = _useState2[1];
+  var Output = (0, _Hooks.useMemo)(function () {
+    return (0, _Nori.h)("span", {
+      className: blue
+    }, (0, _Nori.h)("span", null, inputValue));
+  }, [inputValue]);
+  (0, _Hooks.useEffect)(function () {
+    //console.log('input effect', inputValue);
+    document.title = inputValue;
+    return function () {//console.log('inputControls, useEffect cleanup');
+    };
+  });
 
   var _onInputChange = function _onInputChange(e) {
     //console.log('input',e);
@@ -44382,9 +44480,7 @@ var InputControls = function InputControls(props) {
     onInput: _onInputChange,
     onFocus: _onInputFocus,
     onBlur: _onInputBlur
-  }), (0, _Nori.h)("span", {
-    className: blue
-  }, inputValue));
+  }), (0, _Nori.h)(Output, null));
 };
 
 exports.InputControls = InputControls;
@@ -44475,7 +44571,6 @@ var SFCWithJuice = function SFCWithJuice(props) {
 
   var buttonLabel = _useState2[0],
       updateButton = _useState2[1];
-  console.log('> Execute : SFCWithJuice');
 
   var handleClick = function handleClick() {
     updateButton({

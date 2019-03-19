@@ -51,9 +51,9 @@ const updateDOM = ($element, newvdom, currentvdom, index = 0, patches) => {
     if ($toRemove && $toRemove.parentNode === $element) {
       // console.log('Remove', currentvdom, $toRemove);
       removeComponentInstance(currentvdom);
-      if (currentvdom.hasOwnProperty('props')) {
-        removeEvents(currentvdom.props.id);
-      }
+      // if (currentvdom.hasOwnProperty('props')) {
+      //   removeEvents(currentvdom.props.id); // This is done in removeComponentInstance
+      // }
       $element.removeChild($toRemove);
       if (currentvdom.hasOwnProperty('props')) {
         delete renderedElementsMap[currentvdom.props.id];
@@ -167,6 +167,9 @@ const setEvents = (vnode, $element) => {
   const props = vnode.props || {};
   marshalEventProps(props).forEach(evt => {
     const nodeId        = vnode.props.id;
+    // if(evt.event === 'input') {
+    //   // Auto debounce?
+    // }
     evt.internalHandler = internalEventHandler(evt, vnode, $element);
     $element.addEventListener(evt.event, evt.internalHandler);
     if (!eventMap.hasOwnProperty(nodeId)) {
@@ -198,7 +201,7 @@ const createProxyEventObject = (event, vnode, $element = null) => ({
   target: $element
 });
 
-const removeEvents = id => {
+export const removeEvents = id => {
   if (eventMap.hasOwnProperty(id)) {
     eventMap[id].map(fn => {
       fn();

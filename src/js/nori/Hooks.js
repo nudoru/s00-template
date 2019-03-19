@@ -12,8 +12,10 @@ React's Rules:
 
 */
 
+import {equals} from 'ramda';
 import {getCurrentVnode, getHookCursor} from "./Reconciler";
 import {enqueueUpdate} from "./Nori";
+import {enqueuePostRenderHook} from "./LifecycleQueue";
 
 let _hooksMap = {};
 
@@ -36,19 +38,6 @@ const registerHook = (type, value) => {
     initial = true;
     _hooksMap[id].push({type, vnode: cVnode, data: value});
     //console.log(`NEW hook ${type} for ${id} at ${cursor}`, value);
-  } else {
-    const runHook = _hooksMap[id][cursor];
-    //console.log(`RUN hook ${type} for ${id}`, runHook);
-    switch (runHook.type) {
-      case 'useState':
-        //console.log(`   useState: `, runHook.data);
-        break;
-      case 'useEffect':
-        console.log(`   useEffect: `, runHook.data);
-        break;
-      default:
-        console.warn(`unknown hook type: ${runHook.type}`)
-    }
   }
   return {initial, id, cursor, hook: _hooksMap[id][cursor]};
 };
@@ -56,33 +45,56 @@ const registerHook = (type, value) => {
 const updateHookData = (id, cursor, data) => {
   //console.log(`updateHookData : ${id},${cursor} : `,data);
   _hooksMap[id][cursor].data = data;
-  enqueueUpdate(id);
 };
 
-// TODO when the component is removed need to unregister
-const unregisterHook = (vnode, type) => {
-  console.log(`unregisterHook for `, vnode, type);
+export const unregisterHooks = (id) => {
+  if (_hooksMap.hasOwnProperty(id)) {
+    delete _hooksMap[id];
+  }
 };
-
 
 // HOW to get the component to update when setState is called?
 export const useState = initialState => {
   const res = registerHook('useState', initialState);
   const currentState = res.hook.data;
-  //console.log('useState : ',res);
-
   const setState = newState => {
     if (typeof newState === "function") {
       newState = newState(currentState);
     }
     updateHookData(res.id, res.cursor, newState);
+    enqueueUpdate(res.id);
   };
-
   return [currentState, setState];
 };
 
-// This needs to run on cDM and cDU
-//https://twitter.com/swyx/status/1100833207451185152
-export const useEffect = (callbackFn, deps=[]) => {
-  registerHook('useEffect', callbackFn);
+export const useMemo = (callbackFn, deps) => {
+  let res = registerHook('useMemo', {callback: callbackFn,  dependencies: deps, output:null});
+  const changedDeps = !equals(deps, res.hook.data.dependencies);
+  if(res.initial || deps === undefined || changedDeps) {
+    const result = callbackFn();
+    updateHookData(res.id, res.cursor, {callback: callbackFn, dependencies: deps, output:result});
+    return result;
+  }
+  return res.hook.data.output;
+};
+
+// https://twitter.com/dan_abramov/status/1055709764036943872?lang=en
+export const useCallBack = (callbackFn, deps) => {
+  return useMemo(callbackFn, deps);
+};
+
+export const useEffect = (callbackFn, deps) => {
+  let res = registerHook('useEffect', {callback: callbackFn, dependencies: deps});
+  const changedDeps = !equals(deps, res.hook.data.dependencies);
+  if(deps === undefined || changedDeps) {
+    updateHookData(res.id, res.cursor, {callback: callbackFn, dependencies: deps});
+    enqueuePostRenderHook(res.id, callbackFn);
+  } else if(res.initial || deps.length === 0){
+    enqueuePostRenderHook(res.id, callbackFn);
+  }
+};
+
+// TODO this needs to run right after the component is rendered not after everything renders
+export const useLayoutEffect = (callbackFn, deps) => {
+  useEffect(callbackFn, deps);
 };

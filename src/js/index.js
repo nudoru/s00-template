@@ -52,12 +52,9 @@ const Sfc = props => <span><h1>{props.message}</h1><Greeter/></span>;
 
 const SFCWithJuice = (props) => {
   const [buttonLabel, updateButton] = useState({label:'JOICE!', count:0});
-  console.log('> Execute : SFCWithJuice');
-
   const handleClick = () => {
     updateButton({label:'You pushed me!', count:++buttonLabel.count});
   };
-
   return (
     <button onClick={handleClick}>SFC With Juice: {buttonLabel.label} {buttonLabel.count}</button>
   );
