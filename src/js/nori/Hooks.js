@@ -64,7 +64,6 @@ export const unregisterHooks = (id) => {
   }
 };
 
-// HOW to get the component to update when setState is called?
 export const useState = initialState => {
   const res          = registerHook('useState', initialState);
   const currentState = res.hook.data;
@@ -76,6 +75,19 @@ export const useState = initialState => {
     enqueueUpdate(res.id);
   };
   return [currentState, setState];
+};
+
+export const useReducer = (reduceFn, initialState) => {
+  const res          = registerHook('useReducer', {reduceFn, state: initialState});
+  const currentState = res.hook.data.state;
+  const dispatch     = newState => {
+    if (typeof newState === "function") {
+      newState = newState(currentState);
+    }
+    updateHookData(res.id, res.cursor, {reduceFn, state: newState});
+    enqueueUpdate(res.id);
+  };
+  return [currentState, dispatch];
 };
 
 export const useMemo = (callbackFn, deps) => {
@@ -140,8 +152,4 @@ export const useRef = initialValue => {
 
 export const useContext = foo => {
   console.warn(`useContext hook isn't implemented`);
-};
-
-export const useReducer = foo => {
-  console.warn(`useReducer hook isn't implemented`);
 };
