@@ -8,7 +8,8 @@ let didMountQueue              = [],
 export const enqueueDidMount       = id => didMountQueue.push(id);
 export const enqueueDidUpdate      = id => didUpdateQueue.push(id);
 export const getDidUpdateQueue     = _ => clone(didUpdateQueue);
-export const enqueuePostRenderHook = (id, fn) => postRenderHookQueue.push({
+export const enqueuePostRenderHook = (tag, id, fn) => postRenderHookQueue.push({
+  tag,
   id,
   fn
 });

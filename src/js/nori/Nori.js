@@ -39,10 +39,10 @@ import {
 import {patch} from './NoriDOM';
 import NoriComponent from "./NoriComponent";
 import {
-  reconcile,
-  reconcileOnly,
+  cloneNode,
   getComponentInstances,
-  cloneNode
+  reconcile,
+  reconcileOnly
 } from "./Reconciler";
 
 const STAGE_UNITIALIZED = 'uninitialized';
@@ -75,13 +75,16 @@ export const isSteady        = _ => _currentStage === STAGE_STEADY;
 //------------------------------------------------------------------------------
 
 // Create VDOM from JSX. Used by the Babel/JSX transpiler
-export const h = (type, props, ...args) => ({
-  type,
-  props   : props || {},
-  children: args.length ? flatten(args) : [],
-  _owner  : null, // will be the NoriComponent instance that generated the node
-  $$typeof: Symbol.for('nori.element')
-});
+export const h = (type, props, ...args) => {
+  // console.log(`h ${type} ${JSON.stringify(props)} ${JSON.stringify(args)}`);
+  return {
+    type,
+    props   : props || {},
+    children: args.length ? flatten(args) : [],
+    _owner  : null,
+    $$typeof: Symbol.for('nori.element')
+  }
+};
 
 // Called from NoriDOM to render the first vdom
 export const renderVDOM = node => {
@@ -91,7 +94,6 @@ export const renderVDOM = node => {
   _currentStage = STAGE_STEADY;
   return vdom;
 };
-
 
 //------------------------------------------------------------------------------
 //STATEUPDATESTATEUPDATESTATEUPDATESTATEUPDATESTATEUPDATESTATEUPDATESTATEUPDATES

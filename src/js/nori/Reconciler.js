@@ -26,7 +26,6 @@ export const setCurrentVnode       = vnode => {
 export const getHookCursor         = _ => _currentVnodeHookCursor++;
 
 export const reconcile = vnode => {
-  vnode = cloneNode(vnode);
   setCurrentVnode(vnode);
   if (isTypeFunction(vnode)) {
     vnode = reconcileComponentInstance(vnode);

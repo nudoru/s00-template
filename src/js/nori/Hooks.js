@@ -1,4 +1,3 @@
-
 /* Let's play with hooks!
 https://reactjs.org/docs/hooks-reference.html
 React's Rules:
@@ -19,17 +18,23 @@ import {enqueuePostRenderHook} from "./LifecycleQueue";
 
 let _hooksMap = {};
 
+export const HOOK_TAGS = {
+  EFFECT       : 'useEffect',
+  LAYOUT_EFFECT: 'useLayoutEffect',
+  REF          : 'useRef'
+};
+
 // Returns true if first call, false if n+ call
 const registerHook = (type, value) => {
   // Make sure hooks are only used during rendering
-  if(isSteady()) {
+  if (isSteady()) {
     console.warn('Hooks can only be called inside the body of a function component!');
     return;
   }
 
   let initial = false,
-      cVnode = getCurrentVnode(),
-      cursor = getHookCursor();
+      cVnode  = getCurrentVnode(),
+      cursor  = getHookCursor();
 
   if (!cVnode) {
     console.warn(`registerHook : Can't register hook, no current vnode!`);
@@ -61,9 +66,9 @@ export const unregisterHooks = (id) => {
 
 // HOW to get the component to update when setState is called?
 export const useState = initialState => {
-  const res = registerHook('useState', initialState);
+  const res          = registerHook('useState', initialState);
   const currentState = res.hook.data;
-  const setState = newState => {
+  const setState     = newState => {
     if (typeof newState === "function") {
       newState = newState(currentState);
     }
@@ -74,11 +79,19 @@ export const useState = initialState => {
 };
 
 export const useMemo = (callbackFn, deps) => {
-  let res = registerHook('useMemo', {callback: callbackFn,  dependencies: deps, output:null});
+  let res           = registerHook('useMemo', {
+    callback    : callbackFn,
+    dependencies: deps,
+    output      : null
+  });
   const changedDeps = !equals(deps, res.hook.data.dependencies);
-  if(res.initial || deps === undefined || changedDeps) {
+  if (res.initial || deps === undefined || changedDeps) {
     const result = callbackFn();
-    updateHookData(res.id, res.cursor, {callback: callbackFn, dependencies: deps, output:result});
+    updateHookData(res.id, res.cursor, {
+      callback    : callbackFn,
+      dependencies: deps,
+      output      : result
+    });
     return result;
   }
   return res.hook.data.output;
@@ -90,17 +103,45 @@ export const useCallBack = (callbackFn, deps) => {
 };
 
 export const useEffect = (callbackFn, deps) => {
-  let res = registerHook('useEffect', {callback: callbackFn, dependencies: deps});
+  let res           = registerHook('useEffect', {
+    callback    : callbackFn,
+    dependencies: deps
+  });
   const changedDeps = !equals(deps, res.hook.data.dependencies);
-  if(deps === undefined || changedDeps) {
-    updateHookData(res.id, res.cursor, {callback: callbackFn, dependencies: deps});
-    enqueuePostRenderHook(res.id, callbackFn);
-  } else if(res.initial || deps.length === 0){
-    enqueuePostRenderHook(res.id, callbackFn);
+  if (deps === undefined || changedDeps) {
+    updateHookData(res.id, res.cursor, {
+      callback    : callbackFn,
+      dependencies: deps
+    });
+    enqueuePostRenderHook(HOOK_TAGS.EFFECT, res.id, callbackFn);
+  } else if (res.initial || deps.length === 0) {
+    enqueuePostRenderHook(HOOK_TAGS.EFFECT, res.id, callbackFn);
   }
 };
 
 // TODO this needs to run right after the component is rendered not after everything renders
 export const useLayoutEffect = (callbackFn, deps) => {
   useEffect(callbackFn, deps);
+};
+
+export const useRef = initialValue => {
+  let res = registerHook('useRef', {}),
+      returnObj;
+
+  if (res.initial) {
+    returnObj = {current: initialValue};
+    updateHookData(res.id, res.cursor, returnObj);
+  } else {
+    returnObj = res.hook.data;
+  }
+
+  return returnObj;
+};
+
+export const useContext = foo => {
+  console.warn(`useContext hook isn't implemented`);
+};
+
+export const useReducer = foo => {
+  console.warn(`useReducer hook isn't implemented`);
 };

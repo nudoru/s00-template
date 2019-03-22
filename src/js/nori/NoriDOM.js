@@ -13,17 +13,17 @@ const getEventName  = event => event.slice(2).toLowerCase();
 const specialProps  = ['tweens', 'state', 'actions', 'children', 'element', 'min', 'max', 'mode']; // TODO move this to another file
 const isSpecialProp = test => specialProps.includes(test);
 
-let eventMap            = {},
-    renderedElementsMap = {},
-    $documentHostNode;
+let _eventMap            = {},
+    _renderedElementsMap = {},
+    _$documentHostNode;
 
 export const render = (component, hostNode) => {
   console.time('render');
   removeAllElements(hostNode);
-  $documentHostNode = hostNode;
-  const vdom        = renderVDOM(component);
+  _$documentHostNode = hostNode;
+  const vdom         = renderVDOM(component);
   patch(null)(vdom);
-  // mount not using path : $documentHostNode.appendChild(createDOMNode(vdom));
+  // mount not using path : _$documentHostNode.appendChild(createDOMNode(vdom));
   performDidMountQueue();
   console.timeEnd('render');
   console.log('----------------------------------------------------------------------\n\n\n');
@@ -31,7 +31,7 @@ export const render = (component, hostNode) => {
 
 export const patch = currentvdom => newvdom => {
   let patches = [];
-  paint($documentHostNode, newvdom, currentvdom, 0, patches);
+  paint(_$documentHostNode, newvdom, currentvdom, 0, patches);
   return patches;
 };
 
@@ -57,7 +57,7 @@ const paint = ($element, newvdom, currentvdom, index = 0, patches) => {
       // }
       $element.removeChild($toRemove);
       if (currentvdom.hasOwnProperty('props')) {
-        delete renderedElementsMap[currentvdom.props.id];
+        delete _renderedElementsMap[currentvdom.props.id];
       }
       patches.push({
         type  : 'REMOVE',
@@ -67,7 +67,7 @@ const paint = ($element, newvdom, currentvdom, index = 0, patches) => {
       });
     } else {
       console.warn(`wanted to remove`, currentvdom, `but it wasn't there or the parent is wrong`);
-      console.warn('$element, $toRemove',$element, $toRemove);
+      console.warn('$element, $toRemove', $element, $toRemove);
     }
   } else if (changed(newvdom, currentvdom)) {
     // This needs to be smarter - Rearrange rather than replace and append
@@ -111,7 +111,7 @@ const getELForVNode = (vnode, $domRoot) => {
   if (!vnode) {
     return $domRoot;
   } else {
-    const $element = vnode.hasOwnProperty('props') ? renderedElementsMap[vnode.props.id] : null;
+    const $element = vnode.hasOwnProperty('props') ? _renderedElementsMap[vnode.props.id] : null;
     if (!$element) {
       console.warn(`correlateVDOMNode : Couldn't get rendered element ${vnode.props.id}`);
     }
@@ -153,7 +153,7 @@ const createDOMNode = vnode => {
   applyEvents(vnode, $element);
 
   if (vnode.hasOwnProperty('props')) {
-    renderedElementsMap[vnode.props.id] = $element;
+    _renderedElementsMap[vnode.props.id] = $element;
   }
   return $element;
 };
@@ -167,17 +167,17 @@ const createTextNode = string => document.createTextNode(string);
 const applyEvents = (vnode, $element) => {
   const props = vnode.props || {};
   marshalEventProps(props).forEach(evt => {
-    const nodeId        = vnode.props.id;
+    const nodeId = vnode.props.id;
     // if(evt.event === 'input') {
     //   // Auto debounce?
     // }
     evt.internalHandler = internalEventHandler(evt, vnode, $element);
     $element.addEventListener(evt.event, evt.internalHandler);
-    if (!eventMap.hasOwnProperty(nodeId)) {
-      eventMap[nodeId] = [];
+    if (!_eventMap.hasOwnProperty(nodeId)) {
+      _eventMap[nodeId] = [];
     }
     // Push an event remover fn to a queue
-    eventMap[nodeId].push(() => $element.removeEventListener(evt.event, evt.internalHandler));
+    _eventMap[nodeId].push(() => $element.removeEventListener(evt.event, evt.internalHandler));
   });
 };
 
@@ -203,12 +203,12 @@ const createProxyEventObject = (event, vnode, $element = null) => ({
 });
 
 export const removeEvents = id => {
-  if (eventMap.hasOwnProperty(id)) {
-    eventMap[id].map(fn => {
+  if (_eventMap.hasOwnProperty(id)) {
+    _eventMap[id].map(fn => {
       fn();
       return null;
     });
-    delete eventMap[id];
+    delete _eventMap[id];
   }
 };
 
@@ -253,6 +253,16 @@ const applyProp = ($element, key, value) => {
         return;
       }
       key = 'id';
+    } else if (key === 'ref') {
+      // This doesn't work because the vnodes are cloned so obj pass by reference is broken
+      if(typeof value === 'object') {
+        value.current = $element;
+      } else if (typeof value === 'function') {
+        value($element);
+      } else {
+        console.warn(`ref prop must be an object or a function: 'ref={el => refVar = el}'`);
+      }
+      return;
     }
     if (typeof value === 'boolean') {
       setBooleanProp($element, key, value);

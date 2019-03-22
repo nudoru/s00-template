@@ -20978,8 +20978,9 @@ var getDidUpdateQueue = function getDidUpdateQueue(_) {
 
 exports.getDidUpdateQueue = getDidUpdateQueue;
 
-var enqueuePostRenderHook = function enqueuePostRenderHook(id, fn) {
+var enqueuePostRenderHook = function enqueuePostRenderHook(tag, id, fn) {
   return postRenderHookQueue.push({
+    tag: tag,
     id: id,
     fn: fn
   });
@@ -42195,7 +42196,7 @@ exports.getNextId = getNextId;
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.useLayoutEffect = exports.useEffect = exports.useCallBack = exports.useMemo = exports.useState = exports.unregisterHooks = void 0;
+exports.useReducer = exports.useContext = exports.useRef = exports.useLayoutEffect = exports.useEffect = exports.useCallBack = exports.useMemo = exports.useState = exports.unregisterHooks = exports.HOOK_TAGS = void 0;
 
 var _ramda = require("ramda");
 
@@ -42217,7 +42218,14 @@ React's Rules:
     - need to add a the cDM queue in lifecycle
 
 */
-var _hooksMap = {}; // Returns true if first call, false if n+ call
+var _hooksMap = {};
+var HOOK_TAGS = {
+  EFFECT: 'useEffect',
+  LAYOUT_EFFECT: 'useLayoutEffect',
+  REF: 'useRef'
+}; // Returns true if first call, false if n+ call
+
+exports.HOOK_TAGS = HOOK_TAGS;
 
 var registerHook = function registerHook(type, value) {
   // Make sure hooks are only used during rendering
@@ -42334,9 +42342,9 @@ var useEffect = function useEffect(callbackFn, deps) {
       callback: callbackFn,
       dependencies: deps
     });
-    (0, _LifecycleQueue.enqueuePostRenderHook)(res.id, callbackFn);
+    (0, _LifecycleQueue.enqueuePostRenderHook)(HOOK_TAGS.EFFECT, res.id, callbackFn);
   } else if (res.initial || deps.length === 0) {
-    (0, _LifecycleQueue.enqueuePostRenderHook)(res.id, callbackFn);
+    (0, _LifecycleQueue.enqueuePostRenderHook)(HOOK_TAGS.EFFECT, res.id, callbackFn);
   }
 }; // TODO this needs to run right after the component is rendered not after everything renders
 
@@ -42348,6 +42356,36 @@ var useLayoutEffect = function useLayoutEffect(callbackFn, deps) {
 };
 
 exports.useLayoutEffect = useLayoutEffect;
+
+var useRef = function useRef(initialValue) {
+  var res = registerHook('useRef', {}),
+      returnObj;
+
+  if (res.initial) {
+    returnObj = {
+      current: initialValue
+    };
+    updateHookData(res.id, res.cursor, returnObj);
+  } else {
+    returnObj = res.hook.data;
+  }
+
+  return returnObj;
+};
+
+exports.useRef = useRef;
+
+var useContext = function useContext(foo) {
+  console.warn("useContext hook isn't implemented");
+};
+
+exports.useContext = useContext;
+
+var useReducer = function useReducer(foo) {
+  console.warn("useReducer hook isn't implemented");
+};
+
+exports.useReducer = useReducer;
 },{"ramda":"../node_modules/ramda/es/index.js","./Reconciler":"js/nori/Reconciler.js","./Nori":"js/nori/Nori.js","./LifecycleQueue":"js/nori/LifecycleQueue.js"}],"js/nori/Reconciler.js":[function(require,module,exports) {
 "use strict";
 
@@ -42436,7 +42474,6 @@ var getHookCursor = function getHookCursor(_) {
 exports.getHookCursor = getHookCursor;
 
 var reconcile = function reconcile(vnode) {
-  vnode = cloneNode(vnode);
   setCurrentVnode(vnode);
 
   if ((0, _Nori.isTypeFunction)(vnode)) {
@@ -42946,16 +42983,16 @@ var isSpecialProp = function isSpecialProp(test) {
   return specialProps.includes(test);
 };
 
-var eventMap = {},
-    renderedElementsMap = {},
-    $documentHostNode;
+var _eventMap = {},
+    _renderedElementsMap = {},
+    _$documentHostNode;
 
 var render = function render(component, hostNode) {
   console.time('render');
   (0, _DOMToolbox.removeAllElements)(hostNode);
-  $documentHostNode = hostNode;
+  _$documentHostNode = hostNode;
   var vdom = (0, _Nori.renderVDOM)(component);
-  patch(null)(vdom); // mount not using path : $documentHostNode.appendChild(createDOMNode(vdom));
+  patch(null)(vdom); // mount not using path : _$documentHostNode.appendChild(createDOMNode(vdom));
 
   (0, _LifecycleQueue.performDidMountQueue)();
   console.timeEnd('render');
@@ -42967,7 +43004,7 @@ exports.render = render;
 var patch = function patch(currentvdom) {
   return function (newvdom) {
     var patches = [];
-    paint($documentHostNode, newvdom, currentvdom, 0, patches);
+    paint(_$documentHostNode, newvdom, currentvdom, 0, patches);
     return patches;
   };
 }; // Affect the DOM
@@ -43001,7 +43038,7 @@ var paint = function paint($element, newvdom, currentvdom) {
       $element.removeChild($toRemove);
 
       if (currentvdom.hasOwnProperty('props')) {
-        delete renderedElementsMap[currentvdom.props.id];
+        delete _renderedElementsMap[currentvdom.props.id];
       }
 
       patches.push({
@@ -43052,7 +43089,7 @@ var getELForVNode = function getELForVNode(vnode, $domRoot) {
   if (!vnode) {
     return $domRoot;
   } else {
-    var $element = vnode.hasOwnProperty('props') ? renderedElementsMap[vnode.props.id] : null;
+    var $element = vnode.hasOwnProperty('props') ? _renderedElementsMap[vnode.props.id] : null;
 
     if (!$element) {
       console.warn("correlateVDOMNode : Couldn't get rendered element ".concat(vnode.props.id));
@@ -43098,7 +43135,7 @@ var createDOMNode = function createDOMNode(vnode) {
   applyEvents(vnode, $element);
 
   if (vnode.hasOwnProperty('props')) {
-    renderedElementsMap[vnode.props.id] = $element;
+    _renderedElementsMap[vnode.props.id] = $element;
   }
 
   return $element;
@@ -43121,12 +43158,12 @@ var applyEvents = function applyEvents(vnode, $element) {
     evt.internalHandler = internalEventHandler(evt, vnode, $element);
     $element.addEventListener(evt.event, evt.internalHandler);
 
-    if (!eventMap.hasOwnProperty(nodeId)) {
-      eventMap[nodeId] = [];
+    if (!_eventMap.hasOwnProperty(nodeId)) {
+      _eventMap[nodeId] = [];
     } // Push an event remover fn to a queue
 
 
-    eventMap[nodeId].push(function () {
+    _eventMap[nodeId].push(function () {
       return $element.removeEventListener(evt.event, evt.internalHandler);
     });
   });
@@ -43165,12 +43202,13 @@ var createProxyEventObject = function createProxyEventObject(event, vnode) {
 };
 
 var removeEvents = function removeEvents(id) {
-  if (eventMap.hasOwnProperty(id)) {
-    eventMap[id].map(function (fn) {
+  if (_eventMap.hasOwnProperty(id)) {
+    _eventMap[id].map(function (fn) {
       fn();
       return null;
     });
-    delete eventMap[id];
+
+    delete _eventMap[id];
   }
 }; //------------------------------------------------------------------------------
 //PROPSPROPSPROPSPROPSPROPSPROPSPROPSPROPSPROPSPROPSPROPSPROPSPROPSPROPSPROPSPRO
@@ -43221,6 +43259,17 @@ var applyProp = function applyProp($element, key, value) {
       }
 
       key = 'id';
+    } else if (key === 'ref') {
+      // This doesn't work because the vnodes are cloned so obj pass by reference is broken
+      if (_typeof(value) === 'object') {
+        value.current = $element;
+      } else if (typeof value === 'function') {
+        value($element);
+      } else {
+        console.warn("ref prop must be an object or a function: 'ref={el => refVar = el}'");
+      }
+
+      return;
     }
 
     if (typeof value === 'boolean') {
@@ -43502,12 +43551,12 @@ var h = function h(type, props) {
     args[_key - 2] = arguments[_key];
   }
 
+  // console.log(`h ${type} ${JSON.stringify(props)} ${JSON.stringify(args)}`);
   return {
     type: type,
     props: props || {},
     children: args.length ? (0, _ArrayUtils.flatten)(args) : [],
     _owner: null,
-    // will be the NoriComponent instance that generated the node
     $$typeof: Symbol.for('nori.element')
   };
 }; // Called from NoriDOM to render the first vdom
@@ -44460,15 +44509,18 @@ var InputControls = function InputControls(props) {
     return (0, _Nori.h)("span", {
       className: blue
     }, (0, _Nori.h)("span", null, inputValue));
-  }, [inputValue]);
+  }, [inputValue]); // let inputRef;
+
+  var inputRef = (0, _Hooks.useRef)(null);
   (0, _Hooks.useEffect)(function () {
-    //console.log('input effect', inputValue);
+    // console.log('input useEffect, ref is', inputRef.current);
     document.title = inputValue;
     return function () {//console.log('inputControls, useEffect cleanup');
     };
   });
 
   var _onInputChange = function _onInputChange(e) {
+    // console.log(inputRef.current);
     //console.log('input',e);
     setInputValue(e.target.value);
   };
@@ -44479,9 +44531,11 @@ var InputControls = function InputControls(props) {
 
   var _onInputBlur = function _onInputBlur(e) {
     return console.log('blur', e);
-  };
+  }; //el => inputRef = el
+
 
   return (0, _Nori.h)("div", null, (0, _Nori.h)("input", {
+    ref: inputRef,
     type: "text",
     placeholder: "Type here",
     onInput: _onInputChange,

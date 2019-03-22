@@ -5,7 +5,7 @@
  */
 
 import {h} from "../nori/Nori";
-import {useState, useEffect, useMemo} from "../nori/Hooks";
+import {useState, useEffect, useMemo, useRef} from "../nori/Hooks";
 import {css} from 'emotion';
 
 const blue = css`
@@ -20,8 +20,12 @@ export const InputControls = props => {
     return <span className={blue}><span>{inputValue}</span></span>;
   }, [inputValue]);
 
+  // let inputRef;
+
+  const inputRef = useRef(null);
+
   useEffect(() => {
-    //console.log('input effect', inputValue);
+    // console.log('input useEffect, ref is', inputRef.current);
     document.title = inputValue;
     return function() {
       //console.log('inputControls, useEffect cleanup');
@@ -29,6 +33,7 @@ export const InputControls = props => {
   });
 
   const _onInputChange = e => {
+    // console.log(inputRef.current);
     //console.log('input',e);
     setInputValue(e.target.value);
   };
@@ -36,8 +41,10 @@ export const InputControls = props => {
   const _onInputFocus = e => console.log('focus',e);
   const _onInputBlur = e => console.log('blur',e);
 
+  //el => inputRef = el
   return (
     <div><input
+      ref={inputRef}
       type='text'
       placeholder='Type here'
       onInput={_onInputChange}
