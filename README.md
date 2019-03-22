@@ -1,9 +1,3 @@
-"transform-class-properties",
-    "transform-object-rest-spread",
-    "transform-es2015-destructuring"
-  
-
-
 # **README is most likely out of date!**
 
 # Sketch 00 - Vanilla JS Template
