@@ -44499,29 +44499,31 @@ function _taggedTemplateLiteral(strings, raw) { if (!raw) { raw = strings.slice(
 
 var blue = (0, _emotion.css)(_templateObject());
 
+var useTitle = function useTitle(title) {
+  (0, _Hooks.useEffect)(function () {
+    document.title = title;
+  });
+};
+
+var useGetInputDisplay = function useGetInputDisplay(value) {
+  return (0, _Hooks.useMemo)(function () {
+    return (0, _Nori.h)("span", {
+      className: blue
+    }, (0, _Nori.h)("span", null, value));
+  }, [value]);
+};
+
 var InputControls = function InputControls(props) {
   var _useState = (0, _Hooks.useState)(''),
       _useState2 = _slicedToArray(_useState, 2);
 
   var inputValue = _useState2[0],
       setInputValue = _useState2[1];
-  var Output = (0, _Hooks.useMemo)(function () {
-    return (0, _Nori.h)("span", {
-      className: blue
-    }, (0, _Nori.h)("span", null, inputValue));
-  }, [inputValue]); // let inputRef;
-
+  var Output = useGetInputDisplay(inputValue);
+  useTitle(inputValue);
   var inputRef = (0, _Hooks.useRef)(null);
-  (0, _Hooks.useEffect)(function () {
-    // console.log('input useEffect, ref is', inputRef.current);
-    document.title = inputValue;
-    return function () {//console.log('inputControls, useEffect cleanup');
-    };
-  });
 
   var _onInputChange = function _onInputChange(e) {
-    // console.log(inputRef.current);
-    //console.log('input',e);
     setInputValue(e.target.value);
   };
 
@@ -44531,8 +44533,7 @@ var InputControls = function InputControls(props) {
 
   var _onInputBlur = function _onInputBlur(e) {
     return console.log('blur', e);
-  }; //el => inputRef = el
-
+  };
 
   return (0, _Nori.h)("div", null, (0, _Nori.h)("input", {
     ref: inputRef,

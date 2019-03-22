@@ -1,7 +1,7 @@
 /* @jsx h */
 
 /**
- * Example component that demos input fields and useState
+ * Example component that uses hooks
  */
 
 import {h} from "../nori/Nori";
@@ -13,35 +13,32 @@ const blue = css`
   color: blue;
 `;
 
+
+const useTitle = title => {
+  useEffect(() => {
+    document.title = title;
+  });
+};
+
+const useGetInputDisplay = value => {
+  return useMemo(() => {
+    return <span className={blue}><span>{value}</span></span>;
+  }, [value]);
+};
+
 export const InputControls = props => {
   let [inputValue, setInputValue] = useState('');
-
-  let Output = useMemo(() => {
-    return <span className={blue}><span>{inputValue}</span></span>;
-  }, [inputValue]);
-
-  // let inputRef;
-
+  let Output = useGetInputDisplay(inputValue);
+  useTitle(inputValue);
   const inputRef = useRef(null);
 
-  useEffect(() => {
-    // console.log('input useEffect, ref is', inputRef.current);
-    document.title = inputValue;
-    return function() {
-      //console.log('inputControls, useEffect cleanup');
-    };
-  });
-
   const _onInputChange = e => {
-    // console.log(inputRef.current);
-    //console.log('input',e);
     setInputValue(e.target.value);
   };
 
   const _onInputFocus = e => console.log('focus',e);
   const _onInputBlur = e => console.log('blur',e);
 
-  //el => inputRef = el
   return (
     <div><input
       ref={inputRef}
