@@ -53,10 +53,11 @@ const registerHook = (type, value) => {
   return {initial, id, cursor, hook: _hooksMap[id][cursor]};
 };
 
-const updateHookData = (id, cursor, data) => {
-  //console.log(`updateHookData : ${id},${cursor} : `,data);
+const setHookData = (id, cursor, data) => {
   _hooksMap[id][cursor].data = data;
 };
+
+const getHookData = (id, cursor) => _hooksMap[id][cursor].data;
 
 export const unregisterHooks = (id) => {
   if (_hooksMap.hasOwnProperty(id)) {
@@ -64,27 +65,30 @@ export const unregisterHooks = (id) => {
   }
 };
 
+// Implementation w/o useReducer
+// export const useState = initialState => {
+//   const res          = registerHook('useState', initialState);
+//   const currentState = res.hook.data;
+//   const setState     = newState => {
+//     setHookData(res.id, res.cursor, newState);
+//     enqueueUpdate(res.id);
+//   };
+//   return [currentState, setState];
+// };
+
 export const useState = initialState => {
-  const res          = registerHook('useState', initialState);
-  const currentState = res.hook.data;
-  const setState     = newState => {
-    if (typeof newState === "function") {
-      newState = newState(currentState);
-    }
-    updateHookData(res.id, res.cursor, newState);
-    enqueueUpdate(res.id);
-  };
-  return [currentState, setState];
+  // Returning the action from the reducer because the argument of the setState() fn
+  // is expected to be the new state, not the action as in the case of useReducer's dispatch() fn
+  const [currentState, dispatch] = useReducer((state, action) => action, initialState);
+  return [currentState, dispatch];
 };
 
 export const useReducer = (reduceFn, initialState) => {
-  const res          = registerHook('useReducer', {reduceFn, state: initialState});
-  const currentState = res.hook.data.state;
-  const dispatch     = newState => {
-    if (typeof newState === "function") {
-      newState = newState(currentState);
-    }
-    updateHookData(res.id, res.cursor, {reduceFn, state: newState});
+  const res          = registerHook('useReducer', initialState);
+  const currentState = res.hook.data;
+  const dispatch     = action => {
+    const newState = reduceFn(getHookData(res.id, res.cursor), action);
+    setHookData(res.id, res.cursor, newState);
     enqueueUpdate(res.id);
   };
   return [currentState, dispatch];
@@ -99,7 +103,7 @@ export const useMemo = (callbackFn, deps) => {
   const changedDeps = !equals(deps, res.hook.data.dependencies);
   if (res.initial || deps === undefined || changedDeps) {
     const result = callbackFn();
-    updateHookData(res.id, res.cursor, {
+    setHookData(res.id, res.cursor, {
       callback    : callbackFn,
       dependencies: deps,
       output      : result
@@ -121,7 +125,7 @@ export const useEffect = (callbackFn, deps) => {
   });
   const changedDeps = !equals(deps, res.hook.data.dependencies);
   if (deps === undefined || changedDeps) {
-    updateHookData(res.id, res.cursor, {
+    setHookData(res.id, res.cursor, {
       callback    : callbackFn,
       dependencies: deps
     });
@@ -142,7 +146,7 @@ export const useRef = initialValue => {
 
   if (res.initial) {
     returnObj = {current: initialValue};
-    updateHookData(res.id, res.cursor, returnObj);
+    setHookData(res.id, res.cursor, returnObj);
   } else {
     returnObj = res.hook.data;
   }

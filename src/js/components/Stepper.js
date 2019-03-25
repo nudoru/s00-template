@@ -7,6 +7,7 @@
 import {h} from "../nori/Nori";
 import {useReducer} from "../nori/Hooks";
 import {css} from 'emotion';
+import {delay} from '../nori/util/delay';
 
 const blue = css`
   padding-left: 1rem;
@@ -35,14 +36,6 @@ const reducer = (state, action) => {
   }
 };
 
-const delay = (time = 1500) => {
-  return new Promise(resolve => {
-    setTimeout(() => {
-      resolve(true);
-    }, time);
-  });
-};
-
 export const Stepper = props => {
   const [{ count, loading }, dispatch] = useReducer(reducer, initialState);
 
@@ -60,13 +53,10 @@ export const Stepper = props => {
 
   return (
     <div>
-      <p>Count {loading ? 'loading..' : count}</p>
-      <button type="button" onClick={onHandleIncrement}>
-        +
-      </button>
-      <button type="button" onClick={onHandleDecrement}>
-        -
-      </button>
+      <p>Count {loading ? 'loading..' : count}
+      <button type="button" onClick={onHandleIncrement}>+</button>
+      <button type="button" onClick={onHandleDecrement}>-</button>
+      </p>
     </div>
   );
 };

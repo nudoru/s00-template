@@ -42330,6 +42330,8 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.useContext = exports.useRef = exports.useLayoutEffect = exports.useEffect = exports.useCallBack = exports.useMemo = exports.useReducer = exports.useState = exports.unregisterHooks = exports.HOOK_TAGS = void 0;
 
+var _slicedToArray2 = _interopRequireDefault(require("@babel/runtime/helpers/slicedToArray"));
+
 var _ramda = require("ramda");
 
 var _Reconciler = require("./Reconciler");
@@ -42337,6 +42339,8 @@ var _Reconciler = require("./Reconciler");
 var _Nori = require("./Nori");
 
 var _LifecycleQueue = require("./LifecycleQueue");
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 /* Let's play with hooks!
 https://reactjs.org/docs/hooks-reference.html
@@ -42400,53 +42404,54 @@ var registerHook = function registerHook(type, value) {
   };
 };
 
-var updateHookData = function updateHookData(id, cursor, data) {
-  //console.log(`updateHookData : ${id},${cursor} : `,data);
+var setHookData = function setHookData(id, cursor, data) {
   _hooksMap[id][cursor].data = data;
+};
+
+var getHookData = function getHookData(id, cursor) {
+  return _hooksMap[id][cursor].data;
 };
 
 var unregisterHooks = function unregisterHooks(id) {
   if (_hooksMap.hasOwnProperty(id)) {
     delete _hooksMap[id];
   }
-};
+}; // Implementation w/o useReducer
+// export const useState = initialState => {
+//   const res          = registerHook('useState', initialState);
+//   const currentState = res.hook.data;
+//   const setState     = newState => {
+//     setHookData(res.id, res.cursor, newState);
+//     enqueueUpdate(res.id);
+//   };
+//   return [currentState, setState];
+// };
+
 
 exports.unregisterHooks = unregisterHooks;
 
 var useState = function useState(initialState) {
-  var res = registerHook('useState', initialState);
-  var currentState = res.hook.data;
+  // Returning the action from the reducer because the argument of the setState() fn
+  // is expected to be the new state, not the action as in the case of useReducer's dispatch() fn
+  var _useReducer = useReducer(function (state, action) {
+    return action;
+  }, initialState),
+      _useReducer2 = (0, _slicedToArray2.default)(_useReducer, 2),
+      currentState = _useReducer2[0],
+      dispatch = _useReducer2[1];
 
-  var setState = function setState(newState) {
-    if (typeof newState === "function") {
-      newState = newState(currentState);
-    }
-
-    updateHookData(res.id, res.cursor, newState);
-    (0, _Nori.enqueueUpdate)(res.id);
-  };
-
-  return [currentState, setState];
+  return [currentState, dispatch];
 };
 
 exports.useState = useState;
 
 var useReducer = function useReducer(reduceFn, initialState) {
-  var res = registerHook('useReducer', {
-    reduceFn: reduceFn,
-    state: initialState
-  });
-  var currentState = res.hook.data.state;
+  var res = registerHook('useReducer', initialState);
+  var currentState = res.hook.data;
 
-  var dispatch = function dispatch(newState) {
-    if (typeof newState === "function") {
-      newState = newState(currentState);
-    }
-
-    updateHookData(res.id, res.cursor, {
-      reduceFn: reduceFn,
-      state: newState
-    });
+  var dispatch = function dispatch(action) {
+    var newState = reduceFn(getHookData(res.id, res.cursor), action);
+    setHookData(res.id, res.cursor, newState);
     (0, _Nori.enqueueUpdate)(res.id);
   };
 
@@ -42465,7 +42470,7 @@ var useMemo = function useMemo(callbackFn, deps) {
 
   if (res.initial || deps === undefined || changedDeps) {
     var result = callbackFn();
-    updateHookData(res.id, res.cursor, {
+    setHookData(res.id, res.cursor, {
       callback: callbackFn,
       dependencies: deps,
       output: result
@@ -42493,7 +42498,7 @@ var useEffect = function useEffect(callbackFn, deps) {
   var changedDeps = !(0, _ramda.equals)(deps, res.hook.data.dependencies);
 
   if (deps === undefined || changedDeps) {
-    updateHookData(res.id, res.cursor, {
+    setHookData(res.id, res.cursor, {
       callback: callbackFn,
       dependencies: deps
     });
@@ -42520,7 +42525,7 @@ var useRef = function useRef(initialValue) {
     returnObj = {
       current: initialValue
     };
-    updateHookData(res.id, res.cursor, returnObj);
+    setHookData(res.id, res.cursor, returnObj);
   } else {
     returnObj = res.hook.data;
   }
@@ -42535,7 +42540,7 @@ var useContext = function useContext(foo) {
 };
 
 exports.useContext = useContext;
-},{"ramda":"../node_modules/ramda/es/index.js","./Reconciler":"js/nori/Reconciler.js","./Nori":"js/nori/Nori.js","./LifecycleQueue":"js/nori/LifecycleQueue.js"}],"js/nori/Reconciler.js":[function(require,module,exports) {
+},{"@babel/runtime/helpers/slicedToArray":"../node_modules/@babel/runtime/helpers/slicedToArray.js","ramda":"../node_modules/ramda/es/index.js","./Reconciler":"js/nori/Reconciler.js","./Nori":"js/nori/Nori.js","./LifecycleQueue":"js/nori/LifecycleQueue.js"}],"js/nori/Reconciler.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -45599,7 +45604,36 @@ function _objectSpread(target) {
 }
 
 module.exports = _objectSpread;
-},{"./defineProperty":"../node_modules/@babel/runtime/helpers/defineProperty.js"}],"js/components/Stepper.js":[function(require,module,exports) {
+},{"./defineProperty":"../node_modules/@babel/runtime/helpers/defineProperty.js"}],"js/nori/util/delay.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.delay = void 0;
+
+/*
+Handy function picked up from this blog post
+https://medium.freecodecamp.org/hooked-on-hooks-how-to-use-reacts-usereducer-2fe8f486b963
+
+Usage
+const doSomething = async () => {
+   //foo
+   await delay(500);
+   // bar
+};
+ */
+var delay = function delay() {
+  var time = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 1000;
+  return new Promise(function (resolve) {
+    setTimeout(function () {
+      resolve(true);
+    }, time);
+  });
+};
+
+exports.delay = delay;
+},{}],"js/components/Stepper.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -45622,6 +45656,8 @@ var _Nori = require("../nori/Nori");
 var _Hooks = require("../nori/Hooks");
 
 var _emotion = require("emotion");
+
+var _delay = require("../nori/util/delay");
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -45673,15 +45709,6 @@ var reducer = function reducer(state, action) {
   }
 };
 
-var delay = function delay() {
-  var time = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 1500;
-  return new Promise(function (resolve) {
-    setTimeout(function () {
-      resolve(true);
-    }, time);
-  });
-};
-
 var Stepper = function Stepper(props) {
   var _useReducer = (0, _Hooks.useReducer)(reducer, initialState),
       _useReducer2 = (0, _slicedToArray2.default)(_useReducer, 2),
@@ -45704,7 +45731,7 @@ var Stepper = function Stepper(props) {
                 type: 'loading'
               });
               _context.next = 3;
-              return delay(500);
+              return (0, _delay.delay)(500);
 
             case 3:
               dispatch({
@@ -45738,7 +45765,7 @@ var Stepper = function Stepper(props) {
                 type: 'loading'
               });
               _context2.next = 3;
-              return delay(500);
+              return (0, _delay.delay)(500);
 
             case 3:
               dispatch({
@@ -45758,17 +45785,17 @@ var Stepper = function Stepper(props) {
     };
   }();
 
-  return (0, _Nori.h)("div", null, (0, _Nori.h)("p", null, "Count ", loading ? 'loading..' : count), (0, _Nori.h)("button", {
+  return (0, _Nori.h)("div", null, (0, _Nori.h)("p", null, "Count ", loading ? 'loading..' : count, (0, _Nori.h)("button", {
     type: "button",
     onClick: onHandleIncrement
   }, "+"), (0, _Nori.h)("button", {
     type: "button",
     onClick: onHandleDecrement
-  }, "-"));
+  }, "-")));
 };
 
 exports.Stepper = Stepper;
-},{"@babel/runtime/regenerator":"../node_modules/@babel/runtime/regenerator/index.js","@babel/runtime/helpers/asyncToGenerator":"../node_modules/@babel/runtime/helpers/asyncToGenerator.js","@babel/runtime/helpers/slicedToArray":"../node_modules/@babel/runtime/helpers/slicedToArray.js","@babel/runtime/helpers/objectSpread":"../node_modules/@babel/runtime/helpers/objectSpread.js","@babel/runtime/helpers/taggedTemplateLiteral":"../node_modules/@babel/runtime/helpers/taggedTemplateLiteral.js","../nori/Nori":"js/nori/Nori.js","../nori/Hooks":"js/nori/Hooks.js","emotion":"../node_modules/emotion/dist/index.esm.js"}],"img/pattern/shattered.png":[function(require,module,exports) {
+},{"@babel/runtime/regenerator":"../node_modules/@babel/runtime/regenerator/index.js","@babel/runtime/helpers/asyncToGenerator":"../node_modules/@babel/runtime/helpers/asyncToGenerator.js","@babel/runtime/helpers/slicedToArray":"../node_modules/@babel/runtime/helpers/slicedToArray.js","@babel/runtime/helpers/objectSpread":"../node_modules/@babel/runtime/helpers/objectSpread.js","@babel/runtime/helpers/taggedTemplateLiteral":"../node_modules/@babel/runtime/helpers/taggedTemplateLiteral.js","../nori/Nori":"js/nori/Nori.js","../nori/Hooks":"js/nori/Hooks.js","emotion":"../node_modules/emotion/dist/index.esm.js","../nori/util/delay":"js/nori/util/delay.js"}],"img/pattern/shattered.png":[function(require,module,exports) {
 module.exports = "/shattered.a446e091.png";
 },{}],"js/index.js":[function(require,module,exports) {
 "use strict";
