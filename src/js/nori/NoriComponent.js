@@ -9,9 +9,10 @@ import {enqueueUpdate} from "./Nori";
 export default class NoriComponent {
 
   constructor(props) {
-    this.props              = props || {};
-    this.props.id           = props.key ? props.key : (props.id ? props.id : getNextId());
-    this.props.key          = props.key || null;
+    props = props || {};
+    this.props              = props;
+    this.props.id           = props.hasOwnProperty('key') ? props.key : (props.id ? props.id : getNextId());
+    this.props.key          = props.hasOwnProperty('key') || null;
     this._internalState     = props.hasOwnProperty('state') ? props.state : {};
     this._isDirty           = true;
     this._memoRenderResult  = null;
@@ -63,7 +64,6 @@ export default class NoriComponent {
   }
 
   internalRender() {
-    console.log('internalrender');
     if (this._isDirty || !this._memoRenderResult) {
       let result;
       if (typeof this.render === 'function') {

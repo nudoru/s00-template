@@ -1,20 +1,18 @@
 /* @jsx h */
 
-import {Global} from './theme/Global';
 import {theme} from './theme/Theme';
 import {css} from 'emotion';
 import {h} from './nori/Nori';
 import {render} from './nori/NoriDOM';
 import Box from './components/Box';
 import Lorem from './components/Lorem';
-import Ticker from './components/Ticker';
 import Greeter from './components/Greeter';
 import Lister from './components/Lister';
-import ColorSwatch from './components/ColorSwatch';
 import {useState} from "./nori/Hooks";
 import {InputControls} from "./components/InputControls";
 import {Stepper} from "./components/Stepper";
 import Nonpresentational from './components/Nonpresentational';
+import {createContext} from "./nori/Context";
 
 // ${tme.gradients['premium-white']};
 const appContainerBG = require('../img/pattern/shattered.png');
@@ -53,12 +51,13 @@ const blackBox = css`
 const Sfc = props => <span><h1>{props.message}</h1><Greeter/></span>;
 
 const SFCWithJuice = (props) => {
-  const [buttonLabel, updateButton] = useState({label:'JOICE!', count:0});
-  const handleClick = () => {
-    updateButton({label:'You pushed me!', count:++buttonLabel.count});
+  const [buttonLabel, updateButton] = useState({label: 'JOICE!', count: 0});
+  const handleClick                 = () => {
+    updateButton({label: 'You pushed me!', count: ++buttonLabel.count});
   };
   return (
-    <button onClick={handleClick}>SFC With Juice: {buttonLabel.label} {buttonLabel.count}</button>
+    <button onClick={handleClick}>SFC With
+      Juice: {buttonLabel.label} {buttonLabel.count}</button>
   );
 };
 
@@ -86,5 +85,24 @@ let testBox = <Box key='main' className={appContainer}>
   </Box>
 </Box>;
 
-  //<Box><SFCWithJuice/><Ticker/></Box>
-render(<Box><Nonpresentational><p>I'm a pragraph</p></Nonpresentational></Box>, document.querySelector('#js-application'));
+//<Box><SFCWithJuice/><Ticker/></Box>
+
+let ContextComp        = createContext();
+let AnotherContextComp = createContext();
+
+let contextTest = <div>
+  <ContextComp.Provider value={{fuz: 'number1'}}>
+    <ContextComp.Consumer>
+      {value => <p>Context! {value.fuz}</p>}
+    </ContextComp.Consumer>
+  </ContextComp.Provider>
+  <AnotherContextComp.Provider value={{bar:'number2!'}}>
+    <AnotherContextComp.Consumer>
+      {value => <p>Another context {value.bar}</p>}
+    </AnotherContextComp.Consumer>
+  </AnotherContextComp.Provider>
+</div>;
+
+// console.log(ContextComp);
+console.log(contextTest);
+render(contextTest, document.querySelector('#js-application'));

@@ -183,6 +183,99 @@ function _taggedTemplateLiteral(strings, raw) {
 }
 
 module.exports = _taggedTemplateLiteral;
+},{}],"js/theme/Theme.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.theme = exports.BASE_MEASURE = exports.modularScale = void 0;
+var modularScale = {
+  ms10: '11.089rem',
+  ms9: '8.755rem',
+  ms8: '6.854rem',
+  ms7: '5.411rem',
+  ms6: '4.236rem',
+  ms5: '3.344rem',
+  ms4: '2.618rem',
+  ms3: '2.067rem',
+  ms2: '1.618rem',
+  ms1: '1.277rem',
+  ms0: '1rem',
+  'ms-0': '0.723rem',
+  'ms-1': '0.618rem',
+  'ms-2': '0.382rem',
+  'ms-3': '0.236rem',
+  'ms-4': '0.146rem'
+}; // 16px = 1rem, modular scale 0 entry
+
+exports.modularScale = modularScale;
+var BASE_MEASURE = 1;
+exports.BASE_MEASURE = BASE_MEASURE;
+var theme = {
+  colors: {
+    black: '#000',
+    'near-black': '#111',
+    'dark-gray': '#333',
+    'mid-gray': '#555',
+    gray: ' #777',
+    silver: '#999',
+    'light-silver': '#aaa',
+    'moon-gray': '#ccc',
+    'light-gray': '#eee',
+    'near-white': '#f4f4f4',
+    white: '#fff',
+    transparent: 'transparent',
+    blacks: ['rgba(0,0,0,.0125)', 'rgba(0,0,0,.025)', 'rgba(0,0,0,.05)', 'rgba(0,0,0,.1)', 'rgba(0,0,0,.2)', 'rgba(0,0,0,.3)', 'rgba(0,0,0,.4)', 'rgba(0,0,0,.5)', 'rgba(0,0,0,.6)', 'rgba(0,0,0,.7)', 'rgba(0,0,0,.8)', 'rgba(0,0,0,.9)'],
+    whites: ['rgba(255,255,255,.0125)', 'rgba(255,255,255,.025)', 'rgba(255,255,255,.05)', 'rgba(255,255,255,.1)', 'rgba(255,255,255,.2)', 'rgba(255,255,255,.3)', 'rgba(255,255,255,.4)', 'rgba(255,255,255,.5)', 'rgba(255,255,255,.6)', 'rgba(255,255,255,.7)', 'rgba(255,255,255,.8)', 'rgba(255,255,255,.9)']
+  },
+  //https://webgradients.com/
+  gradients: {
+    'warm-flame': 'linear-gradient(45deg, #ff9a9e 0%, #fad0c4 99%, #fad0c4 100%)',
+    'sunny-morning': 'linear-gradient(120deg, #f6d365 0%, #fda085 100%)',
+    'dusty-grass': 'linear-gradient(120deg, #d4fc79 0%, #96e6a1 100%)',
+    'winter-neva': 'linear-gradient(120deg, #a1c4fd 0%, #c2e9fb 100%)',
+    'tempting-azue': 'linear-gradient(120deg, #84fab0 0%, #8fd3f4 100%)',
+    'heavy-rain': 'linear-gradient(to top, #cfd9df 0%, #e2ebf0 100%)',
+    'cloudy-knoxville': 'linear-gradient(120deg, #fdfbfb 0%, #ebedee 100%)',
+    'ripe-malinka': 'linear-gradient(120deg, #f093fb 0%, #f5576c 100%)',
+    'malibu-beach': 'linear-gradient(to right, #4facfe 0%, #00f2fe 100%)',
+    'saint-petersburg': 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)',
+    'strong-bliss': 'linear-gradient(to right, #f78ca0 0%, #f9748f 19%, #fd868c 60%, #fe9a8b 100%)',
+    'above-clouds': 'linear-gradient(to left, #BDBBBE 0%, #9D9EA3 100%), radial-gradient(88% 271%, rgba(255, 255, 255, 0.25) 0%, rgba(254, 254, 254, 0.25) 1%, rgba(0, 0, 0, 0.25) 100%), radial-gradient(50% 100%, rgba(255, 255, 255, 0.30) 0%, rgba(0, 0, 0, 0.30) 100%)',
+    'premium-dark': 'linear-gradient(to right, #434343 0%, black 100%)',
+    'premium-white': 'linear-gradient(to top, #d5d4d0 0%, #d5d4d0 1%, #eeeeec 31%, #efeeec 75%, #e9e9e7 100%)'
+  },
+  space: [BASE_MEASURE * 0.25, BASE_MEASURE * 0.5, BASE_MEASURE * 0.75, BASE_MEASURE, BASE_MEASURE * 1.25, BASE_MEASURE * 1.5, BASE_MEASURE * 2, BASE_MEASURE * 3],
+  baseUnit: 'rem',
+  fonts: {
+    sansSerif: '\'Helvetica Neue\', Helvetica, Arial, sans-serif'
+  },
+  shadows: {
+    textLight: '1px 1px 0 rgba(255,255,255,.75)',
+    textDark: '1px 1px 0 rgba(0,0,0,.25)',
+    textDarkSmall: '1px 1px 3px rgba(0,0,0,.25)',
+    textEmboss: '-1px -1px 0 rgba(0, 0, 0, .15), 1px 1px 0 rgba(255, 255, 255, .1)',
+    dropShadow: {
+      xs: '0 1px 2px rgba(0,0,0,0.075)',
+      sm: '0 2px 4px rgba(0,0,0,0.05), 2px 6px 8px -5px rgba(0,0,0,0.15)',
+      m: '0 2px 4px rgba(0,0,0,0.05), 4px 8px 15px -7px rgba(0,0,0,0.1), 4px 8px 20px rgba(0,0,0,0.10)',
+      lg: '0 1px  6px  rgba(0, 0, 0, .1), 0 8px  8px  rgba(0, 0, 0, .05), 4px 23px 40px -15px rgba(0,0,0,0.15), 8px 30px 64px rgba(0, 0, 0, .1)',
+      xl: '0 1px  6px  rgba(0, 0, 0, .05), 0 8px  8px  rgba(0, 0, 0, .1), 0 16px 16px rgba(0, 0, 0, .1), 4px 32px 32px rgba(0, 0, 0, .05), 8px 50px 64px rgba(0, 0, 0, .15)',
+      bigsoft: '0 16px 16px -20px rgba(0, 0, 0, .05), 4px 32px 64px -50px rgba(0, 0, 0, .05), 8px 70px 128px -20px rgba(0, 0, 0, .2)'
+    }
+  },
+  radii: ['3px', modularScale.ms0],
+  fontSizes: [modularScale['ms-1'], '0.8rem', modularScale.ms0, modularScale.ms2],
+  animation: {
+    vfast: 0.1,
+    fast: 0.2,
+    default: 0.3,
+    slow: 0.4,
+    vslow: 0.5
+  }
+};
+exports.theme = theme;
 },{}],"../node_modules/@emotion/memoize/dist/memoize.esm.js":[function(require,module,exports) {
 "use strict";
 
@@ -1560,124 +1653,7 @@ exports.merge = merge;
 exports.cx = cx;
 exports.hydrate = hydrate;
 exports.flush = flush;
-},{"create-emotion":"../node_modules/create-emotion/dist/index.esm.js"}],"js/theme/Theme.js":[function(require,module,exports) {
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.theme = exports.BASE_MEASURE = exports.modularScale = void 0;
-var modularScale = {
-  ms10: '11.089rem',
-  ms9: '8.755rem',
-  ms8: '6.854rem',
-  ms7: '5.411rem',
-  ms6: '4.236rem',
-  ms5: '3.344rem',
-  ms4: '2.618rem',
-  ms3: '2.067rem',
-  ms2: '1.618rem',
-  ms1: '1.277rem',
-  ms0: '1rem',
-  'ms-0': '0.723rem',
-  'ms-1': '0.618rem',
-  'ms-2': '0.382rem',
-  'ms-3': '0.236rem',
-  'ms-4': '0.146rem'
-}; // 16px = 1rem, modular scale 0 entry
-
-exports.modularScale = modularScale;
-var BASE_MEASURE = 1;
-exports.BASE_MEASURE = BASE_MEASURE;
-var theme = {
-  colors: {
-    black: '#000',
-    'near-black': '#111',
-    'dark-gray': '#333',
-    'mid-gray': '#555',
-    gray: ' #777',
-    silver: '#999',
-    'light-silver': '#aaa',
-    'moon-gray': '#ccc',
-    'light-gray': '#eee',
-    'near-white': '#f4f4f4',
-    white: '#fff',
-    transparent: 'transparent',
-    blacks: ['rgba(0,0,0,.0125)', 'rgba(0,0,0,.025)', 'rgba(0,0,0,.05)', 'rgba(0,0,0,.1)', 'rgba(0,0,0,.2)', 'rgba(0,0,0,.3)', 'rgba(0,0,0,.4)', 'rgba(0,0,0,.5)', 'rgba(0,0,0,.6)', 'rgba(0,0,0,.7)', 'rgba(0,0,0,.8)', 'rgba(0,0,0,.9)'],
-    whites: ['rgba(255,255,255,.0125)', 'rgba(255,255,255,.025)', 'rgba(255,255,255,.05)', 'rgba(255,255,255,.1)', 'rgba(255,255,255,.2)', 'rgba(255,255,255,.3)', 'rgba(255,255,255,.4)', 'rgba(255,255,255,.5)', 'rgba(255,255,255,.6)', 'rgba(255,255,255,.7)', 'rgba(255,255,255,.8)', 'rgba(255,255,255,.9)']
-  },
-  //https://webgradients.com/
-  gradients: {
-    'warm-flame': 'linear-gradient(45deg, #ff9a9e 0%, #fad0c4 99%, #fad0c4 100%)',
-    'sunny-morning': 'linear-gradient(120deg, #f6d365 0%, #fda085 100%)',
-    'dusty-grass': 'linear-gradient(120deg, #d4fc79 0%, #96e6a1 100%)',
-    'winter-neva': 'linear-gradient(120deg, #a1c4fd 0%, #c2e9fb 100%)',
-    'tempting-azue': 'linear-gradient(120deg, #84fab0 0%, #8fd3f4 100%)',
-    'heavy-rain': 'linear-gradient(to top, #cfd9df 0%, #e2ebf0 100%)',
-    'cloudy-knoxville': 'linear-gradient(120deg, #fdfbfb 0%, #ebedee 100%)',
-    'ripe-malinka': 'linear-gradient(120deg, #f093fb 0%, #f5576c 100%)',
-    'malibu-beach': 'linear-gradient(to right, #4facfe 0%, #00f2fe 100%)',
-    'saint-petersburg': 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)',
-    'strong-bliss': 'linear-gradient(to right, #f78ca0 0%, #f9748f 19%, #fd868c 60%, #fe9a8b 100%)',
-    'above-clouds': 'linear-gradient(to left, #BDBBBE 0%, #9D9EA3 100%), radial-gradient(88% 271%, rgba(255, 255, 255, 0.25) 0%, rgba(254, 254, 254, 0.25) 1%, rgba(0, 0, 0, 0.25) 100%), radial-gradient(50% 100%, rgba(255, 255, 255, 0.30) 0%, rgba(0, 0, 0, 0.30) 100%)',
-    'premium-dark': 'linear-gradient(to right, #434343 0%, black 100%)',
-    'premium-white': 'linear-gradient(to top, #d5d4d0 0%, #d5d4d0 1%, #eeeeec 31%, #efeeec 75%, #e9e9e7 100%)'
-  },
-  space: [BASE_MEASURE * 0.25, BASE_MEASURE * 0.5, BASE_MEASURE * 0.75, BASE_MEASURE, BASE_MEASURE * 1.25, BASE_MEASURE * 1.5, BASE_MEASURE * 2, BASE_MEASURE * 3],
-  baseUnit: 'rem',
-  fonts: {
-    sansSerif: '\'Helvetica Neue\', Helvetica, Arial, sans-serif'
-  },
-  shadows: {
-    textLight: '1px 1px 0 rgba(255,255,255,.75)',
-    textDark: '1px 1px 0 rgba(0,0,0,.25)',
-    textDarkSmall: '1px 1px 3px rgba(0,0,0,.25)',
-    textEmboss: '-1px -1px 0 rgba(0, 0, 0, .15), 1px 1px 0 rgba(255, 255, 255, .1)',
-    dropShadow: {
-      xs: '0 1px 2px rgba(0,0,0,0.075)',
-      sm: '0 2px 4px rgba(0,0,0,0.05), 2px 6px 8px -5px rgba(0,0,0,0.15)',
-      m: '0 2px 4px rgba(0,0,0,0.05), 4px 8px 15px -7px rgba(0,0,0,0.1), 4px 8px 20px rgba(0,0,0,0.10)',
-      lg: '0 1px  6px  rgba(0, 0, 0, .1), 0 8px  8px  rgba(0, 0, 0, .05), 4px 23px 40px -15px rgba(0,0,0,0.15), 8px 30px 64px rgba(0, 0, 0, .1)',
-      xl: '0 1px  6px  rgba(0, 0, 0, .05), 0 8px  8px  rgba(0, 0, 0, .1), 0 16px 16px rgba(0, 0, 0, .1), 4px 32px 32px rgba(0, 0, 0, .05), 8px 50px 64px rgba(0, 0, 0, .15)',
-      bigsoft: '0 16px 16px -20px rgba(0, 0, 0, .05), 4px 32px 64px -50px rgba(0, 0, 0, .05), 8px 70px 128px -20px rgba(0, 0, 0, .2)'
-    }
-  },
-  radii: ['3px', modularScale.ms0],
-  fontSizes: [modularScale['ms-1'], '0.8rem', modularScale.ms0, modularScale.ms2],
-  animation: {
-    vfast: 0.1,
-    fast: 0.2,
-    default: 0.3,
-    slow: 0.4,
-    vslow: 0.5
-  }
-};
-exports.theme = theme;
-},{}],"js/theme/Global.js":[function(require,module,exports) {
-"use strict";
-
-var _taggedTemplateLiteral2 = _interopRequireDefault(require("@babel/runtime/helpers/taggedTemplateLiteral"));
-
-var _emotion = require("emotion");
-
-var _Theme = require("./Theme");
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-function _templateObject() {
-  var data = (0, _taggedTemplateLiteral2.default)(["\n  @import url('https://fonts.googleapis.com/css?family=Abel');\n\n  *, *::before, *::after {\n    box-sizing: border-box;\n  }\n  html {\n    -ms-text-size-adjust: 100%;\n    -moz-text-size-adjust: 100%;\n    -webkit-text-size-adjust: none;\n    min-height: 100vh;\n    line-height: ", ";\n    font-size: 100%;\n  }\n  body {\n    margin: 0;\n    padding: 0;\n    min-height: 100vh;\n    font-size: ", ";\n    font-family: 'Abel', 'Helvetica Neue', Helvetica, Arial, sans-serif;\n  }\n  h1 {\n    font-size: 2em;\n    margin: 0.67em 0;\n  }\n  hr {\n    box-sizing: content-box;\n    height: 0;\n    overflow: visible;\n  }\n  pre {\n    font-family: monospace, monospace;\n    font-size: 1em;\n  }\n  a {\n    background-color: transparent;\n  }\n  abbr[title] {\n    border-bottom: none; \n    text-decoration: underline; \n    text-decoration: underline dotted; \n  }\n  b,\n  strong {\n    font-weight: bolder;\n  }\n  code,\n  kbd,\n  samp {\n    font-family: monospace, monospace; \n    font-size: 1em; \n  }\n  small {\n    font-size: 80%;\n  }\n  sub,\n  sup {\n    font-size: 75%;\n    line-height: 0;\n    position: relative;\n    vertical-align: baseline;\n  }\n  sub {\n    bottom: -0.25em;\n  }\n  sup {\n    top: -0.5em;\n  }\n  img {\n    border-style: none;\n  }\n  button,\n  input,\n  optgroup,\n  select,\n  textarea {\n    font-family: inherit; \n    font-size: 100%; \n    line-height: 1.15; \n    margin: 0; \n  }\n  button,\n  input { \n    overflow: visible;\n  }\n  button,\n  select { \n    text-transform: none;\n  }\n  button,\n  [type=\"button\"],\n  [type=\"reset\"],\n  [type=\"submit\"] {\n    -webkit-appearance: button;\n  }\n  button::-moz-focus-inner,\n  [type=\"button\"]::-moz-focus-inner,\n  [type=\"reset\"]::-moz-focus-inner,\n  [type=\"submit\"]::-moz-focus-inner {\n    border-style: none;\n    padding: 0;\n  }\n  button:-moz-focusring,\n  [type=\"button\"]:-moz-focusring,\n  [type=\"reset\"]:-moz-focusring,\n  [type=\"submit\"]:-moz-focusring {\n    outline: 1px dotted ButtonText;\n  }\n  fieldset {\n    padding: 0.35em 0.75em 0.625em;\n  }\n  legend {\n    box-sizing: border-box; \n    color: inherit; \n    display: table; \n    max-width: 100%; \n    padding: 0; \n    white-space: normal; \n  }\n  progress {\n    vertical-align: baseline;\n  }\n  textarea {\n    overflow: auto;\n  }\n  [type=\"checkbox\"],\n  [type=\"radio\"] {\n    box-sizing: border-box; \n    padding: 0; \n  }\n  [type=\"number\"]::-webkit-inner-spin-button,\n  [type=\"number\"]::-webkit-outer-spin-button {\n    height: auto;\n  }\n  [type=\"search\"] {\n    -webkit-appearance: textfield; \n    outline-offset: -2px; \n  }\n  [type=\"search\"]::-webkit-search-decoration {\n    -webkit-appearance: none;\n  }\n  ::-webkit-file-upload-button {\n    -webkit-appearance: button; \n    font: inherit; \n  }\n  details {\n    display: block;\n  }\n  summary {\n    display: list-item;\n  }\n  template {\n    display: none;\n  }\n  [hidden] {\n    display: none;\n  }\n  p, li {\n    margin-top: 0;\n  }\n  p:last-of-type, li:last-of-type  {\n    margin-bottom: 0;\n  }\n"]);
-
-  _templateObject = function _templateObject() {
-    return data;
-  };
-
-  return data;
-}
-
-// normalize.css v8.0.0 | MIT License | github.com/necolas/normalize.css
-// + Customs
-(0, _emotion.injectGlobal)(_templateObject(), _Theme.modularScale.ms2, _Theme.theme.fontSizes[2]);
-},{"@babel/runtime/helpers/taggedTemplateLiteral":"../node_modules/@babel/runtime/helpers/taggedTemplateLiteral.js","emotion":"../node_modules/emotion/dist/index.esm.js","./Theme":"js/theme/Theme.js"}],"../node_modules/@babel/runtime/helpers/typeof.js":[function(require,module,exports) {
+},{"create-emotion":"../node_modules/create-emotion/dist/index.esm.js"}],"../node_modules/@babel/runtime/helpers/typeof.js":[function(require,module,exports) {
 function _typeof2(obj) { if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof2 = function _typeof2(obj) { return typeof obj; }; } else { _typeof2 = function _typeof2(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof2(obj); }
 
 function _typeof(obj) {
@@ -42540,7 +42516,365 @@ var useContext = function useContext(foo) {
 };
 
 exports.useContext = useContext;
-},{"@babel/runtime/helpers/slicedToArray":"../node_modules/@babel/runtime/helpers/slicedToArray.js","ramda":"../node_modules/ramda/es/index.js","./Reconciler":"js/nori/Reconciler.js","./Nori":"js/nori/Nori.js","./LifecycleQueue":"js/nori/LifecycleQueue.js"}],"js/nori/Reconciler.js":[function(require,module,exports) {
+},{"@babel/runtime/helpers/slicedToArray":"../node_modules/@babel/runtime/helpers/slicedToArray.js","ramda":"../node_modules/ramda/es/index.js","./Reconciler":"js/nori/Reconciler.js","./Nori":"js/nori/Nori.js","./LifecycleQueue":"js/nori/LifecycleQueue.js"}],"../node_modules/@babel/runtime/helpers/classCallCheck.js":[function(require,module,exports) {
+function _classCallCheck(instance, Constructor) {
+  if (!(instance instanceof Constructor)) {
+    throw new TypeError("Cannot call a class as a function");
+  }
+}
+
+module.exports = _classCallCheck;
+},{}],"../node_modules/@babel/runtime/helpers/createClass.js":[function(require,module,exports) {
+function _defineProperties(target, props) {
+  for (var i = 0; i < props.length; i++) {
+    var descriptor = props[i];
+    descriptor.enumerable = descriptor.enumerable || false;
+    descriptor.configurable = true;
+    if ("value" in descriptor) descriptor.writable = true;
+    Object.defineProperty(target, descriptor.key, descriptor);
+  }
+}
+
+function _createClass(Constructor, protoProps, staticProps) {
+  if (protoProps) _defineProperties(Constructor.prototype, protoProps);
+  if (staticProps) _defineProperties(Constructor, staticProps);
+  return Constructor;
+}
+
+module.exports = _createClass;
+},{}],"../node_modules/@babel/runtime/helpers/assertThisInitialized.js":[function(require,module,exports) {
+function _assertThisInitialized(self) {
+  if (self === void 0) {
+    throw new ReferenceError("this hasn't been initialised - super() hasn't been called");
+  }
+
+  return self;
+}
+
+module.exports = _assertThisInitialized;
+},{}],"../node_modules/@babel/runtime/helpers/possibleConstructorReturn.js":[function(require,module,exports) {
+var _typeof = require("../helpers/typeof");
+
+var assertThisInitialized = require("./assertThisInitialized");
+
+function _possibleConstructorReturn(self, call) {
+  if (call && (_typeof(call) === "object" || typeof call === "function")) {
+    return call;
+  }
+
+  return assertThisInitialized(self);
+}
+
+module.exports = _possibleConstructorReturn;
+},{"../helpers/typeof":"../node_modules/@babel/runtime/helpers/typeof.js","./assertThisInitialized":"../node_modules/@babel/runtime/helpers/assertThisInitialized.js"}],"../node_modules/@babel/runtime/helpers/getPrototypeOf.js":[function(require,module,exports) {
+function _getPrototypeOf(o) {
+  module.exports = _getPrototypeOf = Object.setPrototypeOf ? Object.getPrototypeOf : function _getPrototypeOf(o) {
+    return o.__proto__ || Object.getPrototypeOf(o);
+  };
+  return _getPrototypeOf(o);
+}
+
+module.exports = _getPrototypeOf;
+},{}],"../node_modules/@babel/runtime/helpers/setPrototypeOf.js":[function(require,module,exports) {
+function _setPrototypeOf(o, p) {
+  module.exports = _setPrototypeOf = Object.setPrototypeOf || function _setPrototypeOf(o, p) {
+    o.__proto__ = p;
+    return o;
+  };
+
+  return _setPrototypeOf(o, p);
+}
+
+module.exports = _setPrototypeOf;
+},{}],"../node_modules/@babel/runtime/helpers/inherits.js":[function(require,module,exports) {
+var setPrototypeOf = require("./setPrototypeOf");
+
+function _inherits(subClass, superClass) {
+  if (typeof superClass !== "function" && superClass !== null) {
+    throw new TypeError("Super expression must either be null or a function");
+  }
+
+  subClass.prototype = Object.create(superClass && superClass.prototype, {
+    constructor: {
+      value: subClass,
+      writable: true,
+      configurable: true
+    }
+  });
+  if (superClass) setPrototypeOf(subClass, superClass);
+}
+
+module.exports = _inherits;
+},{"./setPrototypeOf":"../node_modules/@babel/runtime/helpers/setPrototypeOf.js"}],"../node_modules/@babel/runtime/helpers/defineProperty.js":[function(require,module,exports) {
+function _defineProperty(obj, key, value) {
+  if (key in obj) {
+    Object.defineProperty(obj, key, {
+      value: value,
+      enumerable: true,
+      configurable: true,
+      writable: true
+    });
+  } else {
+    obj[key] = value;
+  }
+
+  return obj;
+}
+
+module.exports = _defineProperty;
+},{}],"../node_modules/@babel/runtime/helpers/extends.js":[function(require,module,exports) {
+function _extends() {
+  module.exports = _extends = Object.assign || function (target) {
+    for (var i = 1; i < arguments.length; i++) {
+      var source = arguments[i];
+
+      for (var key in source) {
+        if (Object.prototype.hasOwnProperty.call(source, key)) {
+          target[key] = source[key];
+        }
+      }
+    }
+
+    return target;
+  };
+
+  return _extends.apply(this, arguments);
+}
+
+module.exports = _extends;
+},{}],"js/nori/NoriComponent.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = void 0;
+
+var _typeof2 = _interopRequireDefault(require("@babel/runtime/helpers/typeof"));
+
+var _extends2 = _interopRequireDefault(require("@babel/runtime/helpers/extends"));
+
+var _classCallCheck2 = _interopRequireDefault(require("@babel/runtime/helpers/classCallCheck"));
+
+var _createClass2 = _interopRequireDefault(require("@babel/runtime/helpers/createClass"));
+
+var _Nori = require("../nori/Nori");
+
+var _lodash = require("lodash");
+
+var _is = _interopRequireDefault(require("./util/is"));
+
+var _ElementIDCreator = require("./util/ElementIDCreator");
+
+var _Nori2 = require("./Nori");
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+/* @jsx h */
+var NoriComponent =
+/*#__PURE__*/
+function () {
+  function NoriComponent(props) {
+    (0, _classCallCheck2.default)(this, NoriComponent);
+    props = props || {};
+    this.props = props;
+    this.props.id = props.hasOwnProperty('key') ? props.key : props.id ? props.id : (0, _ElementIDCreator.getNextId)();
+    this.props.key = props.hasOwnProperty('key') || null;
+    this._internalState = props.hasOwnProperty('state') ? props.state : {};
+    this._isDirty = true;
+    this._memoRenderResult = null;
+    this._lastRenderedDOMEl = null; // Removing this ...
+    // if (typeof this.render !== 'function') {
+    //   console.error(`Component ${this.props.id} doesn't have a render() method!`);
+    // }
+  }
+
+  (0, _createClass2.default)(NoriComponent, [{
+    key: "shouldComponentUpdate",
+    value: function shouldComponentUpdate(nextProps, nextState) {
+      // Deep compare using Ramda !equals(nextState, this._internalState);
+      // return !(nextState === this._internalState) || !(nextProps === this.props);
+      return !Object.is(nextState, this._internalState) || !Object.is(nextProps, this.props);
+    }
+  }, {
+    key: "forceUpdate",
+    value: function forceUpdate() {
+      (0, _Nori2.enqueueUpdate)(this.props.id);
+    }
+  }, {
+    key: "internalRender",
+    value: function internalRender() {
+      var _this = this;
+
+      if (this._isDirty || !this._memoRenderResult) {
+        var result;
+
+        if (typeof this.render === 'function') {
+          result = this.render();
+        } else {
+          // This would be better solved with a fragment since Nori doesn't support
+          // empty tags or just arrays of children
+          result = (0, _Nori.h)("span", (0, _extends2.default)({
+            "data-ntype": "fragment"
+          }, this.props), this.props.children);
+        }
+
+        if (!result.props.id) {
+          result.props.id = this.props.id;
+        }
+
+        result.children.forEach(function (child, i) {
+          if ((0, _typeof2.default)(child) === 'object' && !child.props.id) {
+            child.props.id = _this.props.id + ".".concat(i);
+          }
+        });
+        this._isDirty = false;
+        this._memoRenderResult = result;
+      }
+
+      return this._memoRenderResult;
+    }
+  }, {
+    key: "remove",
+    value: function remove() {// Nothing here
+    }
+  }, {
+    key: "state",
+    set: function set(nextState) {
+      if (!_is.default.object(nextState)) {
+        console.warn('Component state must be an object');
+        return;
+      }
+
+      if (this.shouldComponentUpdate({}, nextState)) {
+        this._internalState = Object.assign({}, this._internalState, nextState);
+
+        if (typeof this.componentWillUpdate === 'function') {
+          this.componentWillUpdate();
+        }
+
+        this._isDirty = true;
+        (0, _Nori2.enqueueUpdate)(this.props.id);
+      }
+    },
+    get: function get() {
+      // return Object.assign({}, this._internalState);
+      return (0, _lodash.cloneDeep)(this._internalState);
+    }
+  }, {
+    key: "$current",
+    set: function set($el) {
+      this._lastRenderedDOMEl = $el;
+    },
+    get: function get() {
+      return this._lastRenderedDOMEl;
+    }
+  }]);
+  return NoriComponent;
+}();
+
+exports.default = NoriComponent;
+},{"@babel/runtime/helpers/typeof":"../node_modules/@babel/runtime/helpers/typeof.js","@babel/runtime/helpers/extends":"../node_modules/@babel/runtime/helpers/extends.js","@babel/runtime/helpers/classCallCheck":"../node_modules/@babel/runtime/helpers/classCallCheck.js","@babel/runtime/helpers/createClass":"../node_modules/@babel/runtime/helpers/createClass.js","../nori/Nori":"js/nori/Nori.js","lodash":"../node_modules/lodash/lodash.js","./util/is":"js/nori/util/is.js","./util/ElementIDCreator":"js/nori/util/ElementIDCreator.js","./Nori":"js/nori/Nori.js"}],"js/nori/Context.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.Consumer = exports.Provider = exports.createContext = void 0;
+
+var _classCallCheck2 = _interopRequireDefault(require("@babel/runtime/helpers/classCallCheck"));
+
+var _createClass2 = _interopRequireDefault(require("@babel/runtime/helpers/createClass"));
+
+var _possibleConstructorReturn2 = _interopRequireDefault(require("@babel/runtime/helpers/possibleConstructorReturn"));
+
+var _getPrototypeOf2 = _interopRequireDefault(require("@babel/runtime/helpers/getPrototypeOf"));
+
+var _assertThisInitialized2 = _interopRequireDefault(require("@babel/runtime/helpers/assertThisInitialized"));
+
+var _inherits2 = _interopRequireDefault(require("@babel/runtime/helpers/inherits"));
+
+var _defineProperty2 = _interopRequireDefault(require("@babel/runtime/helpers/defineProperty"));
+
+var _NoriComponent3 = _interopRequireDefault(require("./NoriComponent"));
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+//https://reactjs.org/docs/context.html
+
+/*
+The defaultValue argument is only used when a component does not have a matching Provider above it in the tree. This can be helpful for testing components in isolation without wrapping them. Note: passing undefined as a Provider value does not cause consuming components to use defaultValue.
+ */
+var createContext = function createContext(defaultValue) {
+  var context = {
+    defaultValue: defaultValue,
+    Provider: Provider,
+    Consumer: Consumer
+  };
+  return context;
+};
+/*
+Accepts a value prop to be passed to consuming components that are descendants of this Provider. One Provider can be connected to many consumers. Providers can be nested to override values deeper within the tree.
+
+All consumers that are descendants of a Provider will re-render whenever the Provider’s value prop changes. The propagation from Provider to its descendant consumers is not subject to the shouldComponentUpdate method, so the consumer is updated even when an ancestor component bails out of the update.
+ */
+
+
+exports.createContext = createContext;
+
+var Provider =
+/*#__PURE__*/
+function (_NoriComponent) {
+  (0, _inherits2.default)(Provider, _NoriComponent);
+
+  function Provider(props) {
+    var _this;
+
+    (0, _classCallCheck2.default)(this, Provider);
+    _this = (0, _possibleConstructorReturn2.default)(this, (0, _getPrototypeOf2.default)(Provider).call(this, props));
+    (0, _defineProperty2.default)((0, _assertThisInitialized2.default)(_this), "addConsumer", function (c) {
+      console.log("Adding consumer", c);
+
+      _this._consumers.push(c);
+    });
+    _this._value = props.value || {};
+    _this._consumers = [];
+    return _this;
+  }
+
+  (0, _createClass2.default)(Provider, [{
+    key: "value",
+    get: function get() {
+      console.log("Provider value getter");
+      return this._value;
+    } // When this is set, all consumers need to be rerendered
+    // compare using Object.is
+    ,
+    set: function set(newValue) {
+      console.log("Provider value setter");
+      this._value = newValue;
+    }
+  }]);
+  return Provider;
+}(_NoriComponent3.default);
+
+exports.Provider = Provider;
+
+var Consumer =
+/*#__PURE__*/
+function (_NoriComponent2) {
+  (0, _inherits2.default)(Consumer, _NoriComponent2);
+
+  function Consumer(props) {
+    (0, _classCallCheck2.default)(this, Consumer);
+    return (0, _possibleConstructorReturn2.default)(this, (0, _getPrototypeOf2.default)(Consumer).call(this, props));
+  }
+
+  return Consumer;
+}(_NoriComponent3.default);
+
+exports.Consumer = Consumer;
+},{"@babel/runtime/helpers/classCallCheck":"../node_modules/@babel/runtime/helpers/classCallCheck.js","@babel/runtime/helpers/createClass":"../node_modules/@babel/runtime/helpers/createClass.js","@babel/runtime/helpers/possibleConstructorReturn":"../node_modules/@babel/runtime/helpers/possibleConstructorReturn.js","@babel/runtime/helpers/getPrototypeOf":"../node_modules/@babel/runtime/helpers/getPrototypeOf.js","@babel/runtime/helpers/assertThisInitialized":"../node_modules/@babel/runtime/helpers/assertThisInitialized.js","@babel/runtime/helpers/inherits":"../node_modules/@babel/runtime/helpers/inherits.js","@babel/runtime/helpers/defineProperty":"../node_modules/@babel/runtime/helpers/defineProperty.js","./NoriComponent":"js/nori/NoriComponent.js"}],"js/nori/Reconciler.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -42568,11 +42902,16 @@ var _NoriDOM = require("./NoriDOM");
 
 var _Hooks = require("./Hooks");
 
+var _Context = require("./Context");
+
+var _ArrayUtils = require("./util/ArrayUtils");
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 var _componentInstanceMap = {},
     _currentVnode,
-    _currentVnodeHookCursor = 0;
+    _currentVnodeHookCursor = 0,
+    _currentContextProvider;
 
 var getKeyOrId = function getKeyOrId(vnode) {
   return vnode.props.key ? vnode.props.key : vnode.props.id;
@@ -42588,6 +42927,14 @@ var hasOwnerComponent = function hasOwnerComponent(vnode) {
 
 var reconcileComponentInstance = function reconcileComponentInstance(vnode) {
   return (0, _ramda.compose)(renderComponent, getComponentInstance)(vnode);
+};
+
+var isProvider = function isProvider(vnode) {
+  return vnode.hasOwnProperty('_owner') && vnode._owner instanceof _Context.Provider;
+};
+
+var isConsumer = function isConsumer(vnode) {
+  return vnode.hasOwnProperty('_owner') && vnode._owner instanceof _Context.Consumer;
 };
 
 var cloneNode = function cloneNode(vnode) {
@@ -42626,6 +42973,17 @@ var reconcile = function reconcile(vnode) {
 
   if ((0, _Nori.isTypeFunction)(vnode)) {
     vnode = reconcileComponentInstance(vnode);
+
+    if (isProvider(vnode)) {
+      _currentContextProvider = vnode._owner;
+      console.log('Provider node', _currentContextProvider.value);
+    } else if (isConsumer(vnode) && _currentContextProvider) {
+      vnode.props.context = _currentContextProvider.value;
+
+      _currentContextProvider.addConsumer(vnode);
+
+      console.log('Consumer node', vnode);
+    }
   }
 
   return reconcileChildren(vnode, reconcile);
@@ -42649,7 +43007,6 @@ var reconcileOnly = function reconcileOnly(id) {
     if (hasOwnerComponent(vnode) && vnode.props.id === id) {
       vnode = reconcileComponentInstance(vnode);
     } else if (hasOwnerComponent(vnode) && vnode._owner.props.id === id) {
-      console.log('ReconcileOnly SFC?', vnode);
       vnode = reconcileComponentInstance(vnode._owner);
     } else if ((0, _Nori.isTypeFunction)(vnode)) {
       vnode = reconcile(vnode);
@@ -42674,7 +43031,16 @@ var reconcileChildFunctions = function reconcileChildFunctions(vnode) {
 
   children = children.map(function (child, i) {
     if (typeof child === 'function') {
-      var childResult = child();
+      var childResult;
+
+      if (isConsumer(vnode)) {
+        // Context
+        childResult = child(vnode.props.context);
+      } else {
+        childResult = child();
+      }
+
+      childResult = _is.default.array(childResult) ? childResult : [childResult];
       childResult = childResult.map(function (c, i) {
         if ((0, _Nori.isTypeFunction)(c)) {
           c = reconcile(c);
@@ -42792,7 +43158,7 @@ var removeComponentInstance = function removeComponentInstance(vnode) {
 };
 
 exports.removeComponentInstance = removeComponentInstance;
-},{"@babel/runtime/helpers/toConsumableArray":"../node_modules/@babel/runtime/helpers/toConsumableArray.js","@babel/runtime/helpers/typeof":"../node_modules/@babel/runtime/helpers/typeof.js","ramda":"../node_modules/ramda/es/index.js","./util/is":"js/nori/util/is.js","./util/ElementIDCreator":"js/nori/util/ElementIDCreator.js","./Nori":"js/nori/Nori.js","lodash":"../node_modules/lodash/lodash.js","./LifecycleQueue":"js/nori/LifecycleQueue.js","./NoriDOM":"js/nori/NoriDOM.js","./Hooks":"js/nori/Hooks.js"}],"js/nori/browser/DOMToolbox.js":[function(require,module,exports) {
+},{"@babel/runtime/helpers/toConsumableArray":"../node_modules/@babel/runtime/helpers/toConsumableArray.js","@babel/runtime/helpers/typeof":"../node_modules/@babel/runtime/helpers/typeof.js","ramda":"../node_modules/ramda/es/index.js","./util/is":"js/nori/util/is.js","./util/ElementIDCreator":"js/nori/util/ElementIDCreator.js","./Nori":"js/nori/Nori.js","lodash":"../node_modules/lodash/lodash.js","./LifecycleQueue":"js/nori/LifecycleQueue.js","./NoriDOM":"js/nori/NoriDOM.js","./Hooks":"js/nori/Hooks.js","./Context":"js/nori/Context.js","./util/ArrayUtils":"js/nori/util/ArrayUtils.js"}],"js/nori/browser/DOMToolbox.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -43125,7 +43491,7 @@ var getEventName = function getEventName(event) {
 }; // "Special props should be updated as new props are added to components.
 
 
-var specialProps = ['tweens', 'state', 'actions', 'children', 'element', 'min', 'max', 'mode']; // TODO move this to another file
+var specialProps = ['tweens', 'state', 'actions', 'children', 'element', 'min', 'max', 'mode', 'context', 'ref']; // TODO move this to another file
 
 var isSpecialProp = function isSpecialProp(test) {
   return specialProps.includes(test);
@@ -43465,186 +43831,7 @@ var removeBooleanProp = function removeBooleanProp($element, key) {
   $element.removeAttribute(key);
   $element[key] = false;
 };
-},{"@babel/runtime/helpers/typeof":"../node_modules/@babel/runtime/helpers/typeof.js","decamelize":"../node_modules/decamelize/index.js","./LifecycleQueue":"js/nori/LifecycleQueue.js","./Nori":"js/nori/Nori.js","./Reconciler":"js/nori/Reconciler.js","./browser/DOMToolbox":"js/nori/browser/DOMToolbox.js","./util/is":"js/nori/util/is.js"}],"../node_modules/@babel/runtime/helpers/extends.js":[function(require,module,exports) {
-function _extends() {
-  module.exports = _extends = Object.assign || function (target) {
-    for (var i = 1; i < arguments.length; i++) {
-      var source = arguments[i];
-
-      for (var key in source) {
-        if (Object.prototype.hasOwnProperty.call(source, key)) {
-          target[key] = source[key];
-        }
-      }
-    }
-
-    return target;
-  };
-
-  return _extends.apply(this, arguments);
-}
-
-module.exports = _extends;
-},{}],"../node_modules/@babel/runtime/helpers/classCallCheck.js":[function(require,module,exports) {
-function _classCallCheck(instance, Constructor) {
-  if (!(instance instanceof Constructor)) {
-    throw new TypeError("Cannot call a class as a function");
-  }
-}
-
-module.exports = _classCallCheck;
-},{}],"../node_modules/@babel/runtime/helpers/createClass.js":[function(require,module,exports) {
-function _defineProperties(target, props) {
-  for (var i = 0; i < props.length; i++) {
-    var descriptor = props[i];
-    descriptor.enumerable = descriptor.enumerable || false;
-    descriptor.configurable = true;
-    if ("value" in descriptor) descriptor.writable = true;
-    Object.defineProperty(target, descriptor.key, descriptor);
-  }
-}
-
-function _createClass(Constructor, protoProps, staticProps) {
-  if (protoProps) _defineProperties(Constructor.prototype, protoProps);
-  if (staticProps) _defineProperties(Constructor, staticProps);
-  return Constructor;
-}
-
-module.exports = _createClass;
-},{}],"js/nori/NoriComponent.js":[function(require,module,exports) {
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.default = void 0;
-
-var _typeof2 = _interopRequireDefault(require("@babel/runtime/helpers/typeof"));
-
-var _extends2 = _interopRequireDefault(require("@babel/runtime/helpers/extends"));
-
-var _classCallCheck2 = _interopRequireDefault(require("@babel/runtime/helpers/classCallCheck"));
-
-var _createClass2 = _interopRequireDefault(require("@babel/runtime/helpers/createClass"));
-
-var _Nori = require("../nori/Nori");
-
-var _lodash = require("lodash");
-
-var _is = _interopRequireDefault(require("./util/is"));
-
-var _ElementIDCreator = require("./util/ElementIDCreator");
-
-var _Nori2 = require("./Nori");
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-/* @jsx h */
-var NoriComponent =
-/*#__PURE__*/
-function () {
-  function NoriComponent(props) {
-    (0, _classCallCheck2.default)(this, NoriComponent);
-    this.props = props || {};
-    this.props.id = props.key ? props.key : props.id ? props.id : (0, _ElementIDCreator.getNextId)();
-    this.props.key = props.key || null;
-    this._internalState = props.hasOwnProperty('state') ? props.state : {};
-    this._isDirty = true;
-    this._memoRenderResult = null;
-    this._lastRenderedDOMEl = null; // Removing this ...
-    // if (typeof this.render !== 'function') {
-    //   console.error(`Component ${this.props.id} doesn't have a render() method!`);
-    // }
-  }
-
-  (0, _createClass2.default)(NoriComponent, [{
-    key: "shouldComponentUpdate",
-    value: function shouldComponentUpdate(nextProps, nextState) {
-      // Deep compare using Ramda !equals(nextState, this._internalState);
-      // return !(nextState === this._internalState) || !(nextProps === this.props);
-      return !Object.is(nextState, this._internalState) || !Object.is(nextProps, this.props);
-    }
-  }, {
-    key: "forceUpdate",
-    value: function forceUpdate() {
-      (0, _Nori2.enqueueUpdate)(this.props.id);
-    }
-  }, {
-    key: "internalRender",
-    value: function internalRender() {
-      var _this = this;
-
-      console.log('internalrender');
-
-      if (this._isDirty || !this._memoRenderResult) {
-        var result;
-
-        if (typeof this.render === 'function') {
-          result = this.render();
-        } else {
-          // This would be better solved with a fragment since Nori doesn't support
-          // empty tags or just arrays of children
-          result = (0, _Nori.h)("span", (0, _extends2.default)({
-            "data-ntype": "fragment"
-          }, this.props), this.props.children);
-        }
-
-        if (!result.props.id) {
-          result.props.id = this.props.id;
-        }
-
-        result.children.forEach(function (child, i) {
-          if ((0, _typeof2.default)(child) === 'object' && !child.props.id) {
-            child.props.id = _this.props.id + ".".concat(i);
-          }
-        });
-        this._isDirty = false;
-        this._memoRenderResult = result;
-      }
-
-      return this._memoRenderResult;
-    }
-  }, {
-    key: "remove",
-    value: function remove() {// Nothing here
-    }
-  }, {
-    key: "state",
-    set: function set(nextState) {
-      if (!_is.default.object(nextState)) {
-        console.warn('Component state must be an object');
-        return;
-      }
-
-      if (this.shouldComponentUpdate({}, nextState)) {
-        this._internalState = Object.assign({}, this._internalState, nextState);
-
-        if (typeof this.componentWillUpdate === 'function') {
-          this.componentWillUpdate();
-        }
-
-        this._isDirty = true;
-        (0, _Nori2.enqueueUpdate)(this.props.id);
-      }
-    },
-    get: function get() {
-      // return Object.assign({}, this._internalState);
-      return (0, _lodash.cloneDeep)(this._internalState);
-    }
-  }, {
-    key: "$current",
-    set: function set($el) {
-      this._lastRenderedDOMEl = $el;
-    },
-    get: function get() {
-      return this._lastRenderedDOMEl;
-    }
-  }]);
-  return NoriComponent;
-}();
-
-exports.default = NoriComponent;
-},{"@babel/runtime/helpers/typeof":"../node_modules/@babel/runtime/helpers/typeof.js","@babel/runtime/helpers/extends":"../node_modules/@babel/runtime/helpers/extends.js","@babel/runtime/helpers/classCallCheck":"../node_modules/@babel/runtime/helpers/classCallCheck.js","@babel/runtime/helpers/createClass":"../node_modules/@babel/runtime/helpers/createClass.js","../nori/Nori":"js/nori/Nori.js","lodash":"../node_modules/lodash/lodash.js","./util/is":"js/nori/util/is.js","./util/ElementIDCreator":"js/nori/util/ElementIDCreator.js","./Nori":"js/nori/Nori.js"}],"js/nori/Nori.js":[function(require,module,exports) {
+},{"@babel/runtime/helpers/typeof":"../node_modules/@babel/runtime/helpers/typeof.js","decamelize":"../node_modules/decamelize/index.js","./LifecycleQueue":"js/nori/LifecycleQueue.js","./Nori":"js/nori/Nori.js","./Reconciler":"js/nori/Reconciler.js","./browser/DOMToolbox":"js/nori/browser/DOMToolbox.js","./util/is":"js/nori/util/is.js"}],"js/nori/Nori.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -43720,7 +43907,7 @@ var isTypeFunction = function isTypeFunction(vnode) {
 exports.isTypeFunction = isTypeFunction;
 
 var isNori = function isNori(test) {
-  return Object.getPrototypeOf(test) === _NoriComponent.default;
+  return Object.getPrototypeOf(test) === _NoriComponent.default || test instanceof _NoriComponent.default;
 };
 
 exports.isNori = isNori;
@@ -43894,70 +44081,7 @@ function _objectWithoutProperties(source, excluded) {
 }
 
 module.exports = _objectWithoutProperties;
-},{"./objectWithoutPropertiesLoose":"../node_modules/@babel/runtime/helpers/objectWithoutPropertiesLoose.js"}],"../node_modules/@babel/runtime/helpers/assertThisInitialized.js":[function(require,module,exports) {
-function _assertThisInitialized(self) {
-  if (self === void 0) {
-    throw new ReferenceError("this hasn't been initialised - super() hasn't been called");
-  }
-
-  return self;
-}
-
-module.exports = _assertThisInitialized;
-},{}],"../node_modules/@babel/runtime/helpers/possibleConstructorReturn.js":[function(require,module,exports) {
-var _typeof = require("../helpers/typeof");
-
-var assertThisInitialized = require("./assertThisInitialized");
-
-function _possibleConstructorReturn(self, call) {
-  if (call && (_typeof(call) === "object" || typeof call === "function")) {
-    return call;
-  }
-
-  return assertThisInitialized(self);
-}
-
-module.exports = _possibleConstructorReturn;
-},{"../helpers/typeof":"../node_modules/@babel/runtime/helpers/typeof.js","./assertThisInitialized":"../node_modules/@babel/runtime/helpers/assertThisInitialized.js"}],"../node_modules/@babel/runtime/helpers/getPrototypeOf.js":[function(require,module,exports) {
-function _getPrototypeOf(o) {
-  module.exports = _getPrototypeOf = Object.setPrototypeOf ? Object.getPrototypeOf : function _getPrototypeOf(o) {
-    return o.__proto__ || Object.getPrototypeOf(o);
-  };
-  return _getPrototypeOf(o);
-}
-
-module.exports = _getPrototypeOf;
-},{}],"../node_modules/@babel/runtime/helpers/setPrototypeOf.js":[function(require,module,exports) {
-function _setPrototypeOf(o, p) {
-  module.exports = _setPrototypeOf = Object.setPrototypeOf || function _setPrototypeOf(o, p) {
-    o.__proto__ = p;
-    return o;
-  };
-
-  return _setPrototypeOf(o, p);
-}
-
-module.exports = _setPrototypeOf;
-},{}],"../node_modules/@babel/runtime/helpers/inherits.js":[function(require,module,exports) {
-var setPrototypeOf = require("./setPrototypeOf");
-
-function _inherits(subClass, superClass) {
-  if (typeof superClass !== "function" && superClass !== null) {
-    throw new TypeError("Super expression must either be null or a function");
-  }
-
-  subClass.prototype = Object.create(superClass && superClass.prototype, {
-    constructor: {
-      value: subClass,
-      writable: true,
-      configurable: true
-    }
-  });
-  if (superClass) setPrototypeOf(subClass, superClass);
-}
-
-module.exports = _inherits;
-},{"./setPrototypeOf":"../node_modules/@babel/runtime/helpers/setPrototypeOf.js"}],"js/components/Box.js":[function(require,module,exports) {
+},{"./objectWithoutPropertiesLoose":"../node_modules/@babel/runtime/helpers/objectWithoutPropertiesLoose.js"}],"js/components/Box.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -44356,113 +44480,7 @@ Lorem.TITLE = 'title';
 Lorem.SENTENCE = 'sentence';
 Lorem.DATE = 'date';
 Lorem.FULLNAMEFL = 'fullNameFL';
-},{"@babel/runtime/helpers/classCallCheck":"../node_modules/@babel/runtime/helpers/classCallCheck.js","@babel/runtime/helpers/createClass":"../node_modules/@babel/runtime/helpers/createClass.js","@babel/runtime/helpers/possibleConstructorReturn":"../node_modules/@babel/runtime/helpers/possibleConstructorReturn.js","@babel/runtime/helpers/getPrototypeOf":"../node_modules/@babel/runtime/helpers/getPrototypeOf.js","@babel/runtime/helpers/inherits":"../node_modules/@babel/runtime/helpers/inherits.js","../nori/Nori":"js/nori/Nori.js","../nori/util/Lorem":"js/nori/util/Lorem.js","../nori/NoriComponent":"js/nori/NoriComponent.js"}],"../node_modules/@babel/runtime/helpers/defineProperty.js":[function(require,module,exports) {
-function _defineProperty(obj, key, value) {
-  if (key in obj) {
-    Object.defineProperty(obj, key, {
-      value: value,
-      enumerable: true,
-      configurable: true,
-      writable: true
-    });
-  } else {
-    obj[key] = value;
-  }
-
-  return obj;
-}
-
-module.exports = _defineProperty;
-},{}],"js/components/Ticker.js":[function(require,module,exports) {
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.default = void 0;
-
-var _classCallCheck2 = _interopRequireDefault(require("@babel/runtime/helpers/classCallCheck"));
-
-var _createClass2 = _interopRequireDefault(require("@babel/runtime/helpers/createClass"));
-
-var _possibleConstructorReturn2 = _interopRequireDefault(require("@babel/runtime/helpers/possibleConstructorReturn"));
-
-var _getPrototypeOf2 = _interopRequireDefault(require("@babel/runtime/helpers/getPrototypeOf"));
-
-var _assertThisInitialized2 = _interopRequireDefault(require("@babel/runtime/helpers/assertThisInitialized"));
-
-var _inherits2 = _interopRequireDefault(require("@babel/runtime/helpers/inherits"));
-
-var _defineProperty2 = _interopRequireDefault(require("@babel/runtime/helpers/defineProperty"));
-
-var _taggedTemplateLiteral2 = _interopRequireDefault(require("@babel/runtime/helpers/taggedTemplateLiteral"));
-
-var _NoriComponent2 = _interopRequireDefault(require("../nori/NoriComponent"));
-
-var _Nori = require("../nori/Nori");
-
-var _emotion = require("emotion");
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-function _templateObject() {
-  var data = (0, _taggedTemplateLiteral2.default)(["color: red;"]);
-
-  _templateObject = function _templateObject() {
-    return data;
-  };
-
-  return data;
-}
-
-var red = (0, _emotion.css)(_templateObject());
-
-var Ticker =
-/*#__PURE__*/
-function (_NoriComponent) {
-  (0, _inherits2.default)(Ticker, _NoriComponent);
-
-  // Subclasses should only take passed props and children
-  function Ticker(props) {
-    var _this;
-
-    (0, _classCallCheck2.default)(this, Ticker);
-    _this = (0, _possibleConstructorReturn2.default)(this, (0, _getPrototypeOf2.default)(Ticker).call(this, props));
-    (0, _defineProperty2.default)((0, _assertThisInitialized2.default)(_this), "componentDidMount", function () {
-      _this.intervalID = setInterval(_this.$updateTicker, 1000);
-    });
-    (0, _defineProperty2.default)((0, _assertThisInitialized2.default)(_this), "$updateTicker", function (_) {
-      //console.log('Ticker update!', this.props.id, this.current);
-      _this.state = {
-        counter: ++_this.state.counter
-      };
-    });
-    (0, _defineProperty2.default)((0, _assertThisInitialized2.default)(_this), "componentDidUpdate", function () {//console.log('Ticker update', this.state);
-    });
-    (0, _defineProperty2.default)((0, _assertThisInitialized2.default)(_this), "componentWillUnmount", function () {
-      clearInterval(_this.intervalID);
-    });
-    _this.intervalID = null;
-    _this.state = {
-      counter: 1
-    }; // console.log(`${this.props.id} TICKER : constructor`);
-
-    return _this;
-  }
-
-  (0, _createClass2.default)(Ticker, [{
-    key: "render",
-    value: function render() {
-      return (0, _Nori.h)("h3", null, "The count is ", (0, _Nori.h)("strong", {
-        className: red
-      }, this.state.counter), " ticks.");
-    }
-  }]);
-  return Ticker;
-}(_NoriComponent2.default);
-
-exports.default = Ticker;
-},{"@babel/runtime/helpers/classCallCheck":"../node_modules/@babel/runtime/helpers/classCallCheck.js","@babel/runtime/helpers/createClass":"../node_modules/@babel/runtime/helpers/createClass.js","@babel/runtime/helpers/possibleConstructorReturn":"../node_modules/@babel/runtime/helpers/possibleConstructorReturn.js","@babel/runtime/helpers/getPrototypeOf":"../node_modules/@babel/runtime/helpers/getPrototypeOf.js","@babel/runtime/helpers/assertThisInitialized":"../node_modules/@babel/runtime/helpers/assertThisInitialized.js","@babel/runtime/helpers/inherits":"../node_modules/@babel/runtime/helpers/inherits.js","@babel/runtime/helpers/defineProperty":"../node_modules/@babel/runtime/helpers/defineProperty.js","@babel/runtime/helpers/taggedTemplateLiteral":"../node_modules/@babel/runtime/helpers/taggedTemplateLiteral.js","../nori/NoriComponent":"js/nori/NoriComponent.js","../nori/Nori":"js/nori/Nori.js","emotion":"../node_modules/emotion/dist/index.esm.js"}],"js/components/Greeter.js":[function(require,module,exports) {
+},{"@babel/runtime/helpers/classCallCheck":"../node_modules/@babel/runtime/helpers/classCallCheck.js","@babel/runtime/helpers/createClass":"../node_modules/@babel/runtime/helpers/createClass.js","@babel/runtime/helpers/possibleConstructorReturn":"../node_modules/@babel/runtime/helpers/possibleConstructorReturn.js","@babel/runtime/helpers/getPrototypeOf":"../node_modules/@babel/runtime/helpers/getPrototypeOf.js","@babel/runtime/helpers/inherits":"../node_modules/@babel/runtime/helpers/inherits.js","../nori/Nori":"js/nori/Nori.js","../nori/util/Lorem":"js/nori/util/Lorem.js","../nori/NoriComponent":"js/nori/NoriComponent.js"}],"js/components/Greeter.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -44688,89 +44706,7 @@ function (_NoriComponent) {
 }(_NoriComponent2.default);
 
 exports.default = Lister;
-},{"@babel/runtime/helpers/classCallCheck":"../node_modules/@babel/runtime/helpers/classCallCheck.js","@babel/runtime/helpers/createClass":"../node_modules/@babel/runtime/helpers/createClass.js","@babel/runtime/helpers/possibleConstructorReturn":"../node_modules/@babel/runtime/helpers/possibleConstructorReturn.js","@babel/runtime/helpers/getPrototypeOf":"../node_modules/@babel/runtime/helpers/getPrototypeOf.js","@babel/runtime/helpers/assertThisInitialized":"../node_modules/@babel/runtime/helpers/assertThisInitialized.js","@babel/runtime/helpers/inherits":"../node_modules/@babel/runtime/helpers/inherits.js","@babel/runtime/helpers/defineProperty":"../node_modules/@babel/runtime/helpers/defineProperty.js","@babel/runtime/helpers/taggedTemplateLiteral":"../node_modules/@babel/runtime/helpers/taggedTemplateLiteral.js","../nori/NoriComponent":"js/nori/NoriComponent.js","../nori/Nori":"js/nori/Nori.js","../nori/Hooks":"js/nori/Hooks.js","emotion":"../node_modules/emotion/dist/index.esm.js","../theme/Theme":"js/theme/Theme.js","../nori/util/ArrayUtils":"js/nori/util/ArrayUtils.js","./Greeter":"js/components/Greeter.js"}],"js/components/ColorSwatch.js":[function(require,module,exports) {
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.default = void 0;
-
-var _classCallCheck2 = _interopRequireDefault(require("@babel/runtime/helpers/classCallCheck"));
-
-var _createClass2 = _interopRequireDefault(require("@babel/runtime/helpers/createClass"));
-
-var _possibleConstructorReturn2 = _interopRequireDefault(require("@babel/runtime/helpers/possibleConstructorReturn"));
-
-var _getPrototypeOf2 = _interopRequireDefault(require("@babel/runtime/helpers/getPrototypeOf"));
-
-var _assertThisInitialized2 = _interopRequireDefault(require("@babel/runtime/helpers/assertThisInitialized"));
-
-var _inherits2 = _interopRequireDefault(require("@babel/runtime/helpers/inherits"));
-
-var _defineProperty2 = _interopRequireDefault(require("@babel/runtime/helpers/defineProperty"));
-
-var _NoriComponent2 = _interopRequireDefault(require("../nori/NoriComponent"));
-
-var _Nori = require("../nori/Nori");
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-/* @jsx h */
-
-/**
- * Shamelessly pulled from https://youtu.be/_MAD4Oly9yg?t=348
- */
-var ColorSwatch =
-/*#__PURE__*/
-function (_NoriComponent) {
-  (0, _inherits2.default)(ColorSwatch, _NoriComponent);
-
-  // Subclasses should only take passed props and children
-  function ColorSwatch(props) {
-    var _this;
-
-    (0, _classCallCheck2.default)(this, ColorSwatch);
-    _this = (0, _possibleConstructorReturn2.default)(this, (0, _getPrototypeOf2.default)(ColorSwatch).call(this, props));
-    (0, _defineProperty2.default)((0, _assertThisInitialized2.default)(_this), "componentDidMount", function () {
-      _this.intervalId = setInterval(_this.$updateTicker, 100);
-    });
-    (0, _defineProperty2.default)((0, _assertThisInitialized2.default)(_this), "$updateTicker", function (_) {
-      _this.state = {
-        counter: _this.state.counter + 15
-      };
-    });
-    (0, _defineProperty2.default)((0, _assertThisInitialized2.default)(_this), "componentDidUpdate", function () {});
-    (0, _defineProperty2.default)((0, _assertThisInitialized2.default)(_this), "componentWillUnmount", function () {
-      clearInterval(_this.intervalId);
-    });
-    _this.intervalId = null;
-    _this.state = {
-      counter: 1
-    };
-    return _this;
-  }
-
-  (0, _createClass2.default)(ColorSwatch, [{
-    key: "render",
-    value: function render() {
-      var colVal = this.state.counter % 256;
-      return (0, _Nori.h)("div", {
-        style: {
-          backgroundColor: "rgb(0, 0, ".concat(colVal, ")"),
-          overflow: 'hidden',
-          borderRadius: '25%',
-          height: '50px',
-          width: '50px'
-        }
-      });
-    }
-  }]);
-  return ColorSwatch;
-}(_NoriComponent2.default);
-
-exports.default = ColorSwatch;
-},{"@babel/runtime/helpers/classCallCheck":"../node_modules/@babel/runtime/helpers/classCallCheck.js","@babel/runtime/helpers/createClass":"../node_modules/@babel/runtime/helpers/createClass.js","@babel/runtime/helpers/possibleConstructorReturn":"../node_modules/@babel/runtime/helpers/possibleConstructorReturn.js","@babel/runtime/helpers/getPrototypeOf":"../node_modules/@babel/runtime/helpers/getPrototypeOf.js","@babel/runtime/helpers/assertThisInitialized":"../node_modules/@babel/runtime/helpers/assertThisInitialized.js","@babel/runtime/helpers/inherits":"../node_modules/@babel/runtime/helpers/inherits.js","@babel/runtime/helpers/defineProperty":"../node_modules/@babel/runtime/helpers/defineProperty.js","../nori/NoriComponent":"js/nori/NoriComponent.js","../nori/Nori":"js/nori/Nori.js"}],"js/components/InputControls.js":[function(require,module,exports) {
+},{"@babel/runtime/helpers/classCallCheck":"../node_modules/@babel/runtime/helpers/classCallCheck.js","@babel/runtime/helpers/createClass":"../node_modules/@babel/runtime/helpers/createClass.js","@babel/runtime/helpers/possibleConstructorReturn":"../node_modules/@babel/runtime/helpers/possibleConstructorReturn.js","@babel/runtime/helpers/getPrototypeOf":"../node_modules/@babel/runtime/helpers/getPrototypeOf.js","@babel/runtime/helpers/assertThisInitialized":"../node_modules/@babel/runtime/helpers/assertThisInitialized.js","@babel/runtime/helpers/inherits":"../node_modules/@babel/runtime/helpers/inherits.js","@babel/runtime/helpers/defineProperty":"../node_modules/@babel/runtime/helpers/defineProperty.js","@babel/runtime/helpers/taggedTemplateLiteral":"../node_modules/@babel/runtime/helpers/taggedTemplateLiteral.js","../nori/NoriComponent":"js/nori/NoriComponent.js","../nori/Nori":"js/nori/Nori.js","../nori/Hooks":"js/nori/Hooks.js","emotion":"../node_modules/emotion/dist/index.esm.js","../theme/Theme":"js/theme/Theme.js","../nori/util/ArrayUtils":"js/nori/util/ArrayUtils.js","./Greeter":"js/components/Greeter.js"}],"js/components/InputControls.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -45899,8 +45835,6 @@ var _slicedToArray2 = _interopRequireDefault(require("@babel/runtime/helpers/sli
 
 var _taggedTemplateLiteral2 = _interopRequireDefault(require("@babel/runtime/helpers/taggedTemplateLiteral"));
 
-var _Global = require("./theme/Global");
-
 var _Theme = require("./theme/Theme");
 
 var _emotion = require("emotion");
@@ -45913,13 +45847,9 @@ var _Box = _interopRequireDefault(require("./components/Box"));
 
 var _Lorem = _interopRequireDefault(require("./components/Lorem"));
 
-var _Ticker = _interopRequireDefault(require("./components/Ticker"));
-
 var _Greeter = _interopRequireDefault(require("./components/Greeter"));
 
 var _Lister = _interopRequireDefault(require("./components/Lister"));
-
-var _ColorSwatch = _interopRequireDefault(require("./components/ColorSwatch"));
 
 var _Hooks = require("./nori/Hooks");
 
@@ -45928,6 +45858,8 @@ var _InputControls = require("./components/InputControls");
 var _Stepper = require("./components/Stepper");
 
 var _Nonpresentational = _interopRequireDefault(require("./components/Nonpresentational"));
+
+var _Context = require("./nori/Context");
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -46013,8 +45945,25 @@ var testBox = (0, _Nori.h)(_Box.default, {
   message: "IMA sfc"
 }), (0, _Nori.h)(SFCWithJuice, null), (0, _Nori.h)(_Greeter.default, null), (0, _Nori.h)(_Lister.default, null)))); //<Box><SFCWithJuice/><Ticker/></Box>
 
-(0, _NoriDOM.render)((0, _Nori.h)(_Box.default, null, (0, _Nori.h)(_Nonpresentational.default, null, (0, _Nori.h)("p", null, "I'm a pragraph"))), document.querySelector('#js-application'));
-},{"@babel/runtime/helpers/slicedToArray":"../node_modules/@babel/runtime/helpers/slicedToArray.js","@babel/runtime/helpers/taggedTemplateLiteral":"../node_modules/@babel/runtime/helpers/taggedTemplateLiteral.js","./theme/Global":"js/theme/Global.js","./theme/Theme":"js/theme/Theme.js","emotion":"../node_modules/emotion/dist/index.esm.js","./nori/Nori":"js/nori/Nori.js","./nori/NoriDOM":"js/nori/NoriDOM.js","./components/Box":"js/components/Box.js","./components/Lorem":"js/components/Lorem.js","./components/Ticker":"js/components/Ticker.js","./components/Greeter":"js/components/Greeter.js","./components/Lister":"js/components/Lister.js","./components/ColorSwatch":"js/components/ColorSwatch.js","./nori/Hooks":"js/nori/Hooks.js","./components/InputControls":"js/components/InputControls.js","./components/Stepper":"js/components/Stepper.js","./components/Nonpresentational":"js/components/Nonpresentational.js","../img/pattern/shattered.png":"img/pattern/shattered.png"}],"../node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
+var ContextComp = (0, _Context.createContext)();
+var AnotherContextComp = (0, _Context.createContext)();
+var contextTest = (0, _Nori.h)("div", null, (0, _Nori.h)(ContextComp.Provider, {
+  value: {
+    fuz: 'number1'
+  }
+}, (0, _Nori.h)(ContextComp.Consumer, null, function (value) {
+  return (0, _Nori.h)("p", null, "Context! ", value.fuz);
+})), (0, _Nori.h)(AnotherContextComp.Provider, {
+  value: {
+    bar: 'number2!'
+  }
+}, (0, _Nori.h)(AnotherContextComp.Consumer, null, function (value) {
+  return (0, _Nori.h)("p", null, "Another context ", value.bar);
+}))); // console.log(ContextComp);
+
+console.log(contextTest);
+(0, _NoriDOM.render)(contextTest, document.querySelector('#js-application'));
+},{"@babel/runtime/helpers/slicedToArray":"../node_modules/@babel/runtime/helpers/slicedToArray.js","@babel/runtime/helpers/taggedTemplateLiteral":"../node_modules/@babel/runtime/helpers/taggedTemplateLiteral.js","./theme/Theme":"js/theme/Theme.js","emotion":"../node_modules/emotion/dist/index.esm.js","./nori/Nori":"js/nori/Nori.js","./nori/NoriDOM":"js/nori/NoriDOM.js","./components/Box":"js/components/Box.js","./components/Lorem":"js/components/Lorem.js","./components/Greeter":"js/components/Greeter.js","./components/Lister":"js/components/Lister.js","./nori/Hooks":"js/nori/Hooks.js","./components/InputControls":"js/components/InputControls.js","./components/Stepper":"js/components/Stepper.js","./components/Nonpresentational":"js/components/Nonpresentational.js","./nori/Context":"js/nori/Context.js","../img/pattern/shattered.png":"img/pattern/shattered.png"}],"../node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
 var global = arguments[3];
 var OVERLAY_ID = '__parcel__error__overlay__';
 var OldModule = module.bundle.Module;

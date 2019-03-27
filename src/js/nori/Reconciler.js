@@ -1,20 +1,25 @@
 import {compose} from "ramda";
 import Is from "./util/is";
 import {getNextId} from "./util/ElementIDCreator";
-import {isTypeFunction, isNoriComponent, isNori} from "./Nori";
+import {isNori, isNoriComponent, isTypeFunction} from "./Nori";
 import {cloneDeep} from "lodash";
 import {performPostRenderHookCleanup} from "./LifecycleQueue";
 import {removeEvents} from "./NoriDOM";
 import {unregisterHooks} from "./Hooks";
+import {Provider, Consumer} from './Context';
+import {arrify} from "./util/ArrayUtils";
 
 let _componentInstanceMap   = {},
     _currentVnode,
-    _currentVnodeHookCursor = 0;
+    _currentVnodeHookCursor = 0,
+    _currentContextProvider;
 
 const getKeyOrId                 = vnode => vnode.props.key ? vnode.props.key : vnode.props.id;
 const isVDOMNode                 = vnode => typeof vnode === 'object' && vnode.hasOwnProperty('type') && vnode.hasOwnProperty('props') && vnode.hasOwnProperty('children');
 const hasOwnerComponent          = vnode => vnode.hasOwnProperty('_owner') && vnode._owner !== null;
 const reconcileComponentInstance = vnode => compose(renderComponent, getComponentInstance)(vnode);
+const isProvider = vnode => vnode.hasOwnProperty('_owner') && vnode._owner instanceof Provider;
+const isConsumer = vnode => vnode.hasOwnProperty('_owner') && vnode._owner instanceof Consumer;
 
 export const cloneNode             = vnode => cloneDeep(vnode);
 export const getComponentInstances = _ => _componentInstanceMap;
@@ -29,6 +34,14 @@ export const reconcile = vnode => {
   setCurrentVnode(vnode);
   if (isTypeFunction(vnode)) {
     vnode = reconcileComponentInstance(vnode);
+    if(isProvider(vnode)) {
+      _currentContextProvider = vnode._owner;
+      console.log('Provider node',_currentContextProvider.value);
+    } else if(isConsumer(vnode) && _currentContextProvider) {
+      vnode.props.context = _currentContextProvider.value;
+      _currentContextProvider.addConsumer(vnode);
+      console.log('Consumer node',vnode);
+    }
   }
   return reconcileChildren(vnode, reconcile);
 };
@@ -46,7 +59,6 @@ export const reconcileOnly = id => vnode => {
   if (hasOwnerComponent(vnode) && vnode.props.id === id) {
     vnode = reconcileComponentInstance(vnode);
   } else if (hasOwnerComponent(vnode) && vnode._owner.props.id === id) {
-    console.log('ReconcileOnly SFC?', vnode);
     vnode = reconcileComponentInstance(vnode._owner);
   } else if (isTypeFunction(vnode)) {
     vnode = reconcile(vnode);
@@ -68,7 +80,16 @@ const reconcileChildFunctions = vnode => {
   // }
   children = children.map((child, i) => {
     if (typeof child === 'function') {
-      let childResult = child();
+      let childResult;
+
+      if(isConsumer(vnode)) {
+        // Context
+        childResult = child(vnode.props.context);
+      } else {
+        childResult = child();
+      }
+
+      childResult = Is.array(childResult) ? childResult : [childResult];
       childResult     = childResult.map((c, i) => {
         if (isTypeFunction(c)) {
           c = reconcile(c);
@@ -108,7 +129,7 @@ const getComponentInstance = vnode => {
 const createNoriComponentInstance = vnode => {
   vnode.props.children      = Is.array(vnode.children) ? vnode.children : [vnode.children];
   let instance              = new vnode.type(vnode.props);
-  let id                        = instance.props.id; // id could change during construction
+  let id                    = instance.props.id; // id could change during construction
   _componentInstanceMap[id] = instance;
   return instance;
 };

@@ -59,7 +59,7 @@ let _currentVDOM,
 
 export const isNoriElement   = test => test.$$typeof && Symbol.keyFor(test.$$typeof) === 'nori.element';
 export const isTypeFunction  = vnode => typeof vnode === 'object' && typeof vnode.type === 'function';
-export const isNori          = test => Object.getPrototypeOf(test) === NoriComponent;
+export const isNori          = test => Object.getPrototypeOf(test) === NoriComponent || test instanceof NoriComponent;
 export const isNoriComponent = vnode => isTypeFunction(vnode) && isNori(vnode.type);
 export const setCurrentVDOM  = tree => _currentVDOM = tree;
 export const getCurrentVDOM  = _ => cloneNode(_currentVDOM);
