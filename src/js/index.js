@@ -14,6 +14,7 @@ import ColorSwatch from './components/ColorSwatch';
 import {useState} from "./nori/Hooks";
 import {InputControls} from "./components/InputControls";
 import {Stepper} from "./components/Stepper";
+import Nonpresentational from './components/Nonpresentational';
 
 // ${tme.gradients['premium-white']};
 const appContainerBG = require('../img/pattern/shattered.png');
@@ -72,6 +73,7 @@ let testBox = <Box key='main' className={appContainer}>
   <Box className={blackBox}>
     <Lorem mode={Lorem.TITLE}/>
     <Box className={whiteBox}>
+      <Nonpresentational/>
       <Stepper/>
       <hr/>
       <InputControls/>
@@ -85,4 +87,4 @@ let testBox = <Box key='main' className={appContainer}>
 </Box>;
 
   //<Box><SFCWithJuice/><Ticker/></Box>
-render(testBox, document.querySelector('#js-application'));
+render(<Box><Nonpresentational><p>I'm a pragraph</p></Nonpresentational></Box>, document.querySelector('#js-application'));

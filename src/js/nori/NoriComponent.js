@@ -1,3 +1,6 @@
+/* @jsx h */
+
+import {h} from "../nori/Nori";
 import {cloneDeep} from 'lodash';
 import Is from './util/is';
 import {getNextId} from './util/ElementIDCreator';
@@ -6,17 +9,18 @@ import {enqueueUpdate} from "./Nori";
 export default class NoriComponent {
 
   constructor(props) {
-    this.props             = props || {};
-    this.props.id          = props.key ? props.key : (props.id ? props.id : getNextId());
-    this.props.key         = props.key || null;
-    this._internalState    = props.hasOwnProperty('state') ? props.state : {};
-    this._isDirty          = true;
-    this._memoRenderResult = null;
+    this.props              = props || {};
+    this.props.id           = props.key ? props.key : (props.id ? props.id : getNextId());
+    this.props.key          = props.key || null;
+    this._internalState     = props.hasOwnProperty('state') ? props.state : {};
+    this._isDirty           = true;
+    this._memoRenderResult  = null;
     this._lastRenderedDOMEl = null;
 
-    if (typeof this.render !== 'function') {
-      console.error(`Component ${this.props.id} doesn't have a render() method!`);
-    }
+    // Removing this ...
+    // if (typeof this.render !== 'function') {
+    //   console.error(`Component ${this.props.id} doesn't have a render() method!`);
+    // }
   }
 
   set state(nextState) {
@@ -42,7 +46,8 @@ export default class NoriComponent {
 
   shouldComponentUpdate(nextProps, nextState) {
     // Deep compare using Ramda !equals(nextState, this._internalState);
-    return !(nextState === this._internalState) || !(nextProps === this.props);
+    // return !(nextState === this._internalState) || !(nextProps === this.props);
+    return !Object.is(nextState, this._internalState) || !Object.is(nextProps, this.props);
   }
 
   set $current($el) {
@@ -58,20 +63,28 @@ export default class NoriComponent {
   }
 
   internalRender() {
+    console.log('internalrender');
     if (this._isDirty || !this._memoRenderResult) {
-      const result = this.render();
+      let result;
+      if (typeof this.render === 'function') {
+        result = this.render();
+      } else {
+        // This would be better solved with a fragment since Nori doesn't support
+        // empty tags or just arrays of children
+        result = <span data-ntype='fragment' {...this.props}>{this.props.children}</span>;
+      }
+
       if (!result.props.id) {
         result.props.id = this.props.id;
       }
-
       result.children.forEach((child, i) => {
         if (typeof child === 'object' && !child.props.id) {
           child.props.id = this.props.id + `.${i}`;
         }
       });
-
       this._isDirty          = false;
       this._memoRenderResult = result;
+
     }
     return this._memoRenderResult;
   }
