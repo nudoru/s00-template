@@ -68,6 +68,8 @@ const SFCWithJuice = (props) => {
 
  */
 
+let ContextComp        = createContext();
+
 let testBox = <Box key='main' className={appContainer}>
   <Box className={blackBox}>
     <Lorem mode={Lorem.TITLE}/>
@@ -80,6 +82,13 @@ let testBox = <Box key='main' className={appContainer}>
       <Sfc message='IMA sfc'/>
       <SFCWithJuice/>
       <Greeter/>
+      <hr/>
+      <ContextComp.Provider value={{fuz: 'number1'}}>
+        <ContextComp.Consumer>
+          {value => <p>This value is from a context: <strong>{value.fuz}</strong></p>}
+        </ContextComp.Consumer>
+      </ContextComp.Provider>
+      <hr/>
       <Lister/>
     </Box>
   </Box>
@@ -87,7 +96,6 @@ let testBox = <Box key='main' className={appContainer}>
 
 //<Box><SFCWithJuice/><Ticker/></Box>
 
-let ContextComp        = createContext();
 let AnotherContextComp = createContext();
 
 let contextTest = <div>
@@ -101,8 +109,9 @@ let contextTest = <div>
       {value => <p>Another context {value.bar}</p>}
     </AnotherContextComp.Consumer>
   </AnotherContextComp.Provider>
+  <AnotherContextComp.Consumer>
+    {value => <p>This shouldn't work {value.bar}</p>}
+  </AnotherContextComp.Consumer>
 </div>;
 
-// console.log(ContextComp);
-console.log(contextTest);
-render(contextTest, document.querySelector('#js-application'));
+render(testBox, document.querySelector('#js-application'));

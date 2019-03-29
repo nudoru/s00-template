@@ -1,3 +1,8 @@
+import {range} from './ArrayUtils';
+
+export const repeatStr = (str,num) => range(num).map(n => str).join('');
+
+
 export const capitalizeFirstLetter = (str) => {
   return str.charAt(0).toUpperCase() + str.substring(1);
 };

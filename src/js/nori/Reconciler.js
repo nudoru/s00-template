@@ -7,12 +7,14 @@ import {performPostRenderHookCleanup} from "./LifecycleQueue";
 import {removeEvents} from "./NoriDOM";
 import {unregisterHooks} from "./Hooks";
 import {Provider, Consumer} from './Context';
-import {arrify} from "./util/ArrayUtils";
+import {repeatStr} from "./util/StringUtils";
 
 let _componentInstanceMap   = {},
     _currentVnode,
     _currentVnodeHookCursor = 0,
-    _currentContextProvider;
+    _currentContextProvider,
+    _currentContextProviderIndex = 0,
+    _reconciliationDepth = 0;
 
 const getKeyOrId                 = vnode => vnode.props.key ? vnode.props.key : vnode.props.id;
 const isVDOMNode                 = vnode => typeof vnode === 'object' && vnode.hasOwnProperty('type') && vnode.hasOwnProperty('props') && vnode.hasOwnProperty('children');
@@ -30,20 +32,42 @@ export const setCurrentVnode       = vnode => {
 };
 export const getHookCursor         = _ => _currentVnodeHookCursor++;
 
-export const reconcile = vnode => {
+// Start off the reconciliation process and keep track of the depth
+export const reconcileTree = vnode => {
+  _reconciliationDepth = 0;
+  return reconcile(vnode, _reconciliationDepth);
+};
+
+// Need a persistant index because this fn is called at several places
+const reconcile = (vnode, index=0) => {
   setCurrentVnode(vnode);
+  // let indent = repeatStr('\t',index);
+  // console.log(indent,index,vnode);
+  if(index <= _currentContextProviderIndex) {
+    _currentContextProvider = null;
+  }
   if (isTypeFunction(vnode)) {
     vnode = reconcileComponentInstance(vnode);
     if(isProvider(vnode)) {
+      // console.log(indent, `Provider: `,index, _currentContextProviderIndex);
       _currentContextProvider = vnode._owner;
-      console.log('Provider node',_currentContextProvider.value);
+      _currentContextProviderIndex = index;
     } else if(isConsumer(vnode) && _currentContextProvider) {
+      // console.log(indent, `Consumer: `,index, _currentContextProviderIndex);
       vnode.props.context = _currentContextProvider.value;
       _currentContextProvider.addConsumer(vnode);
-      console.log('Consumer node',vnode);
+    } else if(isConsumer(vnode)) {
+      console.warn(`Use of a context consumer outside the scope of a provider.`)
     }
   }
-  return reconcileChildren(vnode, reconcile);
+  //return reconcileChildren(vnode, reconcile);
+  if (vnode.hasOwnProperty('children') && vnode.children.length) {
+    ++index;
+    vnode.children = reconcileChildFunctions(vnode).map(v => {
+      return reconcile(v, index);
+    });
+  }
+  return vnode;
 };
 
 const reconcileChildren = (vnode, mapper) => {
@@ -61,7 +85,7 @@ export const reconcileOnly = id => vnode => {
   } else if (hasOwnerComponent(vnode) && vnode._owner.props.id === id) {
     vnode = reconcileComponentInstance(vnode._owner);
   } else if (isTypeFunction(vnode)) {
-    vnode = reconcile(vnode);
+    vnode = reconcileTree(vnode);
   }
   return reconcileChildren(vnode, reconcileOnly(id));
 };
@@ -74,19 +98,20 @@ const reconcileChildFunctions = vnode => {
       result      = [],
       resultIndex = [],
       index       = 0;
-
-  // if(vnode.props.hasOwnProperty('id')) {
-  //   console.log('reconcile',vnode.props.id);
-  // }
   children = children.map((child, i) => {
     if (typeof child === 'function') {
+      // Render fn as child
       let childResult;
-
-      if(isConsumer(vnode)) {
-        // Context
-        childResult = child(vnode.props.context);
-      } else {
-        childResult = child();
+      try {
+        if(isConsumer(vnode)) {
+          // Context
+          childResult = child(vnode.props.context);
+        } else {
+          childResult = child();
+        }
+      } catch(err) {
+        console.error(`Error executing child function: `,err);
+        childResult = 'Error executing child function.';
       }
 
       childResult = Is.array(childResult) ? childResult : [childResult];
@@ -104,9 +129,7 @@ const reconcileChildFunctions = vnode => {
     } else if (typeof child.type === 'object') {
       // Occurs when a fn that returns JSX is used as a component in a component
       child = child.type;
-    } else {
-      child = reconcile(child);
-    }
+    } //Not needed : else {child = reconcile(child);}
     return child;
   });
   resultIndex.forEach((idx, i) => {

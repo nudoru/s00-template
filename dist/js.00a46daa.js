@@ -42511,8 +42511,10 @@ var useRef = function useRef(initialValue) {
 
 exports.useRef = useRef;
 
-var useContext = function useContext(foo) {
-  console.warn("useContext hook isn't implemented");
+var useContext = function useContext(context) {
+  console.warn("useContext hook isn't implemented"); // replaces the "consumer"
+  // need to add the component as a consumer to the Provider also
+  // return context.Provider.value
 };
 
 exports.useContext = useContext;
@@ -42800,6 +42802,11 @@ var _NoriComponent3 = _interopRequireDefault(require("./NoriComponent"));
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
+/*
+Clear provider when out of loop (add index counter to reconcile and use that # to test?)
+For nested providers, merge state w/ object assign?
+For value change, ittr over consumer array and add id's to enqueue update
+ */
 //https://reactjs.org/docs/context.html
 
 /*
@@ -42833,8 +42840,6 @@ function (_NoriComponent) {
     (0, _classCallCheck2.default)(this, Provider);
     _this = (0, _possibleConstructorReturn2.default)(this, (0, _getPrototypeOf2.default)(Provider).call(this, props));
     (0, _defineProperty2.default)((0, _assertThisInitialized2.default)(_this), "addConsumer", function (c) {
-      console.log("Adding consumer", c);
-
       _this._consumers.push(c);
     });
     _this._value = props.value || {};
@@ -42845,13 +42850,11 @@ function (_NoriComponent) {
   (0, _createClass2.default)(Provider, [{
     key: "value",
     get: function get() {
-      console.log("Provider value getter");
       return this._value;
     } // When this is set, all consumers need to be rerendered
     // compare using Object.is
     ,
     set: function set(newValue) {
-      console.log("Provider value setter");
       this._value = newValue;
     }
   }]);
@@ -42874,13 +42877,122 @@ function (_NoriComponent2) {
 }(_NoriComponent3.default);
 
 exports.Consumer = Consumer;
-},{"@babel/runtime/helpers/classCallCheck":"../node_modules/@babel/runtime/helpers/classCallCheck.js","@babel/runtime/helpers/createClass":"../node_modules/@babel/runtime/helpers/createClass.js","@babel/runtime/helpers/possibleConstructorReturn":"../node_modules/@babel/runtime/helpers/possibleConstructorReturn.js","@babel/runtime/helpers/getPrototypeOf":"../node_modules/@babel/runtime/helpers/getPrototypeOf.js","@babel/runtime/helpers/assertThisInitialized":"../node_modules/@babel/runtime/helpers/assertThisInitialized.js","@babel/runtime/helpers/inherits":"../node_modules/@babel/runtime/helpers/inherits.js","@babel/runtime/helpers/defineProperty":"../node_modules/@babel/runtime/helpers/defineProperty.js","./NoriComponent":"js/nori/NoriComponent.js"}],"js/nori/Reconciler.js":[function(require,module,exports) {
+},{"@babel/runtime/helpers/classCallCheck":"../node_modules/@babel/runtime/helpers/classCallCheck.js","@babel/runtime/helpers/createClass":"../node_modules/@babel/runtime/helpers/createClass.js","@babel/runtime/helpers/possibleConstructorReturn":"../node_modules/@babel/runtime/helpers/possibleConstructorReturn.js","@babel/runtime/helpers/getPrototypeOf":"../node_modules/@babel/runtime/helpers/getPrototypeOf.js","@babel/runtime/helpers/assertThisInitialized":"../node_modules/@babel/runtime/helpers/assertThisInitialized.js","@babel/runtime/helpers/inherits":"../node_modules/@babel/runtime/helpers/inherits.js","@babel/runtime/helpers/defineProperty":"../node_modules/@babel/runtime/helpers/defineProperty.js","./NoriComponent":"js/nori/NoriComponent.js"}],"js/nori/util/StringUtils.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.removeComponentInstance = exports.reconcileOnly = exports.reconcile = exports.getHookCursor = exports.setCurrentVnode = exports.getCurrentVnode = exports.getComponentInstances = exports.cloneNode = void 0;
+exports.unslugify = exports.slugify = exports.removeWhiteSpace = exports.DOMtoCSSStyle = exports.dasherize = exports.underscore = exports.capitalize = exports.unescapeHTML = exports.removeEntities = exports.removeTags = exports.ellipses = exports.toTitleCase = exports.capitalizeFirstLetter = exports.repeatStr = void 0;
+
+var _ArrayUtils = require("./ArrayUtils");
+
+var _this = void 0;
+
+var repeatStr = function repeatStr(str, num) {
+  return (0, _ArrayUtils.range)(num).map(function (n) {
+    return str;
+  }).join('');
+};
+
+exports.repeatStr = repeatStr;
+
+var capitalizeFirstLetter = function capitalizeFirstLetter(str) {
+  return str.charAt(0).toUpperCase() + str.substring(1);
+};
+
+exports.capitalizeFirstLetter = capitalizeFirstLetter;
+
+var toTitleCase = function toTitleCase(str) {
+  return str.replace(/\w\S*/g, function (txt) {
+    return txt.charAt(0).toUpperCase() + txt.substr(1);
+  });
+};
+
+exports.toTitleCase = toTitleCase;
+
+var ellipses = function ellipses(len) {
+  return _this.length > len ? _this.substr(0, len) + "..." : _this;
+}; // From https://github.com/sstephenson/prototype/blob/d9411e5/src/prototype/lang/string.js#L426
+// export const removeTags2 = (str) => {
+//   return str.replace(/<\w+(\s+("[^"]*"|'[^']*'|[^>])+)?>|<\/\w+>/gi, '');
+// };
+
+
+exports.ellipses = ellipses;
+
+var removeTags = function removeTags(str) {
+  return str.replace(/(<([^>]+)>)/ig, '');
+};
+
+exports.removeTags = removeTags;
+
+var removeEntities = function removeEntities(str) {
+  return str.replace(/(&(#?)(?:[a-z\d]+|#\d+|#x[a-f\d]+);)/ig, '');
+}; // From https://github.com/sstephenson/prototype/blob/d9411e5/src/prototype/lang/string.js#L426
+
+
+exports.removeEntities = removeEntities;
+
+var unescapeHTML = function unescapeHTML(str) {
+  // Warning: In 1.7 String#unescapeHTML will no longer call String#stripTags.
+  return removeTags(str).replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&');
+};
+
+exports.unescapeHTML = unescapeHTML;
+
+var capitalize = function capitalize(str) {
+  return str.charAt(0).toUpperCase() + _this.substring(1).toLowerCase();
+};
+
+exports.capitalize = capitalize;
+
+var underscore = function underscore(str) {
+  return str.replace(/::/g, '/').replace(/([A-Z]+)([A-Z][a-z])/g, '$1_$2').replace(/([a-z\d])([A-Z])/g, '$1_$2').replace(/-/g, '_').toLowerCase();
+};
+
+exports.underscore = underscore;
+
+var dasherize = function dasherize(str) {
+  return str.replace(/_/g, '-');
+};
+
+exports.dasherize = dasherize;
+
+var DOMtoCSSStyle = function DOMtoCSSStyle(str) {
+  return dasherize(underscore(str));
+};
+
+exports.DOMtoCSSStyle = DOMtoCSSStyle;
+
+var removeWhiteSpace = function removeWhiteSpace(str) {
+  return str.replace(/(\r\n|\n|\r|\t|\s)/gm, '').replace(/>\s+</g, '><');
+};
+
+exports.removeWhiteSpace = removeWhiteSpace;
+
+var slugify = function slugify(str) {
+  return str.split(' ').map(function (s) {
+    return s.toLowerCase();
+  }).join('_');
+};
+
+exports.slugify = slugify;
+
+var unslugify = function unslugify(str) {
+  return str.split('_').map(function (s) {
+    return s.charAt(0).toUpperCase() + s.substring(1);
+  }).join(' ');
+};
+
+exports.unslugify = unslugify;
+},{"./ArrayUtils":"js/nori/util/ArrayUtils.js"}],"js/nori/Reconciler.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.removeComponentInstance = exports.reconcileOnly = exports.reconcileTree = exports.getHookCursor = exports.setCurrentVnode = exports.getCurrentVnode = exports.getComponentInstances = exports.cloneNode = void 0;
 
 var _toConsumableArray2 = _interopRequireDefault(require("@babel/runtime/helpers/toConsumableArray"));
 
@@ -42904,14 +43016,16 @@ var _Hooks = require("./Hooks");
 
 var _Context = require("./Context");
 
-var _ArrayUtils = require("./util/ArrayUtils");
+var _StringUtils = require("./util/StringUtils");
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 var _componentInstanceMap = {},
     _currentVnode,
     _currentVnodeHookCursor = 0,
-    _currentContextProvider;
+    _currentContextProvider,
+    _currentContextProviderIndex = 0,
+    _reconciliationDepth = 0;
 
 var getKeyOrId = function getKeyOrId(vnode) {
   return vnode.props.key ? vnode.props.key : vnode.props.id;
@@ -42964,32 +43078,55 @@ exports.setCurrentVnode = setCurrentVnode;
 
 var getHookCursor = function getHookCursor(_) {
   return _currentVnodeHookCursor++;
-};
+}; // Start off the reconciliation process and keep track of the depth
+
 
 exports.getHookCursor = getHookCursor;
 
+var reconcileTree = function reconcileTree(vnode) {
+  _reconciliationDepth = 0;
+  return reconcile(vnode, _reconciliationDepth);
+}; // Need a persistant index because this fn is called at several places
+
+
+exports.reconcileTree = reconcileTree;
+
 var reconcile = function reconcile(vnode) {
-  setCurrentVnode(vnode);
+  var index = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 0;
+  setCurrentVnode(vnode); // let indent = repeatStr('\t',index);
+  // console.log(indent,index,vnode);
+
+  if (index <= _currentContextProviderIndex) {
+    _currentContextProvider = null;
+  }
 
   if ((0, _Nori.isTypeFunction)(vnode)) {
     vnode = reconcileComponentInstance(vnode);
 
     if (isProvider(vnode)) {
+      // console.log(indent, `Provider: `,index, _currentContextProviderIndex);
       _currentContextProvider = vnode._owner;
-      console.log('Provider node', _currentContextProvider.value);
+      _currentContextProviderIndex = index;
     } else if (isConsumer(vnode) && _currentContextProvider) {
+      // console.log(indent, `Consumer: `,index, _currentContextProviderIndex);
       vnode.props.context = _currentContextProvider.value;
 
       _currentContextProvider.addConsumer(vnode);
-
-      console.log('Consumer node', vnode);
+    } else if (isConsumer(vnode)) {
+      console.warn("Use of a context consumer outside the scope of a provider.");
     }
+  } //return reconcileChildren(vnode, reconcile);
+
+
+  if (vnode.hasOwnProperty('children') && vnode.children.length) {
+    ++index;
+    vnode.children = reconcileChildFunctions(vnode).map(function (v) {
+      return reconcile(v, index);
+    });
   }
 
-  return reconcileChildren(vnode, reconcile);
+  return vnode;
 };
-
-exports.reconcile = reconcile;
 
 var reconcileChildren = function reconcileChildren(vnode, mapper) {
   if (vnode.hasOwnProperty('children') && vnode.children.length) {
@@ -43009,7 +43146,7 @@ var reconcileOnly = function reconcileOnly(id) {
     } else if (hasOwnerComponent(vnode) && vnode._owner.props.id === id) {
       vnode = reconcileComponentInstance(vnode._owner);
     } else if ((0, _Nori.isTypeFunction)(vnode)) {
-      vnode = reconcile(vnode);
+      vnode = reconcileTree(vnode);
     }
 
     return reconcileChildren(vnode, reconcileOnly(id));
@@ -43025,19 +43162,22 @@ var reconcileChildFunctions = function reconcileChildFunctions(vnode) {
   var children = vnode.children,
       result = [],
       resultIndex = [],
-      index = 0; // if(vnode.props.hasOwnProperty('id')) {
-  //   console.log('reconcile',vnode.props.id);
-  // }
-
+      index = 0;
   children = children.map(function (child, i) {
     if (typeof child === 'function') {
+      // Render fn as child
       var childResult;
 
-      if (isConsumer(vnode)) {
-        // Context
-        childResult = child(vnode.props.context);
-      } else {
-        childResult = child();
+      try {
+        if (isConsumer(vnode)) {
+          // Context
+          childResult = child(vnode.props.context);
+        } else {
+          childResult = child();
+        }
+      } catch (err) {
+        console.error("Error executing child function: ", err);
+        childResult = 'Error executing child function.';
       }
 
       childResult = _is.default.array(childResult) ? childResult : [childResult];
@@ -43056,9 +43196,8 @@ var reconcileChildFunctions = function reconcileChildFunctions(vnode) {
     } else if ((0, _typeof2.default)(child.type) === 'object') {
       // Occurs when a fn that returns JSX is used as a component in a component
       child = child.type;
-    } else {
-      child = reconcile(child);
-    }
+    } //Not needed : else {child = reconcile(child);}
+
 
     return child;
   });
@@ -43158,7 +43297,7 @@ var removeComponentInstance = function removeComponentInstance(vnode) {
 };
 
 exports.removeComponentInstance = removeComponentInstance;
-},{"@babel/runtime/helpers/toConsumableArray":"../node_modules/@babel/runtime/helpers/toConsumableArray.js","@babel/runtime/helpers/typeof":"../node_modules/@babel/runtime/helpers/typeof.js","ramda":"../node_modules/ramda/es/index.js","./util/is":"js/nori/util/is.js","./util/ElementIDCreator":"js/nori/util/ElementIDCreator.js","./Nori":"js/nori/Nori.js","lodash":"../node_modules/lodash/lodash.js","./LifecycleQueue":"js/nori/LifecycleQueue.js","./NoriDOM":"js/nori/NoriDOM.js","./Hooks":"js/nori/Hooks.js","./Context":"js/nori/Context.js","./util/ArrayUtils":"js/nori/util/ArrayUtils.js"}],"js/nori/browser/DOMToolbox.js":[function(require,module,exports) {
+},{"@babel/runtime/helpers/toConsumableArray":"../node_modules/@babel/runtime/helpers/toConsumableArray.js","@babel/runtime/helpers/typeof":"../node_modules/@babel/runtime/helpers/typeof.js","ramda":"../node_modules/ramda/es/index.js","./util/is":"js/nori/util/is.js","./util/ElementIDCreator":"js/nori/util/ElementIDCreator.js","./Nori":"js/nori/Nori.js","lodash":"../node_modules/lodash/lodash.js","./LifecycleQueue":"js/nori/LifecycleQueue.js","./NoriDOM":"js/nori/NoriDOM.js","./Hooks":"js/nori/Hooks.js","./Context":"js/nori/Context.js","./util/StringUtils":"js/nori/util/StringUtils.js"}],"js/nori/browser/DOMToolbox.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -43990,7 +44129,7 @@ exports.h = h;
 
 var renderVDOM = function renderVDOM(node) {
   _currentStage = isUninitialized() ? STAGE_FIRSTRENDER : STAGE_RENDERING;
-  var vdom = (0, _Reconciler.reconcile)(node);
+  var vdom = (0, _Reconciler.reconcileTree)(node);
   setCurrentVDOM(vdom);
   _currentStage = STAGE_STEADY;
   return vdom;
@@ -44135,106 +44274,7 @@ function (_NoriComponent) {
 }(_NoriComponent2.default);
 
 exports.default = Box;
-},{"@babel/runtime/helpers/objectWithoutProperties":"../node_modules/@babel/runtime/helpers/objectWithoutProperties.js","@babel/runtime/helpers/classCallCheck":"../node_modules/@babel/runtime/helpers/classCallCheck.js","@babel/runtime/helpers/createClass":"../node_modules/@babel/runtime/helpers/createClass.js","@babel/runtime/helpers/possibleConstructorReturn":"../node_modules/@babel/runtime/helpers/possibleConstructorReturn.js","@babel/runtime/helpers/getPrototypeOf":"../node_modules/@babel/runtime/helpers/getPrototypeOf.js","@babel/runtime/helpers/inherits":"../node_modules/@babel/runtime/helpers/inherits.js","../nori/Nori":"js/nori/Nori.js","../nori/NoriComponent":"js/nori/NoriComponent.js"}],"js/nori/util/StringUtils.js":[function(require,module,exports) {
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.unslugify = exports.slugify = exports.removeWhiteSpace = exports.DOMtoCSSStyle = exports.dasherize = exports.underscore = exports.capitalize = exports.unescapeHTML = exports.removeEntities = exports.removeTags = exports.ellipses = exports.toTitleCase = exports.capitalizeFirstLetter = void 0;
-
-var _this = void 0;
-
-var capitalizeFirstLetter = function capitalizeFirstLetter(str) {
-  return str.charAt(0).toUpperCase() + str.substring(1);
-};
-
-exports.capitalizeFirstLetter = capitalizeFirstLetter;
-
-var toTitleCase = function toTitleCase(str) {
-  return str.replace(/\w\S*/g, function (txt) {
-    return txt.charAt(0).toUpperCase() + txt.substr(1);
-  });
-};
-
-exports.toTitleCase = toTitleCase;
-
-var ellipses = function ellipses(len) {
-  return _this.length > len ? _this.substr(0, len) + "..." : _this;
-}; // From https://github.com/sstephenson/prototype/blob/d9411e5/src/prototype/lang/string.js#L426
-// export const removeTags2 = (str) => {
-//   return str.replace(/<\w+(\s+("[^"]*"|'[^']*'|[^>])+)?>|<\/\w+>/gi, '');
-// };
-
-
-exports.ellipses = ellipses;
-
-var removeTags = function removeTags(str) {
-  return str.replace(/(<([^>]+)>)/ig, '');
-};
-
-exports.removeTags = removeTags;
-
-var removeEntities = function removeEntities(str) {
-  return str.replace(/(&(#?)(?:[a-z\d]+|#\d+|#x[a-f\d]+);)/ig, '');
-}; // From https://github.com/sstephenson/prototype/blob/d9411e5/src/prototype/lang/string.js#L426
-
-
-exports.removeEntities = removeEntities;
-
-var unescapeHTML = function unescapeHTML(str) {
-  // Warning: In 1.7 String#unescapeHTML will no longer call String#stripTags.
-  return removeTags(str).replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&');
-};
-
-exports.unescapeHTML = unescapeHTML;
-
-var capitalize = function capitalize(str) {
-  return str.charAt(0).toUpperCase() + _this.substring(1).toLowerCase();
-};
-
-exports.capitalize = capitalize;
-
-var underscore = function underscore(str) {
-  return str.replace(/::/g, '/').replace(/([A-Z]+)([A-Z][a-z])/g, '$1_$2').replace(/([a-z\d])([A-Z])/g, '$1_$2').replace(/-/g, '_').toLowerCase();
-};
-
-exports.underscore = underscore;
-
-var dasherize = function dasherize(str) {
-  return str.replace(/_/g, '-');
-};
-
-exports.dasherize = dasherize;
-
-var DOMtoCSSStyle = function DOMtoCSSStyle(str) {
-  return dasherize(underscore(str));
-};
-
-exports.DOMtoCSSStyle = DOMtoCSSStyle;
-
-var removeWhiteSpace = function removeWhiteSpace(str) {
-  return str.replace(/(\r\n|\n|\r|\t|\s)/gm, '').replace(/>\s+</g, '><');
-};
-
-exports.removeWhiteSpace = removeWhiteSpace;
-
-var slugify = function slugify(str) {
-  return str.split(' ').map(function (s) {
-    return s.toLowerCase();
-  }).join('_');
-};
-
-exports.slugify = slugify;
-
-var unslugify = function unslugify(str) {
-  return str.split('_').map(function (s) {
-    return s.charAt(0).toUpperCase() + s.substring(1);
-  }).join(' ');
-};
-
-exports.unslugify = unslugify;
-},{}],"js/nori/util/Lorem.js":[function(require,module,exports) {
+},{"@babel/runtime/helpers/objectWithoutProperties":"../node_modules/@babel/runtime/helpers/objectWithoutProperties.js","@babel/runtime/helpers/classCallCheck":"../node_modules/@babel/runtime/helpers/classCallCheck.js","@babel/runtime/helpers/createClass":"../node_modules/@babel/runtime/helpers/createClass.js","@babel/runtime/helpers/possibleConstructorReturn":"../node_modules/@babel/runtime/helpers/possibleConstructorReturn.js","@babel/runtime/helpers/getPrototypeOf":"../node_modules/@babel/runtime/helpers/getPrototypeOf.js","@babel/runtime/helpers/inherits":"../node_modules/@babel/runtime/helpers/inherits.js","../nori/Nori":"js/nori/Nori.js","../nori/NoriComponent":"js/nori/NoriComponent.js"}],"js/nori/util/Lorem.js":[function(require,module,exports) {
 "use strict";
 
 var _NumberUtils = require("./NumberUtils");
@@ -45932,6 +45972,7 @@ var SFCWithJuice = function SFCWithJuice(props) {
  */
 
 
+var ContextComp = (0, _Context.createContext)();
 var testBox = (0, _Nori.h)(_Box.default, {
   key: "main",
   className: appContainer
@@ -45943,9 +45984,14 @@ var testBox = (0, _Nori.h)(_Box.default, {
   className: whiteBox
 }, (0, _Nori.h)(_Nonpresentational.default, null), (0, _Nori.h)(_Stepper.Stepper, null), (0, _Nori.h)("hr", null), (0, _Nori.h)(_InputControls.InputControls, null), (0, _Nori.h)("hr", null), (0, _Nori.h)(Sfc, {
   message: "IMA sfc"
-}), (0, _Nori.h)(SFCWithJuice, null), (0, _Nori.h)(_Greeter.default, null), (0, _Nori.h)(_Lister.default, null)))); //<Box><SFCWithJuice/><Ticker/></Box>
+}), (0, _Nori.h)(SFCWithJuice, null), (0, _Nori.h)(_Greeter.default, null), (0, _Nori.h)("hr", null), (0, _Nori.h)(ContextComp.Provider, {
+  value: {
+    fuz: 'number1'
+  }
+}, (0, _Nori.h)(ContextComp.Consumer, null, function (value) {
+  return (0, _Nori.h)("p", null, "This value is from a context: ", (0, _Nori.h)("strong", null, value.fuz));
+})), (0, _Nori.h)("hr", null), (0, _Nori.h)(_Lister.default, null)))); //<Box><SFCWithJuice/><Ticker/></Box>
 
-var ContextComp = (0, _Context.createContext)();
 var AnotherContextComp = (0, _Context.createContext)();
 var contextTest = (0, _Nori.h)("div", null, (0, _Nori.h)(ContextComp.Provider, {
   value: {
@@ -45959,10 +46005,10 @@ var contextTest = (0, _Nori.h)("div", null, (0, _Nori.h)(ContextComp.Provider, {
   }
 }, (0, _Nori.h)(AnotherContextComp.Consumer, null, function (value) {
   return (0, _Nori.h)("p", null, "Another context ", value.bar);
-}))); // console.log(ContextComp);
-
-console.log(contextTest);
-(0, _NoriDOM.render)(contextTest, document.querySelector('#js-application'));
+})), (0, _Nori.h)(AnotherContextComp.Consumer, null, function (value) {
+  return (0, _Nori.h)("p", null, "This shouldn't work ", value.bar);
+}));
+(0, _NoriDOM.render)(testBox, document.querySelector('#js-application'));
 },{"@babel/runtime/helpers/slicedToArray":"../node_modules/@babel/runtime/helpers/slicedToArray.js","@babel/runtime/helpers/taggedTemplateLiteral":"../node_modules/@babel/runtime/helpers/taggedTemplateLiteral.js","./theme/Theme":"js/theme/Theme.js","emotion":"../node_modules/emotion/dist/index.esm.js","./nori/Nori":"js/nori/Nori.js","./nori/NoriDOM":"js/nori/NoriDOM.js","./components/Box":"js/components/Box.js","./components/Lorem":"js/components/Lorem.js","./components/Greeter":"js/components/Greeter.js","./components/Lister":"js/components/Lister.js","./nori/Hooks":"js/nori/Hooks.js","./components/InputControls":"js/components/InputControls.js","./components/Stepper":"js/components/Stepper.js","./components/Nonpresentational":"js/components/Nonpresentational.js","./nori/Context":"js/nori/Context.js","../img/pattern/shattered.png":"img/pattern/shattered.png"}],"../node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
 var global = arguments[3];
 var OVERLAY_ID = '__parcel__error__overlay__';

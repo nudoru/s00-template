@@ -41,8 +41,7 @@ import NoriComponent from "./NoriComponent";
 import {
   cloneNode,
   getComponentInstances,
-  reconcile,
-  reconcileOnly
+  reconcileOnly, reconcileTree
 } from "./Reconciler";
 
 const STAGE_UNITIALIZED = 'uninitialized';
@@ -89,7 +88,7 @@ export const h = (type, props, ...args) => {
 // Called from NoriDOM to render the first vdom
 export const renderVDOM = node => {
   _currentStage = isUninitialized() ? STAGE_FIRSTRENDER : STAGE_RENDERING;
-  const vdom    = reconcile(node);
+  const vdom    = reconcileTree(node);
   setCurrentVDOM(vdom);
   _currentStage = STAGE_STEADY;
   return vdom;

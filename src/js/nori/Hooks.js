@@ -154,6 +154,10 @@ export const useRef = initialValue => {
   return returnObj;
 };
 
-export const useContext = foo => {
+export const useContext = context => {
   console.warn(`useContext hook isn't implemented`);
+  // replaces the "consumer"
+  // need to add the component as a consumer to the Provider also
+  // return context.Provider.value
+
 };

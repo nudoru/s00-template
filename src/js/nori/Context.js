@@ -1,5 +1,11 @@
 import NoriComponent from './NoriComponent';
 
+/*
+Clear provider when out of loop (add index counter to reconcile and use that # to test?)
+For nested providers, merge state w/ object assign?
+For value change, ittr over consumer array and add id's to enqueue update
+ */
+
 //https://reactjs.org/docs/context.html
 
 /*
@@ -29,19 +35,16 @@ export class Provider extends NoriComponent {
   };
 
   get value() {
-    console.log(`Provider value getter`);
     return this._value;
   }
 
   // When this is set, all consumers need to be rerendered
   // compare using Object.is
   set value(newValue) {
-    console.log(`Provider value setter`);
     this._value = newValue;
   }
 
   addConsumer = c => {
-    console.log(`Adding consumer`, c);
     this._consumers.push(c);
   }
 
