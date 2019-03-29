@@ -1,4 +1,5 @@
 import NoriComponent from './NoriComponent';
+import {enqueueUpdate} from "./Nori";
 
 /*
 Clear provider when out of loop (add index counter to reconcile and use that # to test?)
@@ -12,14 +13,11 @@ For value change, ittr over consumer array and add id's to enqueue update
 The defaultValue argument is only used when a component does not have a matching Provider above it in the tree. This can be helpful for testing components in isolation without wrapping them. Note: passing undefined as a Provider value does not cause consuming components to use defaultValue.
  */
 export const createContext = defaultValue => {
-
-  const context = {
+  return {
     defaultValue,
     Provider: Provider,
     Consumer: Consumer
   };
-
-  return context;
 };
 
 /*
@@ -34,22 +32,34 @@ export class Provider extends NoriComponent {
     this._consumers = [];
   };
 
+  addConsumer = c => {
+    this._consumers.push(c);
+  };
+
+  updateConsumers = _ => {
+    this.getVNodeIDs(this._consumers).forEach(c => {
+      enqueueUpdate(c);
+    });
+  };
+
+  getVNodeIDs = consumers => consumers.reduce((acc, c) => {
+    acc.push(c.props.id);
+    return acc;
+  }, []);
+
   get value() {
     return this._value;
   }
 
-  // When this is set, all consumers need to be rerendered
-  // compare using Object.is
   set value(newValue) {
-    this._value = newValue;
+    if(!Object.is(this._value, newValue)) {
+      this._value = newValue;
+      this.updateConsumers();
+    }
   }
-
-  addConsumer = c => {
-    this._consumers.push(c);
-  }
-
 }
 
+// Magic happens in the Reconciler
 export class Consumer extends NoriComponent {
   constructor(props) {
     super(props);

@@ -5,8 +5,9 @@
  */
 
 import {h} from "../nori/Nori";
-import {useState, useEffect, useMemo, useRef} from "../nori/Hooks";
+import {useState, useEffect, useMemo, useRef, useContext} from "../nori/Hooks";
 import {css} from 'emotion';
+import {createContext} from "../nori/Context";
 
 const blue = css`
   padding-left: 1rem;
@@ -20,11 +21,18 @@ const useTitle = title => {
   });
 };
 
+let ContextComp = createContext();
+
 const useGetInputDisplay = value => {
   return useMemo(() => {
     return <span className={blue}><span>{value}</span></span>;
   }, [value]);
 };
+
+// const Label = _ => {
+//   const cntx = useContext(ContextComp);
+//   return <span>{cntx.label}</span>
+// };
 
 export const InputControls = props => {
   let [inputValue, setInputValue] = useState('');
@@ -39,8 +47,15 @@ export const InputControls = props => {
   const _onInputFocus = e => console.log('focus',e);
   const _onInputBlur = e => console.log('blur',e);
 
+
   return (
-    <div><input
+    <div>
+      <ContextComp.Provider value={{label: 'Magic: '}}>
+        <ContextComp.Consumer>
+          {value => <span>{value.label}</span>}
+        </ContextComp.Consumer>
+      </ContextComp.Provider>
+      <input
       ref={inputRef}
       type='text'
       placeholder='Type here'

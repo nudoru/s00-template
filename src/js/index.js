@@ -13,6 +13,8 @@ import {InputControls} from "./components/InputControls";
 import {Stepper} from "./components/Stepper";
 import Nonpresentational from './components/Nonpresentational';
 import {createContext} from "./nori/Context";
+import ColorSwatch from './components/ColorSwatch';
+import Ticker from './components/Ticker';
 
 // ${tme.gradients['premium-white']};
 const appContainerBG = require('../img/pattern/shattered.png');
@@ -81,7 +83,9 @@ let testBox = <Box key='main' className={appContainer}>
       <hr/>
       <Sfc message='IMA sfc'/>
       <SFCWithJuice/>
+      <ColorSwatch/>
       <Greeter/>
+      <Ticker/>
       <hr/>
       <ContextComp.Provider value={{fuz: 'number1'}}>
         <ContextComp.Consumer>
@@ -94,12 +98,17 @@ let testBox = <Box key='main' className={appContainer}>
   </Box>
 </Box>;
 
-//<Box><SFCWithJuice/><Ticker/></Box>
 
 let AnotherContextComp = createContext();
 
 let contextTest = <div>
   <ContextComp.Provider value={{fuz: 'number1'}}>
+    <ContextComp.Consumer>
+      {value => <p>Context! {value.fuz}</p>}
+    </ContextComp.Consumer>
+    <ContextComp.Consumer>
+      {value => <p>Context! {value.fuz}</p>}
+    </ContextComp.Consumer>
     <ContextComp.Consumer>
       {value => <p>Context! {value.fuz}</p>}
     </ContextComp.Consumer>
@@ -109,9 +118,6 @@ let contextTest = <div>
       {value => <p>Another context {value.bar}</p>}
     </AnotherContextComp.Consumer>
   </AnotherContextComp.Provider>
-  <AnotherContextComp.Consumer>
-    {value => <p>This shouldn't work {value.bar}</p>}
-  </AnotherContextComp.Consumer>
 </div>;
 
 render(testBox, document.querySelector('#js-application'));

@@ -155,9 +155,10 @@ export const useRef = initialValue => {
 };
 
 export const useContext = context => {
-  console.warn(`useContext hook isn't implemented`);
   // replaces the "consumer"
   // need to add the component as a consumer to the Provider also
   // return context.Provider.value
-
+  // PROBLEM - how to get the Provider into here? Just passing in the content gets the
+  // Provider class, not the instance of the provider that has the data
+  console.warn(`useContext hook isn't implemented`);
 };

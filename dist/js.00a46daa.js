@@ -42512,9 +42512,12 @@ var useRef = function useRef(initialValue) {
 exports.useRef = useRef;
 
 var useContext = function useContext(context) {
-  console.warn("useContext hook isn't implemented"); // replaces the "consumer"
+  // replaces the "consumer"
   // need to add the component as a consumer to the Provider also
   // return context.Provider.value
+  // PROBLEM - how to get the Provider into here? Just passing in the content gets the
+  // Provider class, not the instance of the provider that has the data
+  console.warn("useContext hook isn't implemented");
 };
 
 exports.useContext = useContext;
@@ -42800,6 +42803,8 @@ var _defineProperty2 = _interopRequireDefault(require("@babel/runtime/helpers/de
 
 var _NoriComponent3 = _interopRequireDefault(require("./NoriComponent"));
 
+var _Nori = require("./Nori");
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 /*
@@ -42813,12 +42818,11 @@ For value change, ittr over consumer array and add id's to enqueue update
 The defaultValue argument is only used when a component does not have a matching Provider above it in the tree. This can be helpful for testing components in isolation without wrapping them. Note: passing undefined as a Provider value does not cause consuming components to use defaultValue.
  */
 var createContext = function createContext(defaultValue) {
-  var context = {
+  return {
     defaultValue: defaultValue,
     Provider: Provider,
     Consumer: Consumer
   };
-  return context;
 };
 /*
 Accepts a value prop to be passed to consuming components that are descendants of this Provider. One Provider can be connected to many consumers. Providers can be nested to override values deeper within the tree.
@@ -42842,6 +42846,17 @@ function (_NoriComponent) {
     (0, _defineProperty2.default)((0, _assertThisInitialized2.default)(_this), "addConsumer", function (c) {
       _this._consumers.push(c);
     });
+    (0, _defineProperty2.default)((0, _assertThisInitialized2.default)(_this), "updateConsumers", function (_) {
+      _this.getVNodeIDs(_this._consumers).forEach(function (c) {
+        (0, _Nori.enqueueUpdate)(c);
+      });
+    });
+    (0, _defineProperty2.default)((0, _assertThisInitialized2.default)(_this), "getVNodeIDs", function (consumers) {
+      return consumers.reduce(function (acc, c) {
+        acc.push(c.props.id);
+        return acc;
+      }, []);
+    });
     _this._value = props.value || {};
     _this._consumers = [];
     return _this;
@@ -42851,15 +42866,17 @@ function (_NoriComponent) {
     key: "value",
     get: function get() {
       return this._value;
-    } // When this is set, all consumers need to be rerendered
-    // compare using Object.is
-    ,
+    },
     set: function set(newValue) {
-      this._value = newValue;
+      if (!Object.is(this._value, newValue)) {
+        this._value = newValue;
+        this.updateConsumers();
+      }
     }
   }]);
   return Provider;
-}(_NoriComponent3.default);
+}(_NoriComponent3.default); // Magic happens in the Reconciler
+
 
 exports.Provider = Provider;
 
@@ -42877,7 +42894,7 @@ function (_NoriComponent2) {
 }(_NoriComponent3.default);
 
 exports.Consumer = Consumer;
-},{"@babel/runtime/helpers/classCallCheck":"../node_modules/@babel/runtime/helpers/classCallCheck.js","@babel/runtime/helpers/createClass":"../node_modules/@babel/runtime/helpers/createClass.js","@babel/runtime/helpers/possibleConstructorReturn":"../node_modules/@babel/runtime/helpers/possibleConstructorReturn.js","@babel/runtime/helpers/getPrototypeOf":"../node_modules/@babel/runtime/helpers/getPrototypeOf.js","@babel/runtime/helpers/assertThisInitialized":"../node_modules/@babel/runtime/helpers/assertThisInitialized.js","@babel/runtime/helpers/inherits":"../node_modules/@babel/runtime/helpers/inherits.js","@babel/runtime/helpers/defineProperty":"../node_modules/@babel/runtime/helpers/defineProperty.js","./NoriComponent":"js/nori/NoriComponent.js"}],"js/nori/util/StringUtils.js":[function(require,module,exports) {
+},{"@babel/runtime/helpers/classCallCheck":"../node_modules/@babel/runtime/helpers/classCallCheck.js","@babel/runtime/helpers/createClass":"../node_modules/@babel/runtime/helpers/createClass.js","@babel/runtime/helpers/possibleConstructorReturn":"../node_modules/@babel/runtime/helpers/possibleConstructorReturn.js","@babel/runtime/helpers/getPrototypeOf":"../node_modules/@babel/runtime/helpers/getPrototypeOf.js","@babel/runtime/helpers/assertThisInitialized":"../node_modules/@babel/runtime/helpers/assertThisInitialized.js","@babel/runtime/helpers/inherits":"../node_modules/@babel/runtime/helpers/inherits.js","@babel/runtime/helpers/defineProperty":"../node_modules/@babel/runtime/helpers/defineProperty.js","./NoriComponent":"js/nori/NoriComponent.js","./Nori":"js/nori/Nori.js"}],"js/nori/util/StringUtils.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -44764,6 +44781,8 @@ var _Hooks = require("../nori/Hooks");
 
 var _emotion = require("emotion");
 
+var _Context = require("../nori/Context");
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 function _templateObject() {
@@ -44784,13 +44803,19 @@ var useTitle = function useTitle(title) {
   });
 };
 
+var ContextComp = (0, _Context.createContext)();
+
 var useGetInputDisplay = function useGetInputDisplay(value) {
   return (0, _Hooks.useMemo)(function () {
     return (0, _Nori.h)("span", {
       className: blue
     }, (0, _Nori.h)("span", null, value));
   }, [value]);
-};
+}; // const Label = _ => {
+//   const cntx = useContext(ContextComp);
+//   return <span>{cntx.label}</span>
+// };
+
 
 var InputControls = function InputControls(props) {
   var _useState = (0, _Hooks.useState)(''),
@@ -44814,7 +44839,13 @@ var InputControls = function InputControls(props) {
     return console.log('blur', e);
   };
 
-  return (0, _Nori.h)("div", null, (0, _Nori.h)("input", {
+  return (0, _Nori.h)("div", null, (0, _Nori.h)(ContextComp.Provider, {
+    value: {
+      label: 'Magic: '
+    }
+  }, (0, _Nori.h)(ContextComp.Consumer, null, function (value) {
+    return (0, _Nori.h)("span", null, value.label);
+  })), (0, _Nori.h)("input", {
     ref: inputRef,
     type: "text",
     placeholder: "Type here",
@@ -44825,7 +44856,7 @@ var InputControls = function InputControls(props) {
 };
 
 exports.InputControls = InputControls;
-},{"@babel/runtime/helpers/slicedToArray":"../node_modules/@babel/runtime/helpers/slicedToArray.js","@babel/runtime/helpers/taggedTemplateLiteral":"../node_modules/@babel/runtime/helpers/taggedTemplateLiteral.js","../nori/Nori":"js/nori/Nori.js","../nori/Hooks":"js/nori/Hooks.js","emotion":"../node_modules/emotion/dist/index.esm.js"}],"../node_modules/@babel/runtime/node_modules/regenerator-runtime/runtime.js":[function(require,module,exports) {
+},{"@babel/runtime/helpers/slicedToArray":"../node_modules/@babel/runtime/helpers/slicedToArray.js","@babel/runtime/helpers/taggedTemplateLiteral":"../node_modules/@babel/runtime/helpers/taggedTemplateLiteral.js","../nori/Nori":"js/nori/Nori.js","../nori/Hooks":"js/nori/Hooks.js","emotion":"../node_modules/emotion/dist/index.esm.js","../nori/Context":"js/nori/Context.js"}],"../node_modules/@babel/runtime/node_modules/regenerator-runtime/runtime.js":[function(require,module,exports) {
 /**
  * Copyright (c) 2014-present, Facebook, Inc.
  *
@@ -45866,7 +45897,178 @@ function (_NoriComponent) {
 }(_NoriComponent2.default);
 
 exports.default = Nonpresentational;
-},{"@babel/runtime/helpers/classCallCheck":"../node_modules/@babel/runtime/helpers/classCallCheck.js","@babel/runtime/helpers/possibleConstructorReturn":"../node_modules/@babel/runtime/helpers/possibleConstructorReturn.js","@babel/runtime/helpers/getPrototypeOf":"../node_modules/@babel/runtime/helpers/getPrototypeOf.js","@babel/runtime/helpers/assertThisInitialized":"../node_modules/@babel/runtime/helpers/assertThisInitialized.js","@babel/runtime/helpers/inherits":"../node_modules/@babel/runtime/helpers/inherits.js","@babel/runtime/helpers/defineProperty":"../node_modules/@babel/runtime/helpers/defineProperty.js","../nori/NoriComponent":"js/nori/NoriComponent.js","../nori/Nori":"js/nori/Nori.js"}],"img/pattern/shattered.png":[function(require,module,exports) {
+},{"@babel/runtime/helpers/classCallCheck":"../node_modules/@babel/runtime/helpers/classCallCheck.js","@babel/runtime/helpers/possibleConstructorReturn":"../node_modules/@babel/runtime/helpers/possibleConstructorReturn.js","@babel/runtime/helpers/getPrototypeOf":"../node_modules/@babel/runtime/helpers/getPrototypeOf.js","@babel/runtime/helpers/assertThisInitialized":"../node_modules/@babel/runtime/helpers/assertThisInitialized.js","@babel/runtime/helpers/inherits":"../node_modules/@babel/runtime/helpers/inherits.js","@babel/runtime/helpers/defineProperty":"../node_modules/@babel/runtime/helpers/defineProperty.js","../nori/NoriComponent":"js/nori/NoriComponent.js","../nori/Nori":"js/nori/Nori.js"}],"js/components/ColorSwatch.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = void 0;
+
+var _classCallCheck2 = _interopRequireDefault(require("@babel/runtime/helpers/classCallCheck"));
+
+var _createClass2 = _interopRequireDefault(require("@babel/runtime/helpers/createClass"));
+
+var _possibleConstructorReturn2 = _interopRequireDefault(require("@babel/runtime/helpers/possibleConstructorReturn"));
+
+var _getPrototypeOf2 = _interopRequireDefault(require("@babel/runtime/helpers/getPrototypeOf"));
+
+var _assertThisInitialized2 = _interopRequireDefault(require("@babel/runtime/helpers/assertThisInitialized"));
+
+var _inherits2 = _interopRequireDefault(require("@babel/runtime/helpers/inherits"));
+
+var _defineProperty2 = _interopRequireDefault(require("@babel/runtime/helpers/defineProperty"));
+
+var _NoriComponent2 = _interopRequireDefault(require("../nori/NoriComponent"));
+
+var _Nori = require("../nori/Nori");
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+/* @jsx h */
+
+/**
+ * Shamelessly pulled from https://youtu.be/_MAD4Oly9yg?t=348
+ */
+var ColorSwatch =
+/*#__PURE__*/
+function (_NoriComponent) {
+  (0, _inherits2.default)(ColorSwatch, _NoriComponent);
+
+  // Subclasses should only take passed props and children
+  function ColorSwatch(props) {
+    var _this;
+
+    (0, _classCallCheck2.default)(this, ColorSwatch);
+    _this = (0, _possibleConstructorReturn2.default)(this, (0, _getPrototypeOf2.default)(ColorSwatch).call(this, props));
+    (0, _defineProperty2.default)((0, _assertThisInitialized2.default)(_this), "componentDidMount", function () {
+      _this.intervalId = setInterval(_this.$updateTicker, 100);
+    });
+    (0, _defineProperty2.default)((0, _assertThisInitialized2.default)(_this), "$updateTicker", function (_) {
+      _this.state = {
+        counter: _this.state.counter + 15
+      };
+    });
+    (0, _defineProperty2.default)((0, _assertThisInitialized2.default)(_this), "componentDidUpdate", function () {});
+    (0, _defineProperty2.default)((0, _assertThisInitialized2.default)(_this), "componentWillUnmount", function () {
+      clearInterval(_this.intervalId);
+    });
+    _this.intervalId = null;
+    _this.state = {
+      counter: 1
+    };
+    return _this;
+  }
+
+  (0, _createClass2.default)(ColorSwatch, [{
+    key: "render",
+    value: function render() {
+      var colVal = this.state.counter % 256;
+      return (0, _Nori.h)("div", {
+        style: {
+          backgroundColor: "rgb(0, 0, ".concat(colVal, ")"),
+          overflow: 'hidden',
+          borderRadius: '25%',
+          height: '50px',
+          width: '50px'
+        }
+      });
+    }
+  }]);
+  return ColorSwatch;
+}(_NoriComponent2.default);
+
+exports.default = ColorSwatch;
+},{"@babel/runtime/helpers/classCallCheck":"../node_modules/@babel/runtime/helpers/classCallCheck.js","@babel/runtime/helpers/createClass":"../node_modules/@babel/runtime/helpers/createClass.js","@babel/runtime/helpers/possibleConstructorReturn":"../node_modules/@babel/runtime/helpers/possibleConstructorReturn.js","@babel/runtime/helpers/getPrototypeOf":"../node_modules/@babel/runtime/helpers/getPrototypeOf.js","@babel/runtime/helpers/assertThisInitialized":"../node_modules/@babel/runtime/helpers/assertThisInitialized.js","@babel/runtime/helpers/inherits":"../node_modules/@babel/runtime/helpers/inherits.js","@babel/runtime/helpers/defineProperty":"../node_modules/@babel/runtime/helpers/defineProperty.js","../nori/NoriComponent":"js/nori/NoriComponent.js","../nori/Nori":"js/nori/Nori.js"}],"js/components/Ticker.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = void 0;
+
+var _classCallCheck2 = _interopRequireDefault(require("@babel/runtime/helpers/classCallCheck"));
+
+var _createClass2 = _interopRequireDefault(require("@babel/runtime/helpers/createClass"));
+
+var _possibleConstructorReturn2 = _interopRequireDefault(require("@babel/runtime/helpers/possibleConstructorReturn"));
+
+var _getPrototypeOf2 = _interopRequireDefault(require("@babel/runtime/helpers/getPrototypeOf"));
+
+var _assertThisInitialized2 = _interopRequireDefault(require("@babel/runtime/helpers/assertThisInitialized"));
+
+var _inherits2 = _interopRequireDefault(require("@babel/runtime/helpers/inherits"));
+
+var _defineProperty2 = _interopRequireDefault(require("@babel/runtime/helpers/defineProperty"));
+
+var _taggedTemplateLiteral2 = _interopRequireDefault(require("@babel/runtime/helpers/taggedTemplateLiteral"));
+
+var _NoriComponent2 = _interopRequireDefault(require("../nori/NoriComponent"));
+
+var _Nori = require("../nori/Nori");
+
+var _emotion = require("emotion");
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+function _templateObject() {
+  var data = (0, _taggedTemplateLiteral2.default)(["color: red;"]);
+
+  _templateObject = function _templateObject() {
+    return data;
+  };
+
+  return data;
+}
+
+var red = (0, _emotion.css)(_templateObject());
+
+var Ticker =
+/*#__PURE__*/
+function (_NoriComponent) {
+  (0, _inherits2.default)(Ticker, _NoriComponent);
+
+  // Subclasses should only take passed props and children
+  function Ticker(props) {
+    var _this;
+
+    (0, _classCallCheck2.default)(this, Ticker);
+    _this = (0, _possibleConstructorReturn2.default)(this, (0, _getPrototypeOf2.default)(Ticker).call(this, props));
+    (0, _defineProperty2.default)((0, _assertThisInitialized2.default)(_this), "componentDidMount", function () {
+      _this.intervalID = setInterval(_this.$updateTicker, 1000);
+    });
+    (0, _defineProperty2.default)((0, _assertThisInitialized2.default)(_this), "$updateTicker", function (_) {
+      //console.log('Ticker update!', this.props.id, this.current);
+      _this.state = {
+        counter: ++_this.state.counter
+      };
+    });
+    (0, _defineProperty2.default)((0, _assertThisInitialized2.default)(_this), "componentDidUpdate", function () {//console.log('Ticker update', this.state);
+    });
+    (0, _defineProperty2.default)((0, _assertThisInitialized2.default)(_this), "componentWillUnmount", function () {
+      clearInterval(_this.intervalID);
+    });
+    _this.intervalID = null;
+    _this.state = {
+      counter: 1
+    }; // console.log(`${this.props.id} TICKER : constructor`);
+
+    return _this;
+  }
+
+  (0, _createClass2.default)(Ticker, [{
+    key: "render",
+    value: function render() {
+      return (0, _Nori.h)("h3", null, "The count is ", (0, _Nori.h)("strong", {
+        className: red
+      }, this.state.counter), " ticks.");
+    }
+  }]);
+  return Ticker;
+}(_NoriComponent2.default);
+
+exports.default = Ticker;
+},{"@babel/runtime/helpers/classCallCheck":"../node_modules/@babel/runtime/helpers/classCallCheck.js","@babel/runtime/helpers/createClass":"../node_modules/@babel/runtime/helpers/createClass.js","@babel/runtime/helpers/possibleConstructorReturn":"../node_modules/@babel/runtime/helpers/possibleConstructorReturn.js","@babel/runtime/helpers/getPrototypeOf":"../node_modules/@babel/runtime/helpers/getPrototypeOf.js","@babel/runtime/helpers/assertThisInitialized":"../node_modules/@babel/runtime/helpers/assertThisInitialized.js","@babel/runtime/helpers/inherits":"../node_modules/@babel/runtime/helpers/inherits.js","@babel/runtime/helpers/defineProperty":"../node_modules/@babel/runtime/helpers/defineProperty.js","@babel/runtime/helpers/taggedTemplateLiteral":"../node_modules/@babel/runtime/helpers/taggedTemplateLiteral.js","../nori/NoriComponent":"js/nori/NoriComponent.js","../nori/Nori":"js/nori/Nori.js","emotion":"../node_modules/emotion/dist/index.esm.js"}],"img/pattern/shattered.png":[function(require,module,exports) {
 module.exports = "/shattered.a446e091.png";
 },{}],"js/index.js":[function(require,module,exports) {
 "use strict";
@@ -45900,6 +46102,10 @@ var _Stepper = require("./components/Stepper");
 var _Nonpresentational = _interopRequireDefault(require("./components/Nonpresentational"));
 
 var _Context = require("./nori/Context");
+
+var _ColorSwatch = _interopRequireDefault(require("./components/ColorSwatch"));
+
+var _Ticker = _interopRequireDefault(require("./components/Ticker"));
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -45984,14 +46190,13 @@ var testBox = (0, _Nori.h)(_Box.default, {
   className: whiteBox
 }, (0, _Nori.h)(_Nonpresentational.default, null), (0, _Nori.h)(_Stepper.Stepper, null), (0, _Nori.h)("hr", null), (0, _Nori.h)(_InputControls.InputControls, null), (0, _Nori.h)("hr", null), (0, _Nori.h)(Sfc, {
   message: "IMA sfc"
-}), (0, _Nori.h)(SFCWithJuice, null), (0, _Nori.h)(_Greeter.default, null), (0, _Nori.h)("hr", null), (0, _Nori.h)(ContextComp.Provider, {
+}), (0, _Nori.h)(SFCWithJuice, null), (0, _Nori.h)(_ColorSwatch.default, null), (0, _Nori.h)(_Greeter.default, null), (0, _Nori.h)(_Ticker.default, null), (0, _Nori.h)("hr", null), (0, _Nori.h)(ContextComp.Provider, {
   value: {
     fuz: 'number1'
   }
 }, (0, _Nori.h)(ContextComp.Consumer, null, function (value) {
   return (0, _Nori.h)("p", null, "This value is from a context: ", (0, _Nori.h)("strong", null, value.fuz));
-})), (0, _Nori.h)("hr", null), (0, _Nori.h)(_Lister.default, null)))); //<Box><SFCWithJuice/><Ticker/></Box>
-
+})), (0, _Nori.h)("hr", null), (0, _Nori.h)(_Lister.default, null))));
 var AnotherContextComp = (0, _Context.createContext)();
 var contextTest = (0, _Nori.h)("div", null, (0, _Nori.h)(ContextComp.Provider, {
   value: {
@@ -45999,17 +46204,19 @@ var contextTest = (0, _Nori.h)("div", null, (0, _Nori.h)(ContextComp.Provider, {
   }
 }, (0, _Nori.h)(ContextComp.Consumer, null, function (value) {
   return (0, _Nori.h)("p", null, "Context! ", value.fuz);
+}), (0, _Nori.h)(ContextComp.Consumer, null, function (value) {
+  return (0, _Nori.h)("p", null, "Context! ", value.fuz);
+}), (0, _Nori.h)(ContextComp.Consumer, null, function (value) {
+  return (0, _Nori.h)("p", null, "Context! ", value.fuz);
 })), (0, _Nori.h)(AnotherContextComp.Provider, {
   value: {
     bar: 'number2!'
   }
 }, (0, _Nori.h)(AnotherContextComp.Consumer, null, function (value) {
   return (0, _Nori.h)("p", null, "Another context ", value.bar);
-})), (0, _Nori.h)(AnotherContextComp.Consumer, null, function (value) {
-  return (0, _Nori.h)("p", null, "This shouldn't work ", value.bar);
-}));
+})));
 (0, _NoriDOM.render)(testBox, document.querySelector('#js-application'));
-},{"@babel/runtime/helpers/slicedToArray":"../node_modules/@babel/runtime/helpers/slicedToArray.js","@babel/runtime/helpers/taggedTemplateLiteral":"../node_modules/@babel/runtime/helpers/taggedTemplateLiteral.js","./theme/Theme":"js/theme/Theme.js","emotion":"../node_modules/emotion/dist/index.esm.js","./nori/Nori":"js/nori/Nori.js","./nori/NoriDOM":"js/nori/NoriDOM.js","./components/Box":"js/components/Box.js","./components/Lorem":"js/components/Lorem.js","./components/Greeter":"js/components/Greeter.js","./components/Lister":"js/components/Lister.js","./nori/Hooks":"js/nori/Hooks.js","./components/InputControls":"js/components/InputControls.js","./components/Stepper":"js/components/Stepper.js","./components/Nonpresentational":"js/components/Nonpresentational.js","./nori/Context":"js/nori/Context.js","../img/pattern/shattered.png":"img/pattern/shattered.png"}],"../node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
+},{"@babel/runtime/helpers/slicedToArray":"../node_modules/@babel/runtime/helpers/slicedToArray.js","@babel/runtime/helpers/taggedTemplateLiteral":"../node_modules/@babel/runtime/helpers/taggedTemplateLiteral.js","./theme/Theme":"js/theme/Theme.js","emotion":"../node_modules/emotion/dist/index.esm.js","./nori/Nori":"js/nori/Nori.js","./nori/NoriDOM":"js/nori/NoriDOM.js","./components/Box":"js/components/Box.js","./components/Lorem":"js/components/Lorem.js","./components/Greeter":"js/components/Greeter.js","./components/Lister":"js/components/Lister.js","./nori/Hooks":"js/nori/Hooks.js","./components/InputControls":"js/components/InputControls.js","./components/Stepper":"js/components/Stepper.js","./components/Nonpresentational":"js/components/Nonpresentational.js","./nori/Context":"js/nori/Context.js","./components/ColorSwatch":"js/components/ColorSwatch.js","./components/Ticker":"js/components/Ticker.js","../img/pattern/shattered.png":"img/pattern/shattered.png"}],"../node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
 var global = arguments[3];
 var OVERLAY_ID = '__parcel__error__overlay__';
 var OldModule = module.bundle.Module;
